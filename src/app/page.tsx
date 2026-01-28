@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 export default function Home() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'exists'>('idle');
-  const [count, setCount] = useState<number | null>(null);
+  const [count, setCount] = useState<number | null>(50);
 
   useEffect(() => {
     fetch('/api/waitlist')
