@@ -26,7 +26,7 @@ export default function AppDashboard() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -213,24 +213,25 @@ export default function AppDashboard() {
   if (loading) {
     return (
       <main className="min-h-screen bg-white dark:bg-[#09090b] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
 
   const pendingTasks = tasks.filter((t) => !t.completed);
   const completedTasks = tasks.filter((t) => t.completed);
+  const hasTasks = tasks.length > 0;
 
   return (
-    <main className="min-h-screen bg-white dark:bg-[#09090b]">
+    <main className="min-h-screen bg-white dark:bg-[#09090b] flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-100 dark:border-gray-800/50 px-4 py-3">
+      <header className="border-b border-gray-100 dark:border-gray-800/50 px-4 py-3 flex-shrink-0">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
             <span className="text-orange-600 dark:text-orange-500">⚡</span> Taskflow
           </h1>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 dark:text-gray-600 hidden sm:inline">
+            <span className="text-xs text-gray-400 dark:text-gray-600 hidden sm:inline truncate max-w-[140px]">
               {user?.email}
             </span>
             <button
@@ -243,49 +244,97 @@ export default function AppDashboard() {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 pb-32">
+      <div className="flex-1 flex flex-col max-w-lg mx-auto w-full px-4 py-6">
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 text-sm">
-            {error}
+          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 text-sm flex items-center justify-between">
+            <span>{error}</span>
             <button
               onClick={() => setError('')}
-              className="ml-2 text-red-500 hover:text-red-700 font-medium"
+              className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg leading-none"
             >
               ×
             </button>
           </div>
         )}
 
-        {/* Processing indicator */}
-        {processing && (
-          <div className="mb-6 text-center">
-            <div className="w-8 h-8 mx-auto mb-2 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">{processingStep}</p>
-          </div>
-        )}
+        {/* Hero Record Button */}
+        <div className={`flex flex-col items-center ${hasTasks && !showExtracted && !processing ? 'py-6' : 'py-12'}`}>
+          {/* Recording timer */}
+          {recording && (
+            <div className="mb-4 flex items-center gap-2 animate-fade-in">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-lg font-mono font-medium text-gray-900 dark:text-white">
+                {formatTime(recordingTime)}
+              </span>
+            </div>
+          )}
+
+          {/* Processing indicator */}
+          {processing && (
+            <div className="mb-4 flex flex-col items-center animate-fade-in">
+              <div className="w-10 h-10 mb-3 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">{processingStep}</p>
+            </div>
+          )}
+
+          {/* The big record button */}
+          {!processing && (
+            <button
+              onClick={recording ? stopRecording : startRecording}
+              disabled={processing}
+              className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                recording
+                  ? 'bg-red-500 hover:bg-red-600 active:bg-red-700 shadow-[0_0_0_6px_rgba(239,68,68,0.15)] dark:shadow-[0_0_0_6px_rgba(239,68,68,0.2)]'
+                  : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 hover:scale-105 shadow-[0_0_0_6px_rgba(234,88,12,0.1)] dark:shadow-[0_0_0_6px_rgba(234,88,12,0.15)] hover:shadow-[0_0_0_8px_rgba(234,88,12,0.15)] dark:hover:shadow-[0_0_0_8px_rgba(234,88,12,0.2)]'
+              }`}
+            >
+              {/* Pulsing ring animation when recording */}
+              {recording && (
+                <>
+                  <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-20" />
+                  <span className="absolute inset-[-8px] rounded-full border-2 border-red-400 animate-pulse opacity-40" />
+                </>
+              )}
+
+              {recording ? (
+                <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              ) : (
+                <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              )}
+            </button>
+          )}
+
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-4">
+            {recording ? 'Tap to stop' : processing ? '' : 'Tap to record your tasks'}
+          </p>
+        </div>
 
         {/* Extracted tasks confirmation */}
         {showExtracted && extractedTasks.length > 0 && (
-          <div className="mb-6 p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/40">
+          <div className="mb-6 p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/40 animate-fade-in">
             <h3 className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">
-              Extracted {extractedTasks.length} task{extractedTasks.length > 1 ? 's' : ''}
+              Found {extractedTasks.length} task{extractedTasks.length > 1 ? 's' : ''}
             </h3>
             {transcript && (
-              <p className="text-xs text-orange-600/70 dark:text-orange-400/50 mb-3 italic">
+              <p className="text-xs text-orange-600/70 dark:text-orange-400/50 mb-3 italic leading-relaxed">
                 &quot;{transcript}&quot;
               </p>
             )}
             <ul className="space-y-2 mb-4">
               {extractedTasks.map((task, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
-                  <span className="w-5 h-5 rounded-full bg-orange-200 dark:bg-orange-800/40 flex items-center justify-center text-xs font-medium text-orange-700 dark:text-orange-300">
+                <li key={i} className="flex items-center gap-2.5 text-sm text-gray-900 dark:text-white">
+                  <span className="w-5 h-5 rounded-full bg-orange-200 dark:bg-orange-800/40 flex items-center justify-center text-xs font-semibold text-orange-700 dark:text-orange-300 flex-shrink-0">
                     {i + 1}
                   </span>
                   <span className="flex-1">{task}</span>
                   <button
                     onClick={() => removeExtractedTask(i)}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -297,7 +346,7 @@ export default function AppDashboard() {
             <div className="flex gap-2">
               <button
                 onClick={() => saveTasks(extractedTasks)}
-                className="flex-1 py-2 rounded-lg font-medium text-white bg-orange-600 hover:bg-orange-700 active:bg-orange-800 transition-all text-sm"
+                className="flex-1 py-2.5 rounded-lg font-medium text-white bg-orange-600 hover:bg-orange-700 active:bg-orange-800 transition-all text-sm"
               >
                 Save All
               </button>
@@ -306,7 +355,7 @@ export default function AppDashboard() {
                   setShowExtracted(false);
                   setExtractedTasks([]);
                 }}
-                className="px-4 py-2 rounded-lg font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all text-sm"
+                className="px-4 py-2.5 rounded-lg font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all text-sm"
               >
                 Discard
               </button>
@@ -315,14 +364,14 @@ export default function AppDashboard() {
         )}
 
         {/* Task list */}
-        <div className="space-y-6">
+        <div className="space-y-6 flex-1">
           {/* Pending tasks */}
           {pendingTasks.length > 0 && (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3">
                 Tasks ({pendingTasks.length})
               </h2>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {pendingTasks.map((task) => (
                   <li
                     key={task.id}
@@ -332,10 +381,10 @@ export default function AppDashboard() {
                       onClick={() => toggleTask(task.id, task.completed)}
                       className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-orange-500 dark:hover:border-orange-500 transition-colors flex-shrink-0"
                     />
-                    <span className="flex-1 text-sm text-gray-900 dark:text-white">{task.title}</span>
+                    <span className="flex-1 text-sm text-gray-900 dark:text-white leading-snug">{task.title}</span>
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0 p-1"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -353,7 +402,7 @@ export default function AppDashboard() {
               <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3">
                 Completed ({completedTasks.length})
               </h2>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {completedTasks.map((task) => (
                   <li
                     key={task.id}
@@ -372,7 +421,7 @@ export default function AppDashboard() {
                     </span>
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0 p-1"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -386,52 +435,12 @@ export default function AppDashboard() {
 
           {/* Empty state */}
           {tasks.length === 0 && !processing && !showExtracted && (
-            <div className="text-center py-16">
-              <div className="text-4xl mb-4">🎙️</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                No tasks yet
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Tap the record button and say your tasks
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-400 dark:text-gray-600">
+                Your tasks will appear here
               </p>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Floating record button */}
-      <div className="fixed bottom-0 left-0 right-0 pb-8 pt-4 bg-gradient-to-t from-white dark:from-[#09090b] via-white/80 dark:via-[#09090b]/80 to-transparent pointer-events-none">
-        <div className="flex flex-col items-center pointer-events-auto">
-          {recording && (
-            <div className="mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {formatTime(recordingTime)}
-              </span>
-            </div>
-          )}
-          <button
-            onClick={recording ? stopRecording : startRecording}
-            disabled={processing}
-            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-              recording
-                ? 'bg-red-500 hover:bg-red-600 active:bg-red-700 scale-110 animate-pulse'
-                : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 hover:scale-105'
-            }`}
-          >
-            {recording ? (
-              <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-            ) : (
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-            )}
-          </button>
-          <span className="text-xs text-gray-400 dark:text-gray-600 mt-2">
-            {recording ? 'Tap to stop' : processing ? 'Processing...' : 'Tap to record'}
-          </span>
         </div>
       </div>
     </main>
