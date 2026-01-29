@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import confetti from 'canvas-confetti';
 
 interface Task {
   id: string;
@@ -10,6 +11,39 @@ interface Task {
   completed: boolean;
   created_at: string;
 }
+
+// Satisfying "ding" sound using Web Audio API
+const playTaskCreatedSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+    oscillator.frequency.exponentialRampToValueAtTime(1320, audioContext.currentTime + 0.1); // E6 note
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch {
+    // Silently fail if audio is not supported
+  }
+};
+
+// Confetti burst for completing tasks
+const fireConfetti = () => {
+  confetti({
+    particleCount: 80,
+    spread: 60,
+    origin: { y: 0.7 },
+    colors: ['#ea580c', '#f97316', '#fdba74', '#fed7aa'],
+  });
+};
 
 export default function AppDashboard() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -173,6 +207,9 @@ export default function AppDashboard() {
       return;
     }
 
+    // Play satisfying sound when tasks are saved
+    playTaskCreatedSound();
+
     setShowExtracted(false);
     setExtractedTasks([]);
     setTranscript('');
@@ -186,6 +223,11 @@ export default function AppDashboard() {
       .eq('id', id);
 
     if (!error) {
+      // Fire confetti when completing a task (not when uncompleting)
+      if (!completed) {
+        fireConfetti();
+      }
+      
       setTasks((prev) =>
         prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t))
       );
@@ -289,6 +331,11 @@ export default function AppDashboard() {
                   : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 hover:scale-105 shadow-[0_0_0_6px_rgba(234,88,12,0.1)] dark:shadow-[0_0_0_6px_rgba(234,88,12,0.15)] hover:shadow-[0_0_0_8px_rgba(234,88,12,0.15)] dark:hover:shadow-[0_0_0_8px_rgba(234,88,12,0.2)]'
               }`}
             >
+              {/* Breathing/pulse animation when idle (not recording) */}
+              {!recording && (
+                <span className="absolute inset-[-4px] rounded-full border-2 border-orange-400/40 animate-breathe" />
+              )}
+
               {/* Pulsing ring animation when recording */}
               {recording && (
                 <>
