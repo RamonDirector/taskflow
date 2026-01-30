@@ -556,90 +556,83 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Recording fullscreen */}
+        {/* Recording fullscreen - sleek minimal design */}
         {(recording || processing) && (
-          <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900' : 'bg-[#f5f5f0]'} z-50 flex flex-col`}>
-            {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between">
+          <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900' : 'bg-[#fafafa]'} z-50 flex flex-col`}>
+            {/* Minimal header */}
+            <div className="px-5 py-4 flex items-center">
               <button
                 onClick={() => { stopRecording(); setProcessing(false); }}
-                className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm flex items-center justify-center`}
+                className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-800/60' : 'bg-black/5'} flex items-center justify-center transition-colors hover:bg-black/10`}
               >
-                <svg className={`w-5 h-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              <div className="text-center">
-                <h2 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Create New Task</h2>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Let AI handle the details</p>
-              </div>
-              <div className="w-10" />
             </div>
 
             {/* Main content */}
             <div className="flex-1 flex flex-col items-center justify-center px-8">
               {recording ? (
                 <>
-                  <p className="text-green-500 text-lg mb-2">I&apos;m here 🎧</p>
-                  <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} text-center mb-8 leading-tight`}>
-                    Tell me what&apos;s on<br />your mind...
-                  </h1>
-
-                  {/* Live transcription */}
-                  <div className={`w-full max-w-sm min-h-[80px] mb-8 p-4 ${darkMode ? 'bg-gray-800/50' : 'bg-white/50'} rounded-2xl`}>
-                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-center`}>
-                      {liveTranscript || (
-                        <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>
-                          {recordingTime > 5 
-                            ? "Take your time, I'm listening... 💭" 
-                            : recordingTime > 2 
-                            ? "I'm with you... 🎙️" 
-                            : "Go ahead, I'm all ears... 👂"}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Waveform visualization */}
-                  <div className="flex items-end justify-center gap-1 h-20 mb-12">
-                    {[...Array(30)].map((_, i) => (
+                  {/* Waveform - main visual element */}
+                  <div className="flex items-center justify-center gap-[3px] h-24 mb-8">
+                    {[...Array(40)].map((_, i) => (
                       <div
                         key={i}
-                        className="w-1.5 bg-green-400 rounded-full animate-pulse"
+                        className="w-1 bg-green-500 rounded-full"
                         style={{
-                          height: `${Math.random() * 60 + 20}%`,
-                          animationDelay: `${i * 50}ms`,
-                          animationDuration: '300ms',
+                          height: `${20 + Math.sin(i * 0.3) * 30 + Math.random() * 40}%`,
+                          animation: `wave 0.5s ease-in-out infinite`,
+                          animationDelay: `${i * 25}ms`,
                         }}
                       />
                     ))}
                   </div>
+
+                  {/* Timer */}
+                  <p className={`text-3xl font-light ${darkMode ? 'text-white' : 'text-gray-900'} tabular-nums mb-8`}>
+                    {formatTime(recordingTime)}
+                  </p>
+
+                  {/* Live transcription - only shows when there's text */}
+                  {liveTranscript && (
+                    <div className={`w-full max-w-md px-4 py-3 ${darkMode ? 'bg-gray-800/40' : 'bg-black/5'} rounded-2xl`}>
+                      <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-center text-sm`}>
+                        {liveTranscript}
+                      </p>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
-                  <div className="w-20 h-20 mx-auto mb-6 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-                  <p className={`text-xl font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{processingStep}</p>
-                  <p className={darkMode ? 'text-gray-500' : 'text-gray-400'}>This won&apos;t take long...</p>
+                  <div className="w-16 h-16 mx-auto mb-6 border-[3px] border-green-500 border-t-transparent rounded-full animate-spin" />
+                  <p className={`text-lg ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{processingStep}</p>
                 </>
               )}
             </div>
 
             {/* Stop button */}
             {recording && (
-              <div className="px-8 pb-12">
+              <div className="px-8 pb-16">
                 <div className="flex flex-col items-center">
                   <button
                     onClick={stopRecording}
-                    className="w-16 h-16 rounded-full bg-green-500 shadow-lg flex items-center justify-center hover:bg-green-600 transition-colors hover:scale-105 active:scale-95"
+                    className="w-20 h-20 rounded-full bg-green-500 shadow-[0_4px_20px_rgba(34,197,94,0.4)] flex items-center justify-center hover:bg-green-600 transition-all hover:scale-105 active:scale-95"
                   >
-                    <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <rect x="6" y="6" width="12" height="12" rx="2" />
-                    </svg>
+                    <div className="w-6 h-6 bg-white rounded-sm" />
                   </button>
-                  <p className={`text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'} text-sm mt-4`}>Tap to finish • {formatTime(recordingTime)}</p>
                 </div>
               </div>
             )}
+
+            {/* CSS for wave animation */}
+            <style jsx>{`
+              @keyframes wave {
+                0%, 100% { transform: scaleY(1); }
+                50% { transform: scaleY(0.6); }
+              }
+            `}</style>
           </div>
         )}
 
