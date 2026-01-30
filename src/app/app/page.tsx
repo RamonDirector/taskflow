@@ -22,21 +22,27 @@ interface ExtractedTask {
   priority: 'high' | 'medium' | 'low';
 }
 
-const categoryColors: Record<string, string> = {
-  work: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  personal: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  health: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  finance: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  home: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  social: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-  learning: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-  errands: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+const categoryIcons: Record<string, string> = {
+  work: '💼',
+  personal: '👤',
+  health: '💪',
+  finance: '💰',
+  home: '🏠',
+  social: '👥',
+  learning: '📚',
+  errands: '📋',
 };
 
-const priorityColors: Record<string, string> = {
-  high: 'text-red-500',
-  medium: 'text-yellow-500',
-  low: 'text-gray-400',
+const priorityRingColors: Record<string, string> = {
+  high: 'ring-red-400',
+  medium: 'ring-amber-400',
+  low: 'ring-green-400',
+};
+
+const priorityBgColors: Record<string, string> = {
+  high: 'bg-red-50',
+  medium: 'bg-amber-50',
+  low: 'bg-green-50',
 };
 
 // Satisfying "ding" sound using Web Audio API
@@ -49,8 +55,8 @@ const playTaskCreatedSound = () => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
-    oscillator.frequency.exponentialRampToValueAtTime(1320, audioContext.currentTime + 0.1); // E6 note
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1320, audioContext.currentTime + 0.1);
     
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
@@ -68,7 +74,7 @@ const fireConfetti = () => {
     particleCount: 80,
     spread: 60,
     origin: { y: 0.7 },
-    colors: ['#ea580c', '#f97316', '#fdba74', '#fed7aa'],
+    colors: ['#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
   });
 };
 
@@ -84,6 +90,7 @@ export default function AppDashboard() {
   const [showExtracted, setShowExtracted] = useState(false);
   const [error, setError] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -181,7 +188,6 @@ export default function AppDashboard() {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
 
-      // Step 1: Transcribe
       const transcribeRes = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
@@ -191,7 +197,6 @@ export default function AppDashboard() {
       const { text } = await transcribeRes.json();
       setTranscript(text);
 
-      // Step 2: Extract tasks
       setProcessingStep('Extracting tasks...');
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
@@ -237,9 +242,7 @@ export default function AppDashboard() {
       return;
     }
 
-    // Play satisfying sound when tasks are saved
     playTaskCreatedSound();
-
     setShowExtracted(false);
     setExtractedTasks([]);
     setTranscript('');
@@ -253,11 +256,9 @@ export default function AppDashboard() {
       .eq('id', id);
 
     if (!error) {
-      // Fire confetti when completing a task (not when uncompleting)
       if (!completed) {
         fireConfetti();
       }
-      
       setTasks((prev) =>
         prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t))
       );
@@ -266,7 +267,6 @@ export default function AppDashboard() {
 
   const deleteTask = async (id: string) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id);
-
     if (!error) {
       setTasks((prev) => prev.filter((t) => t.id !== id));
     }
@@ -282,174 +282,158 @@ export default function AppDashboard() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const formatDueDate = (date: string) => {
+    const d = new Date(date);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+    return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+
   if (loading) {
     return (
-      <main className="min-h-screen bg-white dark:bg-[#09090b] flex items-center justify-center">
-        <div className="w-10 h-10 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-10 h-10 border-3 border-green-500 border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
 
-  const pendingTasks = tasks.filter((t) => !t.completed);
-  const completedTasks = tasks.filter((t) => t.completed);
-  const hasTasks = tasks.length > 0;
+  const filteredTasks = tasks.filter(t => 
+    priorityFilter === 'all' || t.priority === priorityFilter
+  );
+  const pendingTasks = filteredTasks.filter((t) => !t.completed);
+  const completedTasks = filteredTasks.filter((t) => t.completed);
 
   return (
-    <main className="min-h-screen bg-white dark:bg-[#09090b] flex flex-col">
+    <main className="min-h-screen bg-gray-50 flex flex-col pb-24">
       {/* Header */}
-      <header className="border-b border-gray-100 dark:border-gray-800/50 px-4 py-3 flex-shrink-0">
+      <header className="bg-white px-5 py-4 shadow-sm sticky top-0 z-40">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
-            <span className="text-orange-600 dark:text-orange-500">⚡</span> Taskflow
-          </h1>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 dark:text-gray-600 hidden sm:inline truncate max-w-[140px]">
-              {user?.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Sign out
-            </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              <span className="text-green-500">⚡</span> Taskflow
+            </h1>
+            <p className="text-xs text-gray-400 mt-0.5">Voice-powered tasks</p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col max-w-lg mx-auto w-full px-4 py-6">
+      <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
+        {/* Priority Filter Pills */}
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-sm font-medium text-gray-500">Priority</span>
+          <div className="flex gap-2">
+            {(['all', 'low', 'medium', 'high'] as const).map((level) => (
+              <button
+                key={level}
+                onClick={() => setPriorityFilter(level)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  priorityFilter === level
+                    ? level === 'high' 
+                      ? 'bg-red-500 text-white shadow-md'
+                      : level === 'medium'
+                      ? 'bg-amber-500 text-white shadow-md'
+                      : level === 'low'
+                      ? 'bg-green-500 text-white shadow-md'
+                      : 'bg-gray-800 text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {level.charAt(0).toUpperCase() + level.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 text-sm flex items-center justify-between">
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center justify-between">
             <span>{error}</span>
-            <button
-              onClick={() => setError('')}
-              className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg leading-none"
-            >
-              ×
-            </button>
+            <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600 font-bold">×</button>
           </div>
         )}
 
-        {/* Hero Record Button */}
-        <div className={`flex flex-col items-center ${hasTasks && !showExtracted && !processing ? 'py-6' : 'py-12'}`}>
-          {/* Recording timer */}
-          {recording && (
-            <div className="mb-4 flex items-center gap-2 animate-fade-in">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-lg font-mono font-medium text-gray-900 dark:text-white">
-                {formatTime(recordingTime)}
-              </span>
-            </div>
-          )}
-
-          {/* Processing indicator */}
-          {processing && (
-            <div className="mb-4 flex flex-col items-center animate-fade-in">
-              <div className="w-10 h-10 mb-3 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">{processingStep}</p>
-            </div>
-          )}
-
-          {/* The big record button */}
-          {!processing && (
-            <button
-              onClick={recording ? stopRecording : startRecording}
-              disabled={processing}
-              className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-                recording
-                  ? 'bg-red-500 hover:bg-red-600 active:bg-red-700 shadow-[0_0_0_6px_rgba(239,68,68,0.15)] dark:shadow-[0_0_0_6px_rgba(239,68,68,0.2)]'
-                  : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 hover:scale-105 shadow-[0_0_0_6px_rgba(234,88,12,0.1)] dark:shadow-[0_0_0_6px_rgba(234,88,12,0.15)] hover:shadow-[0_0_0_8px_rgba(234,88,12,0.15)] dark:hover:shadow-[0_0_0_8px_rgba(234,88,12,0.2)]'
-              }`}
-            >
-              {/* Breathing/pulse animation when idle (not recording) */}
-              {!recording && (
-                <span className="absolute inset-[-4px] rounded-full border-2 border-orange-400/40 animate-breathe" />
-              )}
-
-              {/* Pulsing ring animation when recording */}
-              {recording && (
-                <>
-                  <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-20" />
-                  <span className="absolute inset-[-8px] rounded-full border-2 border-red-400 animate-pulse opacity-40" />
-                </>
-              )}
-
+        {/* Recording overlay */}
+        {(recording || processing) && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-sm mx-4">
               {recording ? (
-                <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
-              ) : (
-                <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              )}
-            </button>
-          )}
-
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-4">
-            {recording ? 'Tap to stop' : processing ? '' : 'Tap to record your tasks'}
-          </p>
-        </div>
-
-        {/* Extracted tasks confirmation */}
-        {showExtracted && extractedTasks.length > 0 && (
-          <div className="mb-6 p-4 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/40 animate-fade-in">
-            <h3 className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">
-              Found {extractedTasks.length} task{extractedTasks.length > 1 ? 's' : ''}
-            </h3>
-            {transcript && (
-              <p className="text-xs text-orange-600/70 dark:text-orange-400/50 mb-3 italic leading-relaxed">
-                &quot;{transcript}&quot;
-              </p>
-            )}
-            <ul className="space-y-3 mb-4">
-              {extractedTasks.map((task, i) => (
-                <li key={i} className="p-3 rounded-lg bg-white dark:bg-gray-900/50 border border-orange-200 dark:border-orange-800/30">
-                  <div className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-orange-200 dark:bg-orange-800/40 flex items-center justify-center text-xs font-semibold text-orange-700 dark:text-orange-300 flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">{task.title}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColors[task.category] || categoryColors.errands}`}>
-                          {task.category}
-                        </span>
-                        {task.due_date && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                            📅 {new Date(task.due_date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          </span>
-                        )}
-                        <span className={`text-xs ${priorityColors[task.priority]}`}>
-                          {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '⚪'} {task.priority}
-                        </span>
-                      </div>
-                    </div>
+                <>
+                  <div className="relative w-24 h-24 mx-auto mb-4">
+                    <div className="absolute inset-0 bg-red-100 rounded-full animate-ping opacity-50" />
                     <button
-                      onClick={() => removeExtractedTask(i)}
-                      className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1"
+                      onClick={stopRecording}
+                      className="relative w-24 h-24 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
                       </svg>
                     </button>
                   </div>
+                  <p className="text-2xl font-mono font-bold text-gray-900 mb-1">{formatTime(recordingTime)}</p>
+                  <p className="text-gray-500">Tap to stop recording</p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 mx-auto mb-4 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-gray-600 font-medium">{processingStep}</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Extracted tasks confirmation */}
+        {showExtracted && extractedTasks.length > 0 && (
+          <div className="mb-6 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm animate-fade-in">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">
+              Found {extractedTasks.length} task{extractedTasks.length > 1 ? 's' : ''}
+            </h3>
+            {transcript && (
+              <p className="text-sm text-gray-400 mb-4 italic">&ldquo;{transcript}&rdquo;</p>
+            )}
+            <ul className="space-y-3 mb-5">
+              {extractedTasks.map((task, i) => (
+                <li key={i} className={`p-4 rounded-xl ${priorityBgColors[task.priority]} flex items-center gap-4`}>
+                  <div className={`w-12 h-12 rounded-full bg-white ring-3 ${priorityRingColors[task.priority]} flex items-center justify-center text-xl shadow-sm`}>
+                    {categoryIcons[task.category] || '📋'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900">{task.title}</p>
+                    <p className="text-sm text-gray-500">
+                      {task.due_date ? formatDueDate(task.due_date) : 'No date'} • {task.category}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removeExtractedTask(i)}
+                    className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </li>
               ))}
             </ul>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => saveTasks(extractedTasks)}
-                className="flex-1 py-2.5 rounded-lg font-medium text-white bg-orange-600 hover:bg-orange-700 active:bg-orange-800 transition-all text-sm"
+                className="flex-1 py-3 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 transition-all shadow-md"
               >
                 Save All
               </button>
               <button
-                onClick={() => {
-                  setShowExtracted(false);
-                  setExtractedTasks([]);
-                }}
-                className="px-4 py-2.5 rounded-lg font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all text-sm"
+                onClick={() => { setShowExtracted(false); setExtractedTasks([]); }}
+                className="px-6 py-3 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
               >
                 Discard
               </button>
@@ -458,99 +442,122 @@ export default function AppDashboard() {
         )}
 
         {/* Task list */}
-        <div className="space-y-6 flex-1">
-          {/* Pending tasks */}
+        <div className="space-y-3">
           {pendingTasks.length > 0 && (
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3">
-                Tasks ({pendingTasks.length})
-              </h2>
-              <ul className="space-y-0.5">
-                {pendingTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+            <>
+              {pendingTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:shadow-md transition-shadow"
+                >
+                  <div className={`w-12 h-12 rounded-full bg-gray-50 ring-3 ${priorityRingColors[task.priority || 'medium']} flex items-center justify-center text-xl`}>
+                    {categoryIcons[task.category || 'errands'] || '📋'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{task.title}</p>
+                    <p className="text-sm text-gray-400">
+                      {task.due_date ? formatDueDate(task.due_date) : 'No date'}
+                      {task.category && ` • ${task.category}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
                   >
-                    <button
-                      onClick={() => toggleTask(task.id, task.completed)}
-                      className="w-5 h-5 mt-0.5 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-orange-500 dark:hover:border-orange-500 transition-colors flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-gray-900 dark:text-white leading-snug block">{task.title}</span>
-                      <div className="flex flex-wrap gap-1.5 mt-1.5">
-                        {task.category && (
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${categoryColors[task.category] || categoryColors.errands}`}>
-                            {task.category}
-                          </span>
-                        )}
-                        {task.due_date && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            📅 {new Date(task.due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                          </span>
-                        )}
-                        {task.priority === 'high' && <span className="text-xs">🔴</span>}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0 p-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => toggleTask(task.id, task.completed)}
+                    className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors"
+                  >
+                  </button>
+                </div>
+              ))}
+            </>
           )}
 
           {/* Completed tasks */}
           {completedTasks.length > 0 && (
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3">
+            <div className="mt-8">
+              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
                 Completed ({completedTasks.length})
-              </h2>
-              <ul className="space-y-0.5">
-                {completedTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+              </h3>
+              {completedTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="bg-white/60 rounded-2xl p-4 mb-2 border border-gray-100 flex items-center gap-4 group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl opacity-50">
+                    {categoryIcons[task.category || 'errands'] || '📋'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-400 line-through truncate">{task.title}</p>
+                  </div>
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
                   >
-                    <button
-                      onClick={() => toggleTask(task.id, task.completed)}
-                      className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0"
-                    >
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                    <span className="flex-1 text-sm text-gray-400 dark:text-gray-500 line-through">
-                      {task.title}
-                    </span>
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0 p-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => toggleTask(task.id, task.completed)}
+                    className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center"
+                  >
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
           {/* Empty state */}
           {tasks.length === 0 && !processing && !showExtracted && (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-400 dark:text-gray-600">
-                Your tasks will appear here
-              </p>
+            <div className="text-center py-16">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">No tasks yet</h3>
+              <p className="text-gray-400">Tap the mic button to add your first task</p>
+            </div>
+          )}
+
+          {filteredTasks.length === 0 && tasks.length > 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-400">No {priorityFilter} priority tasks</p>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-6 right-6 z-30">
+        <button
+          onClick={recording ? stopRecording : startRecording}
+          disabled={processing}
+          className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all disabled:opacity-50 ${
+            recording
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-green-500 hover:bg-green-600 hover:scale-105'
+          }`}
+        >
+          {recording ? (
+            <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          ) : (
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          )}
+        </button>
       </div>
     </main>
   );
