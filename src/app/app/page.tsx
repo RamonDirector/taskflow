@@ -115,6 +115,7 @@ export default function AppDashboard() {
   const [editTitle, setEditTitle] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   
   // Dark mode state
   const [darkMode, setDarkMode] = useState(false);
@@ -410,6 +411,7 @@ export default function AppDashboard() {
     setEditTitle('');
     setEditCategory('');
     setEditDueDate('');
+    setShowCategoryDropdown(false);
   };
 
   const saveEditedTask = async () => {
@@ -658,19 +660,43 @@ export default function AppDashboard() {
                   />
                 </div>
                 
-                <div>
+                <div className="relative">
                   <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Category</label>
-                  <select
-                    value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all flex items-center gap-3 text-left"
                   >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {categoryEmojis[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                      </option>
-                    ))}
-                  </select>
+                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+                      <CategoryIcon category={editCategory || 'personal'} size={32} />
+                    </div>
+                    <span className="flex-1">{(editCategory || 'personal').charAt(0).toUpperCase() + (editCategory || 'personal').slice(1)}</span>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showCategoryDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-xl z-10 overflow-hidden">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => { setEditCategory(cat); setShowCategoryDropdown(false); }}
+                          className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors ${editCategory === cat ? 'bg-green-50 dark:bg-green-900/30' : ''}`}
+                        >
+                          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+                            <CategoryIcon category={cat} size={32} />
+                          </div>
+                          <span className="text-gray-900 dark:text-white">{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+                          {editCategory === cat && (
+                            <svg className="w-4 h-4 text-green-500 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div>
