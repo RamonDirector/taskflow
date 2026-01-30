@@ -556,7 +556,7 @@ export default function AppDashboard() {
 
         {/* Recording fullscreen */}
         {(recording || processing) && (
-          <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900' : 'bg-[#f5f5f0]'} z-50 flex flex-col`}
+          <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900' : 'bg-[#f5f5f0]'} z-50 flex flex-col`}>
             {/* Header */}
             <div className="px-5 py-4 flex items-center justify-between">
               <button
