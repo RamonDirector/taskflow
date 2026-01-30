@@ -25,48 +25,43 @@ export async function POST(request: NextRequest) {
 
 Today is ${dayOfWeek}, ${today}.
 
+IMPORTANT: Detect the language of the input and write task titles in THE SAME LANGUAGE.
+- If input is in Spanish → titles in Spanish
+- If input is in English → titles in English
+- If input is in any other language → titles in that language
+
 For EACH task, extract:
-1. **title**: Clear, concise action item (clean up filler words like "um", "uh", "like")
+1. **title**: Clear, concise action item IN THE SAME LANGUAGE as the input (clean up filler words like "um", "uh", "like", "eh", "o sea")
 2. **category**: Auto-detect from content. One of: work, personal, health, finance, home, social, learning, errands
-3. **due_date**: Parse natural language dates. Examples:
-   - "tomorrow" → tomorrow's date
-   - "next friday" → calculate the date
-   - "before the weekend" → Friday's date
-   - "this week" → end of this week
+3. **due_date**: Parse natural language dates (in any language). Examples:
+   - "tomorrow" / "mañana" → tomorrow's date
+   - "next friday" / "el viernes que viene" → calculate the date
+   - "before the weekend" / "antes del fin de semana" → Friday's date
+   - "this week" / "esta semana" → end of this week
    - If no date mentioned → null
 4. **priority**: Detect urgency from language:
-   - "urgent", "ASAP", "critical", "need to", "must" → high
-   - "should", "important" → medium  
-   - "when I can", "eventually", "maybe" → low
+   - "urgent", "ASAP", "critical", "need to", "must", "urgente", "tengo que", "debo" → high
+   - "should", "important", "debería", "importante" → medium  
+   - "when I can", "eventually", "maybe", "cuando pueda", "eventualmente", "quizás" → low
    - Default → medium
 
 Rules:
 - Extract EVERY distinct task, even from long rambling monologues
 - If someone mentions the same thing twice, only include it once
-- Separate compound tasks: "call mom and buy groceries" → 2 tasks
+- Separate compound tasks: "call mom and buy groceries" / "llamar a mamá y comprar comida" → 2 tasks
 - Clean up the language while preserving intent
 - Be generous with extraction - it's better to extract too many than miss something
+- ALWAYS match the input language for task titles
 
 Return JSON format:
 {
   "tasks": [
     {
-      "title": "string",
+      "title": "string (in same language as input)",
       "category": "work|personal|health|finance|home|social|learning|errands",
       "due_date": "YYYY-MM-DD" or null,
       "priority": "high|medium|low"
     }
-  ]
-}
-
-Example input: "Ok so tomorrow I really need to call the dentist, that's urgent, and uh I should probably buy Maria's birthday gift before Saturday, oh and when I have time I need to review that Barcelona proposal for work, the client is waiting..."
-
-Example output:
-{
-  "tasks": [
-    {"title": "Call the dentist", "category": "health", "due_date": "${getNextDay()}", "priority": "high"},
-    {"title": "Buy Maria's birthday gift", "category": "personal", "due_date": "${getNextSaturday()}", "priority": "medium"},
-    {"title": "Review Barcelona proposal for client", "category": "work", "due_date": null, "priority": "medium"}
   ]
 }`,
         },
