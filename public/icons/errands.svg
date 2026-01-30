@@ -1,10 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <circle cx="32" cy="32" r="30" fill="#f0fdf4"/>
-  <rect x="16" y="12" width="32" height="42" rx="3" fill="#22c55e"/>
-  <rect x="20" y="20" width="16" height="3" rx="1" fill="#f0fdf4"/>
-  <rect x="20" y="28" width="20" height="3" rx="1" fill="#f0fdf4"/>
-  <rect x="20" y="36" width="14" height="3" rx="1" fill="#f0fdf4"/>
-  <rect x="20" y="44" width="18" height="3" rx="1" fill="#f0fdf4"/>
-  <circle cx="40" cy="21.5" r="2" fill="#f0fdf4"/>
-  <circle cx="44" cy="29.5" r="2" fill="#f0fdf4"/>
+  <defs>
+    <linearGradient id="errBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0fdf4"/>
+      <stop offset="100%" style="stop-color:#dcfce7"/>
+    </linearGradient>
+    <linearGradient id="errFg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#16a34a"/>
+    </linearGradient>
+    <filter id="shadow8" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#errBg)"/>
+  <g filter="url(#shadow8)">
+    <!-- Clipboard -->
+    <rect x="16" y="14" width="32" height="40" rx="4" fill="url(#errFg)"/>
+    <!-- Clip -->
+    <rect x="26" y="10" width="12" height="8" rx="2" fill="#16a34a"/>
+    <rect x="28" y="12" width="8" height="4" rx="1" fill="url(#errBg)"/>
+    <!-- Checklist items -->
+    <rect x="22" y="24" width="5" height="5" rx="1" fill="#f0fdf4"/>
+    <path d="M23 27l1.5 1.5L27 25" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="30" y="25" width="14" height="3" rx="1" fill="#f0fdf4"/>
+    
+    <rect x="22" y="34" width="5" height="5" rx="1" fill="#f0fdf4"/>
+    <path d="M23 37l1.5 1.5L27 35" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="30" y="35" width="12" height="3" rx="1" fill="#f0fdf4"/>
+    
+    <rect x="22" y="44" width="5" height="5" rx="1" fill="#f0fdf4"/>
+    <rect x="30" y="45" width="10" height="3" rx="1" fill="#f0fdf4"/>
+  </g>
 </svg>
