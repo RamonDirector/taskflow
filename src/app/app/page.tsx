@@ -33,16 +33,16 @@ const categoryIcons: Record<string, string> = {
   errands: '📋',
 };
 
-const priorityRingColors: Record<string, string> = {
-  high: 'ring-red-400',
-  medium: 'ring-amber-400',
-  low: 'ring-green-400',
+const priorityColors: Record<string, { bg: string; ring: string; dot: string }> = {
+  high: { bg: 'bg-red-50', ring: 'ring-red-400', dot: 'bg-red-500' },
+  medium: { bg: 'bg-amber-50', ring: 'ring-amber-400', dot: 'bg-amber-500' },
+  low: { bg: 'bg-green-50', ring: 'ring-green-400', dot: 'bg-green-500' },
 };
 
-const priorityBgColors: Record<string, string> = {
-  high: 'bg-red-50',
-  medium: 'bg-amber-50',
-  low: 'bg-green-50',
+const priorityOrder: Record<string, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
 };
 
 // Satisfying "ding" sound using Web Audio API
@@ -90,7 +90,6 @@ export default function AppDashboard() {
   const [showExtracted, setShowExtracted] = useState(false);
   const [error, setError] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
-  const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -265,6 +264,27 @@ export default function AppDashboard() {
     }
   };
 
+  // Cycle priority: medium → low → high → medium
+  const cyclePriority = async (id: string, currentPriority: string) => {
+    const cycle: Record<string, 'high' | 'medium' | 'low'> = {
+      medium: 'low',
+      low: 'high',
+      high: 'medium',
+    };
+    const newPriority = cycle[currentPriority] || 'medium';
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ priority: newPriority })
+      .eq('id', id);
+
+    if (!error) {
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, priority: newPriority } : t))
+      );
+    }
+  };
+
   const deleteTask = async (id: string) => {
     const { error } = await supabase.from('tasks').delete().eq('id', id);
     if (!error) {
@@ -301,11 +321,17 @@ export default function AppDashboard() {
     );
   }
 
-  const filteredTasks = tasks.filter(t => 
-    priorityFilter === 'all' || t.priority === priorityFilter
-  );
-  const pendingTasks = filteredTasks.filter((t) => !t.completed);
-  const completedTasks = filteredTasks.filter((t) => t.completed);
+  // Sort tasks by priority: high (red) → medium (yellow) → low (green)
+  const sortByPriority = (taskList: Task[]) => {
+    return [...taskList].sort((a, b) => {
+      const orderA = priorityOrder[a.priority || 'medium'];
+      const orderB = priorityOrder[b.priority || 'medium'];
+      return orderA - orderB;
+    });
+  };
+
+  const pendingTasks = sortByPriority(tasks.filter((t) => !t.completed));
+  const completedTasks = tasks.filter((t) => t.completed);
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col pb-8">
@@ -328,32 +354,6 @@ export default function AppDashboard() {
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
-        {/* Priority Filter Pills */}
-        <div className="flex items-center gap-3 mb-6">
-          <span className="text-sm font-medium text-gray-500">Priority</span>
-          <div className="flex gap-2">
-            {(['all', 'low', 'medium', 'high'] as const).map((level) => (
-              <button
-                key={level}
-                onClick={() => setPriorityFilter(level)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  priorityFilter === level
-                    ? level === 'high' 
-                      ? 'bg-red-500 text-white shadow-md'
-                      : level === 'medium'
-                      ? 'bg-amber-500 text-white shadow-md'
-                      : level === 'low'
-                      ? 'bg-green-500 text-white shadow-md'
-                      : 'bg-gray-800 text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Hero Record Button */}
         <div className="flex flex-col items-center py-8 mb-4">
           <button
@@ -475,8 +475,8 @@ export default function AppDashboard() {
             )}
             <ul className="space-y-3 mb-5">
               {extractedTasks.map((task, i) => (
-                <li key={i} className={`p-4 rounded-xl ${priorityBgColors[task.priority]} flex items-center gap-4`}>
-                  <div className={`w-12 h-12 rounded-full bg-white ring-3 ${priorityRingColors[task.priority]} flex items-center justify-center text-xl shadow-sm`}>
+                <li key={i} className={`p-4 rounded-xl ${priorityColors[task.priority].bg} flex items-center gap-4`}>
+                  <div className={`w-12 h-12 rounded-full bg-white ring-3 ${priorityColors[task.priority].ring} flex items-center justify-center text-xl shadow-sm`}>
                     {categoryIcons[task.category] || '📋'}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -517,36 +517,45 @@ export default function AppDashboard() {
         <div className="space-y-3">
           {pendingTasks.length > 0 && (
             <>
-              {pendingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="bg-white rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all"
-                >
-                  <div className={`w-12 h-12 rounded-full bg-gray-50 ring-3 ${priorityRingColors[task.priority || 'medium']} flex items-center justify-center text-xl`}>
-                    {categoryIcons[task.category || 'errands'] || '📋'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{task.title}</p>
-                    <p className="text-sm text-gray-400">
-                      {task.due_date ? formatDueDate(task.due_date) : 'No date'}
-                      {task.category && ` • ${task.category}`}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
+              {pendingTasks.map((task) => {
+                const priority = task.priority || 'medium';
+                const colors = priorityColors[priority];
+                return (
+                  <div
+                    key={task.id}
+                    className="bg-white rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => toggleTask(task.id, task.completed)}
-                    className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors"
-                  >
-                  </button>
-                </div>
-              ))}
+                    {/* Priority color button */}
+                    <button
+                      onClick={() => cyclePriority(task.id, priority)}
+                      className={`w-12 h-12 rounded-full ${colors.bg} ring-3 ${colors.ring} flex items-center justify-center text-xl transition-all hover:scale-105 active:scale-95`}
+                      title="Click to change priority"
+                    >
+                      {categoryIcons[task.category || 'errands'] || '📋'}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{task.title}</p>
+                      <p className="text-sm text-gray-400">
+                        {task.due_date ? formatDueDate(task.due_date) : 'No date'}
+                        {task.category && ` • ${task.category}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteTask(task.id)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => toggleTask(task.id, task.completed)}
+                      className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors"
+                    >
+                    </button>
+                  </div>
+                );
+              })}
             </>
           )}
 
@@ -600,15 +609,8 @@ export default function AppDashboard() {
               <p className="text-gray-400">Tap the mic button to add your first task</p>
             </div>
           )}
-
-          {filteredTasks.length === 0 && tasks.length > 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-400">No {priorityFilter} priority tasks</p>
-            </div>
-          )}
         </div>
       </div>
-
     </main>
   );
 }
