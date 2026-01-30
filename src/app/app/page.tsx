@@ -57,10 +57,10 @@ const CategoryIcon = ({ category, size = 32 }: { category: string; size?: number
 
 const categories = ['work', 'personal', 'health', 'finance', 'home', 'social', 'learning', 'errands'];
 
-const priorityColors: Record<string, { bg: string; ring: string; cardBg: string }> = {
-  high: { bg: 'bg-red-50', ring: 'ring-red-400', cardBg: 'bg-red-50/60' },
-  medium: { bg: 'bg-amber-50', ring: 'ring-amber-400', cardBg: 'bg-amber-50/60' },
-  low: { bg: 'bg-green-50', ring: 'ring-green-400', cardBg: 'bg-green-50/60' },
+const priorityColors: Record<string, { bg: string; ring: string; cardBg: string; cardBgDark: string }> = {
+  high: { bg: 'bg-red-50 dark:bg-red-900/30', ring: 'ring-red-400', cardBg: 'bg-red-50/60', cardBgDark: 'dark:bg-red-900/20' },
+  medium: { bg: 'bg-amber-50 dark:bg-amber-900/30', ring: 'ring-amber-400', cardBg: 'bg-amber-50/60', cardBgDark: 'dark:bg-amber-900/20' },
+  low: { bg: 'bg-green-50 dark:bg-green-900/30', ring: 'ring-green-400', cardBg: 'bg-green-50/60', cardBgDark: 'dark:bg-green-900/20' },
 };
 
 // Satisfying "ding" sound using Web Audio API
@@ -116,6 +116,9 @@ export default function AppDashboard() {
   const [editCategory, setEditCategory] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(false);
+  
   // Swipe state
   const [swipingTaskId, setSwipingTaskId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -152,6 +155,25 @@ export default function AppDashboard() {
     };
     init();
   }, [supabase, router, fetchTasks]);
+
+  // Load dark mode preference
+  useEffect(() => {
+    const saved = localStorage.getItem('taskflow-darkmode');
+    if (saved === 'true') {
+      setDarkMode(true);
+    }
+  }, []);
+
+  // Apply dark mode class
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('taskflow-darkmode', 'true');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('taskflow-darkmode', 'false');
+    }
+  }, [darkMode]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -461,7 +483,7 @@ export default function AppDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
         <div className="w-10 h-10 border-3 border-green-500 border-t-transparent rounded-full animate-spin" />
       </main>
     );
@@ -471,22 +493,40 @@ export default function AppDashboard() {
   const completedTasks = tasks.filter((t) => t.completed);
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col pb-8">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col pb-8 transition-colors">
       {/* Header */}
-      <header className="bg-white px-5 py-4 shadow-sm sticky top-0 z-40">
+      <header className="bg-white dark:bg-gray-800 px-5 py-4 shadow-sm sticky top-0 z-40 transition-colors">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               <span className="text-green-500">⚡</span> Taskflow
             </h1>
-            <p className="text-xs text-gray-400 mt-0.5">Voice-powered tasks</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Voice-powered tasks</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
+              title={darkMode ? 'Light mode' : 'Dark mode'}
+            >
+              {darkMode ? (
+                <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -503,7 +543,7 @@ export default function AppDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </button>
-          <p className="text-sm text-gray-400 mt-3">Tap to record your tasks</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Tap to record your tasks</p>
         </div>
 
         {/* Error */}
@@ -516,20 +556,20 @@ export default function AppDashboard() {
 
         {/* Recording fullscreen */}
         {(recording || processing) && (
-          <div className="fixed inset-0 bg-[#f5f5f0] z-50 flex flex-col">
+          <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900' : 'bg-[#f5f5f0]'} z-50 flex flex-col`}
             {/* Header */}
             <div className="px-5 py-4 flex items-center justify-between">
               <button
                 onClick={() => { stopRecording(); setProcessing(false); }}
-                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center"
+                className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm flex items-center justify-center`}
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <div className="text-center">
-                <h2 className="font-semibold text-gray-900">Create New Task</h2>
-                <p className="text-xs text-gray-400">Let AI handle the details</p>
+                <h2 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Create New Task</h2>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Let AI handle the details</p>
               </div>
               <div className="w-10" />
             </div>
@@ -538,16 +578,16 @@ export default function AppDashboard() {
             <div className="flex-1 flex flex-col items-center justify-center px-8">
               {recording ? (
                 <>
-                  <p className="text-green-600 text-lg mb-2">I&apos;m here 🎧</p>
-                  <h1 className="text-3xl font-bold text-gray-900 text-center mb-8 leading-tight">
+                  <p className="text-green-500 text-lg mb-2">I&apos;m here 🎧</p>
+                  <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} text-center mb-8 leading-tight`}>
                     Tell me what&apos;s on<br />your mind...
                   </h1>
 
                   {/* Live transcription */}
-                  <div className="w-full max-w-sm min-h-[80px] mb-8 p-4 bg-white/50 rounded-2xl">
-                    <p className="text-gray-600 text-center">
+                  <div className={`w-full max-w-sm min-h-[80px] mb-8 p-4 ${darkMode ? 'bg-gray-800/50' : 'bg-white/50'} rounded-2xl`}>
+                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-center`}>
                       {liveTranscript || (
-                        <span className="text-gray-400">
+                        <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>
                           {recordingTime > 5 
                             ? "Take your time, I'm listening... 💭" 
                             : recordingTime > 2 
@@ -576,8 +616,8 @@ export default function AppDashboard() {
               ) : (
                 <>
                   <div className="w-20 h-20 mx-auto mb-6 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-xl font-medium text-gray-700">{processingStep}</p>
-                  <p className="text-gray-400 mt-2">This won&apos;t take long...</p>
+                  <p className={`text-xl font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{processingStep}</p>
+                  <p className={darkMode ? 'text-gray-500' : 'text-gray-400'}>This won&apos;t take long...</p>
                 </>
               )}
             </div>
@@ -594,7 +634,7 @@ export default function AppDashboard() {
                       <rect x="6" y="6" width="12" height="12" rx="2" />
                     </svg>
                   </button>
-                  <p className="text-center text-gray-400 text-sm mt-4">Tap to finish • {formatTime(recordingTime)}</p>
+                  <p className={`text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'} text-sm mt-4`}>Tap to finish • {formatTime(recordingTime)}</p>
                 </div>
               </div>
             )}
@@ -604,29 +644,29 @@ export default function AppDashboard() {
         {/* Edit Modal */}
         {editingTask && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Task</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Task</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600 mb-1 block">Title</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Title</label>
                   <input
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
                   />
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600 mb-1 block">Category</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Category</label>
                   <select
                     value={editCategory}
                     onChange={(e) => setEditCategory(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all bg-white"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
                   >
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>
+                      <option key={cat} value={cat} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         {categoryEmojis[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
                       </option>
                     ))}
@@ -634,12 +674,12 @@ export default function AppDashboard() {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600 mb-1 block">Due Date</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Due Date</label>
                   <input
                     type="date"
                     value={editDueDate}
                     onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -653,7 +693,7 @@ export default function AppDashboard() {
                 </button>
                 <button
                   onClick={closeEditModal}
-                  className="px-6 py-3 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+                  className="px-6 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 >
                   Cancel
                 </button>
@@ -713,7 +753,7 @@ export default function AppDashboard() {
 
         {/* Swipe hint */}
         {pendingTasks.length > 0 && (
-          <p className="text-xs text-gray-400 text-center mb-3">
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-3">
             Swipe right to complete • Swipe left to delete • Tap to edit
           </p>
         )}
@@ -758,7 +798,7 @@ export default function AppDashboard() {
                         transform: isBeingSwiped ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                         transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
                       }}
-                      className={`${colors.cardBg} rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-shadow cursor-pointer active:scale-[0.99] relative`}
+                      className={`${colors.cardBg} ${colors.cardBgDark} rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border border-gray-100/50 dark:border-gray-700/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-shadow cursor-pointer active:scale-[0.99] relative`}
                     >
                       {/* Category icon - tap to cycle priority */}
                       <button
@@ -768,15 +808,15 @@ export default function AppDashboard() {
                         <CategoryIcon category={task.category || 'errands'} size={36} />
                       </button>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{task.title}</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-400">
                           {task.due_date ? formatDueDate(task.due_date) : 'No date'}
                           {task.category && ` • ${task.category}`}
                         </p>
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
-                        className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors bg-white/50"
+                        className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-600 hover:border-green-500 flex items-center justify-center transition-colors bg-white/50 dark:bg-gray-700/50"
                       >
                       </button>
                     </div>
@@ -789,19 +829,19 @@ export default function AppDashboard() {
           {/* Completed tasks */}
           {completedTasks.length > 0 && (
             <div className="mt-8">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
                 Completed ({completedTasks.length})
               </h3>
               {completedTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white/80 rounded-2xl p-4 mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_2px_15px_rgba(0,0,0,0.08)] transition-all"
+                  className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-4 mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-gray-100/50 dark:border-gray-700/50 flex items-center gap-4 group hover:shadow-[0_2px_15px_rgba(0,0,0,0.08)] transition-all"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center opacity-50 overflow-hidden">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center opacity-50 overflow-hidden">
                     <CategoryIcon category={task.category || 'errands'} size={36} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-400 line-through truncate">{task.title}</p>
+                    <p className="font-medium text-gray-400 dark:text-gray-500 line-through truncate">{task.title}</p>
                   </div>
                   <button
                     onClick={() => deleteTask(task.id)}
@@ -827,13 +867,13 @@ export default function AppDashboard() {
           {/* Empty state */}
           {tasks.length === 0 && !processing && !showExtracted && (
             <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">No tasks yet</h3>
-              <p className="text-gray-400">Tap the mic button to add your first task</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No tasks yet</h3>
+              <p className="text-gray-400 dark:text-gray-500">Tap the mic button to add your first task</p>
             </div>
           )}
         </div>
