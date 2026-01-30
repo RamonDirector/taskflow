@@ -33,16 +33,10 @@ const categoryIcons: Record<string, string> = {
   errands: '📋',
 };
 
-const priorityColors: Record<string, { bg: string; ring: string; dot: string }> = {
-  high: { bg: 'bg-red-50', ring: 'ring-red-400', dot: 'bg-red-500' },
-  medium: { bg: 'bg-amber-50', ring: 'ring-amber-400', dot: 'bg-amber-500' },
-  low: { bg: 'bg-green-50', ring: 'ring-green-400', dot: 'bg-green-500' },
-};
-
-const priorityOrder: Record<string, number> = {
-  high: 0,
-  medium: 1,
-  low: 2,
+const priorityColors: Record<string, { bg: string; ring: string; cardBg: string }> = {
+  high: { bg: 'bg-red-50', ring: 'ring-red-400', cardBg: 'bg-red-50/60' },
+  medium: { bg: 'bg-amber-50', ring: 'ring-amber-400', cardBg: 'bg-amber-50/60' },
+  low: { bg: 'bg-green-50', ring: 'ring-green-400', cardBg: 'bg-green-50/60' },
 };
 
 // Satisfying "ding" sound using Web Audio API
@@ -264,14 +258,14 @@ export default function AppDashboard() {
     }
   };
 
-  // Cycle priority: medium → low → high → medium
+  // Cycle priority: high (red) → medium (yellow) → low (green) → high
   const cyclePriority = async (id: string, currentPriority: string) => {
     const cycle: Record<string, 'high' | 'medium' | 'low'> = {
+      high: 'medium',
       medium: 'low',
       low: 'high',
-      high: 'medium',
     };
-    const newPriority = cycle[currentPriority] || 'medium';
+    const newPriority = cycle[currentPriority] || 'high';
 
     const { error } = await supabase
       .from('tasks')
@@ -321,16 +315,7 @@ export default function AppDashboard() {
     );
   }
 
-  // Sort tasks by priority: high (red) → medium (yellow) → low (green)
-  const sortByPriority = (taskList: Task[]) => {
-    return [...taskList].sort((a, b) => {
-      const orderA = priorityOrder[a.priority || 'medium'];
-      const orderB = priorityOrder[b.priority || 'medium'];
-      return orderA - orderB;
-    });
-  };
-
-  const pendingTasks = sortByPriority(tasks.filter((t) => !t.completed));
+  const pendingTasks = tasks.filter((t) => !t.completed);
   const completedTasks = tasks.filter((t) => t.completed);
 
   return (
@@ -523,16 +508,13 @@ export default function AppDashboard() {
                 return (
                   <div
                     key={task.id}
-                    className="bg-white rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all"
+                    onClick={() => cyclePriority(task.id, priority)}
+                    className={`${colors.cardBg} rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all cursor-pointer active:scale-[0.99]`}
                   >
-                    {/* Priority color button */}
-                    <button
-                      onClick={() => cyclePriority(task.id, priority)}
-                      className={`w-12 h-12 rounded-full ${colors.bg} ring-3 ${colors.ring} flex items-center justify-center text-xl transition-all hover:scale-105 active:scale-95`}
-                      title="Click to change priority"
-                    >
+                    {/* Category icon */}
+                    <div className={`w-12 h-12 rounded-full bg-white/80 ring-2 ${colors.ring} flex items-center justify-center text-xl`}>
                       {categoryIcons[task.category || 'errands'] || '📋'}
-                    </button>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{task.title}</p>
                       <p className="text-sm text-gray-400">
@@ -541,7 +523,7 @@ export default function AppDashboard() {
                       </p>
                     </div>
                     <button
-                      onClick={() => deleteTask(task.id)}
+                      onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
                       className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,8 +531,8 @@ export default function AppDashboard() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => toggleTask(task.id, task.completed)}
-                      className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors"
+                      onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
+                      className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors bg-white/50"
                     >
                     </button>
                   </div>
