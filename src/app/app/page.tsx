@@ -362,33 +362,90 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Recording overlay */}
+        {/* Recording fullscreen */}
         {(recording || processing) && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-sm mx-4">
+          <div className="fixed inset-0 bg-[#f5f5f0] z-50 flex flex-col">
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between">
+              <button
+                onClick={() => { stopRecording(); setProcessing(false); }}
+                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div className="text-center">
+                <h2 className="font-semibold text-gray-900">Create New Task</h2>
+                <p className="text-xs text-gray-400">Let AI handle the details</p>
+              </div>
+              <div className="w-10" />
+            </div>
+
+            {/* Main content */}
+            <div className="flex-1 flex flex-col items-center justify-center px-8">
               {recording ? (
                 <>
-                  <div className="relative w-24 h-24 mx-auto mb-4">
-                    <div className="absolute inset-0 bg-red-100 rounded-full animate-ping opacity-50" />
-                    <button
-                      onClick={stopRecording}
-                      className="relative w-24 h-24 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
-                    >
-                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <rect x="6" y="6" width="12" height="12" rx="2" />
-                      </svg>
-                    </button>
+                  <p className="text-green-600 text-lg mb-2">Hey there!</p>
+                  <h1 className="text-3xl font-bold text-gray-900 text-center mb-16 leading-tight">
+                    Describe what you<br />need to do...
+                  </h1>
+
+                  {/* Placeholder for live transcript */}
+                  <p className="text-gray-500 text-center mb-8 min-h-[60px] px-4">
+                    {recordingTime > 2 ? "Listening..." : "Start speaking..."}
+                  </p>
+
+                  {/* Waveform visualization */}
+                  <div className="flex items-end justify-center gap-1 h-20 mb-12">
+                    {[...Array(30)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-1.5 bg-green-400 rounded-full animate-pulse"
+                        style={{
+                          height: `${Math.random() * 60 + 20}%`,
+                          animationDelay: `${i * 50}ms`,
+                          animationDuration: '300ms',
+                        }}
+                      />
+                    ))}
                   </div>
-                  <p className="text-2xl font-mono font-bold text-gray-900 mb-1">{formatTime(recordingTime)}</p>
-                  <p className="text-gray-500">Tap to stop recording</p>
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 mx-auto mb-4 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-gray-600 font-medium">{processingStep}</p>
+                  <div className="w-20 h-20 mx-auto mb-6 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xl font-medium text-gray-700">{processingStep}</p>
+                  <p className="text-gray-400 mt-2">This won&apos;t take long...</p>
                 </>
               )}
             </div>
+
+            {/* Bottom controls */}
+            {recording && (
+              <div className="px-8 pb-12">
+                <div className="flex items-center justify-center gap-8">
+                  <button className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-gray-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={stopRecording}
+                    className="w-16 h-16 rounded-full bg-green-500 shadow-lg flex items-center justify-center hover:bg-green-600 transition-colors"
+                  >
+                    <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                  </button>
+                  <button className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-gray-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-center text-gray-400 text-sm mt-4">{formatTime(recordingTime)}</p>
+              </div>
+            )}
           </div>
         )}
 
