@@ -308,7 +308,7 @@ export default function AppDashboard() {
   const completedTasks = filteredTasks.filter((t) => t.completed);
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col pb-24">
+    <main className="min-h-screen bg-gray-50 flex flex-col pb-8">
       {/* Header */}
       <header className="bg-white px-5 py-4 shadow-sm sticky top-0 z-40">
         <div className="max-w-lg mx-auto flex items-center justify-between">
@@ -354,9 +354,24 @@ export default function AppDashboard() {
           </div>
         </div>
 
+        {/* Hero Record Button */}
+        <div className="flex flex-col items-center py-8 mb-4">
+          <button
+            onClick={startRecording}
+            disabled={processing}
+            className="relative w-20 h-20 rounded-full bg-green-500 hover:bg-green-600 active:bg-green-700 shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:shadow-[0_8px_40px_rgba(34,197,94,0.5)] flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
+          >
+            <span className="absolute inset-[-4px] rounded-full border-2 border-green-300/50 animate-ping opacity-30" />
+            <svg className="w-9 h-9 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </button>
+          <p className="text-sm text-gray-400 mt-3">Tap to record your tasks</p>
+        </div>
+
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center justify-between">
+          <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center justify-between shadow-sm">
             <span>{error}</span>
             <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600 font-bold">×</button>
           </div>
@@ -451,7 +466,7 @@ export default function AppDashboard() {
 
         {/* Extracted tasks confirmation */}
         {showExtracted && extractedTasks.length > 0 && (
-          <div className="mb-6 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm animate-fade-in">
+          <div className="mb-6 p-5 rounded-2xl bg-white border border-gray-100/50 shadow-[0_4px_20px_rgba(0,0,0,0.1)] animate-fade-in">
             <h3 className="text-base font-semibold text-gray-900 mb-1">
               Found {extractedTasks.length} task{extractedTasks.length > 1 ? 's' : ''}
             </h3>
@@ -505,7 +520,7 @@ export default function AppDashboard() {
               {pendingTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 group hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all"
                 >
                   <div className={`w-12 h-12 rounded-full bg-gray-50 ring-3 ${priorityRingColors[task.priority || 'medium']} flex items-center justify-center text-xl`}>
                     {categoryIcons[task.category || 'errands'] || '📋'}
@@ -544,7 +559,7 @@ export default function AppDashboard() {
               {completedTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white/60 rounded-2xl p-4 mb-2 border border-gray-100 flex items-center gap-4 group"
+                  className="bg-white/80 rounded-2xl p-4 mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_2px_15px_rgba(0,0,0,0.08)] transition-all"
                 >
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl opacity-50">
                     {categoryIcons[task.category || 'errands'] || '📋'}
@@ -594,28 +609,6 @@ export default function AppDashboard() {
         </div>
       </div>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-30">
-        <button
-          onClick={recording ? stopRecording : startRecording}
-          disabled={processing}
-          className={`w-16 h-16 rounded-full shadow-xl flex items-center justify-center transition-all disabled:opacity-50 ${
-            recording
-              ? 'bg-red-500 hover:bg-red-600'
-              : 'bg-green-500 hover:bg-green-600 hover:scale-105'
-          }`}
-        >
-          {recording ? (
-            <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <rect x="6" y="6" width="12" height="12" rx="2" />
-            </svg>
-          ) : (
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
-          )}
-        </button>
-      </div>
     </main>
   );
 }
