@@ -33,6 +33,8 @@ const categoryIcons: Record<string, string> = {
   errands: '📋',
 };
 
+const categories = ['work', 'personal', 'health', 'finance', 'home', 'social', 'learning', 'errands'];
+
 const priorityColors: Record<string, { bg: string; ring: string; cardBg: string }> = {
   high: { bg: 'bg-red-50', ring: 'ring-red-400', cardBg: 'bg-red-50/60' },
   medium: { bg: 'bg-amber-50', ring: 'ring-amber-400', cardBg: 'bg-amber-50/60' },
@@ -80,14 +82,27 @@ export default function AppDashboard() {
   const [processing, setProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
   const [transcript, setTranscript] = useState('');
+  const [liveTranscript, setLiveTranscript] = useState('');
   const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
   const [showExtracted, setShowExtracted] = useState(false);
   const [error, setError] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
+  
+  // Edit modal state
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  
+  // Swipe state
+  const [swipingTaskId, setSwipingTaskId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartX = useRef(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -122,9 +137,57 @@ export default function AppDashboard() {
     router.refresh();
   };
 
+  // Start live transcription
+  const startLiveTranscription = () => {
+    if (typeof window === 'undefined') return;
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'es-ES'; // Default to Spanish, will auto-detect
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      let final = '';
+      
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          final += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      
+      setLiveTranscript(final || interim);
+    };
+
+    recognition.onerror = () => {
+      // Silently handle errors
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch {
+      // Already started or not supported
+    }
+  };
+
+  const stopLiveTranscription = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+  };
+
   const startRecording = async () => {
     setError('');
     setTranscript('');
+    setLiveTranscript('');
     setExtractedTasks([]);
     setShowExtracted(false);
 
@@ -147,12 +210,15 @@ export default function AppDashboard() {
 
       mediaRecorder.onstop = () => {
         stream.getTracks().forEach((track) => track.stop());
+        stopLiveTranscription();
         processAudio();
       };
 
       mediaRecorder.start(250);
       setRecording(true);
       setRecordingTime(0);
+      startLiveTranscription();
+      
       timerRef.current = setInterval(() => {
         setRecordingTime((t) => t + 1);
       }, 1000);
@@ -239,6 +305,7 @@ export default function AppDashboard() {
     setShowExtracted(false);
     setExtractedTasks([]);
     setTranscript('');
+    setLiveTranscript('');
     await fetchTasks();
   };
 
@@ -284,6 +351,69 @@ export default function AppDashboard() {
     if (!error) {
       setTasks((prev) => prev.filter((t) => t.id !== id));
     }
+  };
+
+  // Edit task functions
+  const openEditModal = (task: Task) => {
+    setEditingTask(task);
+    setEditTitle(task.title);
+    setEditCategory(task.category || 'personal');
+    setEditDueDate(task.due_date || '');
+  };
+
+  const closeEditModal = () => {
+    setEditingTask(null);
+    setEditTitle('');
+    setEditCategory('');
+    setEditDueDate('');
+  };
+
+  const saveEditedTask = async () => {
+    if (!editingTask) return;
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({
+        title: editTitle,
+        category: editCategory,
+        due_date: editDueDate || null,
+      })
+      .eq('id', editingTask.id);
+
+    if (!error) {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === editingTask.id
+            ? { ...t, title: editTitle, category: editCategory, due_date: editDueDate || undefined }
+            : t
+        )
+      );
+      closeEditModal();
+    }
+  };
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent, taskId: string) => {
+    touchStartX.current = e.touches[0].clientX;
+    setSwipingTaskId(taskId);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!swipingTaskId) return;
+    const diff = e.touches[0].clientX - touchStartX.current;
+    setSwipeOffset(diff);
+  };
+
+  const handleTouchEnd = (task: Task) => {
+    if (swipeOffset > 100) {
+      // Swipe right - complete
+      toggleTask(task.id, task.completed);
+    } else if (swipeOffset < -100) {
+      // Swipe left - delete
+      deleteTask(task.id);
+    }
+    setSwipingTaskId(null);
+    setSwipeOffset(0);
   };
 
   const removeExtractedTask = (index: number) => {
@@ -387,18 +517,24 @@ export default function AppDashboard() {
               {recording ? (
                 <>
                   <p className="text-green-600 text-lg mb-2">I&apos;m here 🎧</p>
-                  <h1 className="text-3xl font-bold text-gray-900 text-center mb-16 leading-tight">
+                  <h1 className="text-3xl font-bold text-gray-900 text-center mb-8 leading-tight">
                     Tell me what&apos;s on<br />your mind...
                   </h1>
 
-                  {/* Friendly status message */}
-                  <p className="text-gray-500 text-center mb-8 min-h-[60px] px-4">
-                    {recordingTime > 5 
-                      ? "Take your time, I'm listening... 💭" 
-                      : recordingTime > 2 
-                      ? "I'm with you... 🎙️" 
-                      : "Go ahead, I'm all ears... 👂"}
-                  </p>
+                  {/* Live transcription */}
+                  <div className="w-full max-w-sm min-h-[80px] mb-8 p-4 bg-white/50 rounded-2xl">
+                    <p className="text-gray-600 text-center">
+                      {liveTranscript || (
+                        <span className="text-gray-400">
+                          {recordingTime > 5 
+                            ? "Take your time, I'm listening... 💭" 
+                            : recordingTime > 2 
+                            ? "I'm with you... 🎙️" 
+                            : "Go ahead, I'm all ears... 👂"}
+                        </span>
+                      )}
+                    </p>
+                  </div>
 
                   {/* Waveform visualization */}
                   <div className="flex items-end justify-center gap-1 h-20 mb-12">
@@ -440,6 +576,67 @@ export default function AppDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {editingTask && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Task</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-1 block">Title</label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-1 block">Category</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all bg-white"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {categoryIcons[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-1 block">Due Date</label>
+                  <input
+                    type="date"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={saveEditedTask}
+                  className="flex-1 py-3 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 transition-all"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={closeEditModal}
+                  className="px-6 py-3 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -492,6 +689,13 @@ export default function AppDashboard() {
           </div>
         )}
 
+        {/* Swipe hint */}
+        {pendingTasks.length > 0 && (
+          <p className="text-xs text-gray-400 text-center mb-3">
+            Swipe right to complete • Swipe left to delete • Tap to edit
+          </p>
+        )}
+
         {/* Task list */}
         <div className="space-y-3">
           {pendingTasks.length > 0 && (
@@ -499,36 +703,61 @@ export default function AppDashboard() {
               {pendingTasks.map((task) => {
                 const priority = task.priority || 'medium';
                 const colors = priorityColors[priority];
+                const isBeingSwiped = swipingTaskId === task.id;
+                const showComplete = swipeOffset > 50;
+                const showDelete = swipeOffset < -50;
+                
                 return (
                   <div
                     key={task.id}
-                    onClick={() => cyclePriority(task.id, priority)}
-                    className={`${colors.cardBg} rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all cursor-pointer active:scale-[0.99]`}
+                    className="relative overflow-hidden rounded-2xl"
                   >
-                    {/* Category icon */}
-                    <div className={`w-12 h-12 rounded-full bg-white/80 ring-2 ${colors.ring} flex items-center justify-center text-xl`}>
-                      {categoryIcons[task.category || 'errands'] || '📋'}
+                    {/* Swipe backgrounds */}
+                    <div className="absolute inset-0 flex">
+                      <div className={`flex-1 bg-green-500 flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div className={`flex-1 bg-red-500 flex items-center justify-end pr-6 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{task.title}</p>
-                      <p className="text-sm text-gray-400">
-                        {task.due_date ? formatDueDate(task.due_date) : 'No date'}
-                        {task.category && ` • ${task.category}`}
-                      </p>
+                    
+                    {/* Task card */}
+                    <div
+                      onTouchStart={(e) => handleTouchStart(e, task.id)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={() => handleTouchEnd(task)}
+                      onClick={() => !isBeingSwiped && openEditModal(task)}
+                      style={{
+                        transform: isBeingSwiped ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                        transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
+                      }}
+                      className={`${colors.cardBg} rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-shadow cursor-pointer active:scale-[0.99] relative`}
+                    >
+                      {/* Category icon - tap to cycle priority */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); cyclePriority(task.id, priority); }}
+                        className={`w-12 h-12 rounded-full bg-white/80 ring-2 ${colors.ring} flex items-center justify-center text-xl transition-all hover:scale-105 active:scale-95`}
+                      >
+                        {categoryIcons[task.category || 'errands'] || '📋'}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{task.title}</p>
+                        <p className="text-sm text-gray-400">
+                          {task.due_date ? formatDueDate(task.due_date) : 'No date'}
+                          {task.category && ` • ${task.category}`}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
+                        className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors bg-white/50"
+                      >
+                      </button>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
-                      className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-green-500 flex items-center justify-center transition-colors bg-white/50"
-                    >
-                    </button>
                   </div>
                 );
               })}
@@ -589,4 +818,12 @@ export default function AppDashboard() {
       </div>
     </main>
   );
+}
+
+// Add TypeScript declarations for Web Speech API
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
 }
