@@ -386,14 +386,18 @@ export default function AppDashboard() {
             <div className="flex-1 flex flex-col items-center justify-center px-8">
               {recording ? (
                 <>
-                  <p className="text-green-600 text-lg mb-2">Hey there!</p>
+                  <p className="text-green-600 text-lg mb-2">I&apos;m here 🎧</p>
                   <h1 className="text-3xl font-bold text-gray-900 text-center mb-16 leading-tight">
-                    Describe what you<br />need to do...
+                    Tell me what&apos;s on<br />your mind...
                   </h1>
 
-                  {/* Placeholder for live transcript */}
+                  {/* Friendly status message */}
                   <p className="text-gray-500 text-center mb-8 min-h-[60px] px-4">
-                    {recordingTime > 2 ? "Listening..." : "Start speaking..."}
+                    {recordingTime > 5 
+                      ? "Take your time, I'm listening... 💭" 
+                      : recordingTime > 2 
+                      ? "I'm with you... 🎙️" 
+                      : "Go ahead, I'm all ears... 👂"}
                   </p>
 
                   {/* Waveform visualization */}
@@ -420,30 +424,20 @@ export default function AppDashboard() {
               )}
             </div>
 
-            {/* Bottom controls */}
+            {/* Stop button */}
             {recording && (
               <div className="px-8 pb-12">
-                <div className="flex items-center justify-center gap-8">
-                  <button className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-gray-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
+                <div className="flex flex-col items-center">
                   <button
                     onClick={stopRecording}
-                    className="w-16 h-16 rounded-full bg-green-500 shadow-lg flex items-center justify-center hover:bg-green-600 transition-colors"
+                    className="w-16 h-16 rounded-full bg-green-500 shadow-lg flex items-center justify-center hover:bg-green-600 transition-colors hover:scale-105 active:scale-95"
                   >
                     <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <rect x="6" y="6" width="12" height="12" rx="2" />
                     </svg>
                   </button>
-                  <button className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-gray-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+                  <p className="text-center text-gray-400 text-sm mt-4">Tap to finish • {formatTime(recordingTime)}</p>
                 </div>
-                <p className="text-center text-gray-400 text-sm mt-4">{formatTime(recordingTime)}</p>
               </div>
             )}
           </div>
