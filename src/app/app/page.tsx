@@ -10,7 +10,34 @@ interface Task {
   title: string;
   completed: boolean;
   created_at: string;
+  category?: string;
+  due_date?: string;
+  priority?: 'high' | 'medium' | 'low';
 }
+
+interface ExtractedTask {
+  title: string;
+  category: string;
+  due_date: string | null;
+  priority: 'high' | 'medium' | 'low';
+}
+
+const categoryColors: Record<string, string> = {
+  work: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  personal: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  health: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  finance: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  home: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  social: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
+  learning: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+  errands: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+};
+
+const priorityColors: Record<string, string> = {
+  high: 'text-red-500',
+  medium: 'text-yellow-500',
+  low: 'text-gray-400',
+};
 
 // Satisfying "ding" sound using Web Audio API
 const playTaskCreatedSound = () => {
@@ -53,7 +80,7 @@ export default function AppDashboard() {
   const [processing, setProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
   const [transcript, setTranscript] = useState('');
-  const [extractedTasks, setExtractedTasks] = useState<string[]>([]);
+  const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
   const [showExtracted, setShowExtracted] = useState(false);
   const [error, setError] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
@@ -191,12 +218,15 @@ export default function AppDashboard() {
     setProcessing(false);
   };
 
-  const saveTasks = async (tasksToSave: string[]) => {
+  const saveTasks = async (tasksToSave: ExtractedTask[]) => {
     if (!user) return;
 
-    const rows = tasksToSave.map((title) => ({
+    const rows = tasksToSave.map((task) => ({
       user_id: user.id,
-      title,
+      title: task.title,
+      category: task.category,
+      due_date: task.due_date,
+      priority: task.priority,
       completed: false,
     }));
 
@@ -372,21 +402,38 @@ export default function AppDashboard() {
                 &quot;{transcript}&quot;
               </p>
             )}
-            <ul className="space-y-2 mb-4">
+            <ul className="space-y-3 mb-4">
               {extractedTasks.map((task, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-gray-900 dark:text-white">
-                  <span className="w-5 h-5 rounded-full bg-orange-200 dark:bg-orange-800/40 flex items-center justify-center text-xs font-semibold text-orange-700 dark:text-orange-300 flex-shrink-0">
-                    {i + 1}
-                  </span>
-                  <span className="flex-1">{task}</span>
-                  <button
-                    onClick={() => removeExtractedTask(i)}
-                    className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                <li key={i} className="p-3 rounded-lg bg-white dark:bg-gray-900/50 border border-orange-200 dark:border-orange-800/30">
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-orange-200 dark:bg-orange-800/40 flex items-center justify-center text-xs font-semibold text-orange-700 dark:text-orange-300 flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">{task.title}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColors[task.category] || categoryColors.errands}`}>
+                          {task.category}
+                        </span>
+                        {task.due_date && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                            📅 {new Date(task.due_date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
+                        )}
+                        <span className={`text-xs ${priorityColors[task.priority]}`}>
+                          {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '⚪'} {task.priority}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeExtractedTask(i)}
+                      className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -422,13 +469,28 @@ export default function AppDashboard() {
                 {pendingTasks.map((task) => (
                   <li
                     key={task.id}
-                    className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+                    className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
                   >
                     <button
                       onClick={() => toggleTask(task.id, task.completed)}
-                      className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-orange-500 dark:hover:border-orange-500 transition-colors flex-shrink-0"
+                      className="w-5 h-5 mt-0.5 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-orange-500 dark:hover:border-orange-500 transition-colors flex-shrink-0"
                     />
-                    <span className="flex-1 text-sm text-gray-900 dark:text-white leading-snug">{task.title}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-gray-900 dark:text-white leading-snug block">{task.title}</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {task.category && (
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${categoryColors[task.category] || categoryColors.errands}`}>
+                            {task.category}
+                          </span>
+                        )}
+                        {task.due_date && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            📅 {new Date(task.due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                          </span>
+                        )}
+                        {task.priority === 'high' && <span className="text-xs">🔴</span>}
+                      </div>
+                    </div>
                     <button
                       onClick={() => deleteTask(task.id)}
                       className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all flex-shrink-0 p-1"
