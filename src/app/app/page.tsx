@@ -23,14 +23,14 @@ interface ExtractedTask {
 }
 
 const categoryIcons: Record<string, string> = {
-  work: '/icons/work.svg',
-  personal: '/icons/personal.svg',
-  health: '/icons/health.svg',
-  finance: '/icons/finance.svg',
-  home: '/icons/home.svg',
-  social: '/icons/social.svg',
-  learning: '/icons/learning.svg',
-  errands: '/icons/errands.svg',
+  work: '/icons/work.png',
+  personal: '/icons/personal.png',
+  health: '/icons/health.png',
+  finance: '/icons/finance.png',
+  home: '/icons/home.png',
+  social: '/icons/social.png',
+  learning: '/icons/learning.png',
+  errands: '/icons/errands.png',
 };
 
 const categoryEmojis: Record<string, string> = {
