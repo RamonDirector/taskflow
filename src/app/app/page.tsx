@@ -23,6 +23,17 @@ interface ExtractedTask {
 }
 
 const categoryIcons: Record<string, string> = {
+  work: '/icons/work.svg',
+  personal: '/icons/personal.svg',
+  health: '/icons/health.svg',
+  finance: '/icons/finance.svg',
+  home: '/icons/home.svg',
+  social: '/icons/social.svg',
+  learning: '/icons/learning.svg',
+  errands: '/icons/errands.svg',
+};
+
+const categoryEmojis: Record<string, string> = {
   work: '💼',
   personal: '👤',
   health: '💪',
@@ -32,6 +43,17 @@ const categoryIcons: Record<string, string> = {
   learning: '📚',
   errands: '📋',
 };
+
+// Icon component for category
+const CategoryIcon = ({ category, size = 32 }: { category: string; size?: number }) => (
+  <img 
+    src={categoryIcons[category] || categoryIcons.errands} 
+    alt={category}
+    width={size}
+    height={size}
+    className="object-contain"
+  />
+);
 
 const categories = ['work', 'personal', 'health', 'finance', 'home', 'social', 'learning', 'errands'];
 
@@ -605,7 +627,7 @@ export default function AppDashboard() {
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
-                        {categoryIcons[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                        {categoryEmojis[cat]} {cat.charAt(0).toUpperCase() + cat.slice(1)}
                       </option>
                     ))}
                   </select>
@@ -652,8 +674,8 @@ export default function AppDashboard() {
             <ul className="space-y-3 mb-5">
               {extractedTasks.map((task, i) => (
                 <li key={i} className={`p-4 rounded-xl ${priorityColors[task.priority].bg} flex items-center gap-4`}>
-                  <div className={`w-12 h-12 rounded-full bg-white ring-3 ${priorityColors[task.priority].ring} flex items-center justify-center text-xl shadow-sm`}>
-                    {categoryIcons[task.category] || '📋'}
+                  <div className={`w-12 h-12 rounded-full bg-white ring-3 ${priorityColors[task.priority].ring} flex items-center justify-center shadow-sm overflow-hidden`}>
+                    <CategoryIcon category={task.category} size={36} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900">{task.title}</p>
@@ -741,9 +763,9 @@ export default function AppDashboard() {
                       {/* Category icon - tap to cycle priority */}
                       <button
                         onClick={(e) => { e.stopPropagation(); cyclePriority(task.id, priority); }}
-                        className={`w-12 h-12 rounded-full bg-white/80 ring-2 ${colors.ring} flex items-center justify-center text-xl transition-all hover:scale-105 active:scale-95`}
+                        className={`w-12 h-12 rounded-full bg-white/80 ring-2 ${colors.ring} flex items-center justify-center transition-all hover:scale-105 active:scale-95 overflow-hidden`}
                       >
-                        {categoryIcons[task.category || 'errands'] || '📋'}
+                        <CategoryIcon category={task.category || 'errands'} size={36} />
                       </button>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{task.title}</p>
@@ -775,8 +797,8 @@ export default function AppDashboard() {
                   key={task.id}
                   className="bg-white/80 rounded-2xl p-4 mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100/50 flex items-center gap-4 group hover:shadow-[0_2px_15px_rgba(0,0,0,0.08)] transition-all"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl opacity-50">
-                    {categoryIcons[task.category || 'errands'] || '📋'}
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center opacity-50 overflow-hidden">
+                    <CategoryIcon category={task.category || 'errands'} size={36} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-400 line-through truncate">{task.title}</p>
