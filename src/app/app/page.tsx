@@ -5,8 +5,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { InstallPrompt } from '../components/InstallPrompt';
-import { OfflineIndicator } from '../components/OfflineIndicator';
-import { useOffline } from '@/hooks/useOffline';
 
 interface Task {
   id: string;
@@ -150,9 +148,6 @@ export default function AppDashboard() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const router = useRouter();
   const supabase = createClient();
-  
-  // Offline support
-  const { isOnline, saveRecordingOffline, saveTaskOffline, triggerSync } = useOffline(user?.id || null);
 
   const fetchTasks = useCallback(async () => {
     const { data, error } = await supabase
@@ -309,25 +304,6 @@ export default function AppDashboard() {
     setProcessing(true);
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
-    // If offline, save locally and show message
-    if (!isOnline) {
-      setProcessingStep('Guardando para después...');
-      try {
-        await saveRecordingOffline(audioBlob);
-        setError('');
-        setProcessingStep('');
-        setProcessing(false);
-        // Show success message
-        setTranscript('📴 ¡Grabación guardada! Se procesará cuando vuelvas a estar online.');
-        setTimeout(() => setTranscript(''), 3000);
-        return;
-      } catch {
-        setError('Error al guardar la grabación offline.');
-        setProcessing(false);
-        return;
-      }
-    }
-
     setProcessingStep('Transcribiendo audio...');
 
     try {
@@ -364,13 +340,7 @@ export default function AppDashboard() {
       setShowExtracted(true);
       setProcessingStep('');
     } catch {
-      // If online request fails, try saving offline
-      try {
-        await saveRecordingOffline(audioBlob);
-        setError('Error de red. Grabación guardada para después.');
-      } catch {
-        setError('Error al procesar el audio. Inténtalo de nuevo.');
-      }
+      setError('Error al procesar el audio. Inténtalo de nuevo.');
     }
     setProcessing(false);
   };
@@ -1048,9 +1018,6 @@ export default function AppDashboard() {
           )}
         </div>
       </div>
-      
-      {/* Offline indicator */}
-      <OfflineIndicator />
       
       {/* Install prompt for PWA */}
       <InstallPrompt />
