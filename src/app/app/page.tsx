@@ -106,7 +106,7 @@ const fireConfetti = () => {
     particleCount: 80,
     spread: 60,
     origin: { y: 0.7 },
-    colors: ['#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
+    colors: ['#6b8f71', '#8fb096', '#a8c4ad', '#c8d9cb'],
   });
 };
 
@@ -516,7 +516,7 @@ export default function AppDashboard() {
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
-        <div className="w-10 h-10 border-3 border-green-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-3 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
@@ -593,7 +593,7 @@ export default function AppDashboard() {
             const progressColors = {
               high: { start: '#ef4444', end: '#f87171' },
               medium: { start: '#f59e0b', end: '#fbbf24' },
-              low: { start: '#22c55e', end: '#4ade80' },
+              low: { start: '#6b8f71', end: '#8fb096' },
             };
             const colors = progressColors[stats.dominantPriority as keyof typeof progressColors] || progressColors.low;
             const progress = stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0;
@@ -820,7 +820,7 @@ export default function AppDashboard() {
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-[#6b8f71] focus:ring-2 focus:ring-[#6b8f71]/20 outline-none transition-all"
                   />
                 </div>
                 
@@ -829,7 +829,7 @@ export default function AppDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all flex items-center gap-3 text-left"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-[#6b8f71] focus:ring-2 focus:ring-[#6b8f71]/20 outline-none transition-all flex items-center gap-3 text-left"
                   >
                     <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
                       <CategoryIcon category={editCategory || 'personal'} size={32} />
@@ -853,7 +853,7 @@ export default function AppDashboard() {
                           </div>
                           <span className="text-gray-900 dark:text-white">{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
                           {editCategory === cat && (
-                            <svg className="w-4 h-4 text-green-500 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-[#6b8f71] ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           )}
@@ -869,7 +869,7 @@ export default function AppDashboard() {
                     type="date"
                     value={editDueDate}
                     onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-[#6b8f71] focus:ring-2 focus:ring-[#6b8f71]/20 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -877,7 +877,7 @@ export default function AppDashboard() {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={saveEditedTask}
-                  className="flex-1 py-3 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 transition-all"
+                  className="flex-1 py-3 rounded-xl font-semibold text-white bg-[#6b8f71] hover:bg-[#5a7a60] transition-all"
                 >
                   Guardar
                 </button>
@@ -927,7 +927,7 @@ export default function AppDashboard() {
             <div className="flex gap-3">
               <button
                 onClick={() => saveTasks(extractedTasks)}
-                className="flex-1 py-3 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 transition-all shadow-md"
+                className="flex-1 py-3 rounded-xl font-semibold text-white bg-[#6b8f71] hover:bg-[#5a7a60] active:bg-[#4a6b52] transition-all shadow-md"
               >
                 Guardar Todo
               </button>
@@ -966,7 +966,7 @@ export default function AppDashboard() {
                   >
                     {/* Swipe backgrounds */}
                     <div className="absolute inset-0 flex">
-                      <div className={`flex-1 bg-green-500 flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                      <div className={`flex-1 bg-[#6b8f71] flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
@@ -1006,7 +1006,7 @@ export default function AppDashboard() {
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
-                        className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-600 hover:border-green-500 flex items-center justify-center transition-colors bg-white/50 dark:bg-gray-700/50"
+                        className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-600 hover:border-[#6b8f71] flex items-center justify-center transition-colors bg-white/50 dark:bg-gray-700/50"
                       >
                       </button>
                     </div>
@@ -1043,7 +1043,7 @@ export default function AppDashboard() {
                   </button>
                   <button
                     onClick={() => toggleTask(task.id, task.completed)}
-                    className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-[#6b8f71] flex items-center justify-center"
                   >
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
