@@ -89,6 +89,10 @@ export default function LandingPage() {
           <p className="text-xs text-[#555]">
             Free beta · No card required
           </p>
+
+          <p className="text-xs text-[#666] mt-6">
+            <span className="text-[#6b8f71]">56 people</span> waiting to stop losing ideas
+          </p>
         </div>
       </section>
 
