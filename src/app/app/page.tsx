@@ -672,44 +672,50 @@ export default function AppDashboard() {
             <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8">
               {recording ? (
                 <>
-                  {/* Heartbeat visualization */}
-                  <div className="relative w-48 h-48 mb-10">
+                  {/* Heartbeat visualization - tap to stop */}
+                  <button
+                    onClick={stopRecording}
+                    className="relative w-52 h-52 mb-8 group cursor-pointer focus:outline-none"
+                  >
                     {/* Outer pulse rings */}
                     <div className="absolute inset-0 rounded-full border border-[#3d5a45]/20 animate-heartbeat-ring" />
                     <div className="absolute inset-4 rounded-full border border-[#3d5a45]/30 animate-heartbeat-ring-delay" />
                     <div className="absolute inset-8 rounded-full border border-[#3d5a45]/40 animate-heartbeat-ring-delay-2" />
                     
                     {/* Core heartbeat circle */}
-                    <div className="absolute inset-12 rounded-full bg-gradient-to-br from-[#3d5a45] to-[#2a3d2f] shadow-[0_0_60px_rgba(61,90,69,0.4)] animate-heartbeat flex items-center justify-center">
-                      {/* Inner glow */}
-                      <div className="w-16 h-16 rounded-full bg-[#6b8f71]/30 animate-heartbeat-inner" />
-                    </div>
-                    
-                    {/* Voice reactive bars */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-1 bg-[#6b8f71] rounded-full animate-voice-bar"
-                            style={{
-                              height: '24px',
-                              animationDelay: `${i * 100}ms`,
-                            }}
-                          />
-                        ))}
+                    <div className="absolute inset-12 rounded-full bg-gradient-to-br from-[#3d5a45] to-[#2a3d2f] shadow-[0_0_60px_rgba(61,90,69,0.4)] animate-heartbeat flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_0_80px_rgba(107,143,113,0.5)] group-active:scale-95">
+                      {/* Inner glow - transforms to stop icon on hover */}
+                      <div className="relative w-16 h-16 flex items-center justify-center">
+                        <div className="absolute inset-0 rounded-full bg-[#6b8f71]/30 animate-heartbeat-inner group-hover:opacity-0 transition-opacity duration-300" />
+                        {/* Voice reactive bars - hide on hover */}
+                        <div className="flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-300">
+                          {[...Array(5)].map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-1 bg-[#6b8f71] rounded-full animate-voice-bar"
+                              style={{
+                                height: '24px',
+                                animationDelay: `${i * 100}ms`,
+                              }}
+                            />
+                          ))}
+                        </div>
+                        {/* Stop icon - show on hover */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-5 h-5 bg-[#e8e8e8] rounded-sm" />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
 
                   {/* Timer */}
-                  <p className="text-4xl font-extralight text-[#e8e8e8] tabular-nums tracking-wider mb-4">
+                  <p className="text-4xl font-extralight text-[#e8e8e8] tabular-nums tracking-wider mb-3">
                     {formatTime(recordingTime)}
                   </p>
                   
                   {/* Subtle hint */}
-                  <p className="text-xs text-[#444] tracking-wide mb-8">
-                    Speak naturally
+                  <p className="text-xs text-[#444] tracking-wide mb-6">
+                    Tap to finish
                   </p>
 
                   {/* Live transcription */}
@@ -733,21 +739,6 @@ export default function AppDashboard() {
                 </>
               )}
             </div>
-
-            {/* Stop button */}
-            {recording && (
-              <div className="relative z-10 px-8 pb-16">
-                <div className="flex flex-col items-center">
-                  <button
-                    onClick={stopRecording}
-                    className="w-20 h-20 rounded-full bg-[#3d5a45] shadow-[0_0_40px_rgba(61,90,69,0.5)] flex items-center justify-center hover:bg-[#4a6b52] transition-all hover:scale-105 active:scale-95 border border-[#4a6b52]"
-                  >
-                    <div className="w-5 h-5 bg-[#e8e8e8] rounded-sm" />
-                  </button>
-                  <p className="text-xs text-[#444] mt-4 tracking-wide">Tap to finish</p>
-                </div>
-              </div>
-            )}
 
             {/* CSS for heartbeat animations */}
             <style jsx>{`
