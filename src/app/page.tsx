@@ -66,7 +66,7 @@ export default function LandingPage() {
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-sm mx-auto mb-6">
               <input
                 type="email"
-                placeholder="email"
+                placeholder="your best email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="flex-1 px-5 py-3.5 rounded-lg border border-[#222] bg-[#111] text-[#e8e8e8] placeholder-[#555] focus:border-[#3d5a45] focus:outline-none transition-colors duration-300 text-sm"
@@ -75,9 +75,9 @@ export default function LandingPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3.5 rounded-lg bg-[#3d5a45] hover:bg-[#4a6b52] text-[#e8e8e8] text-sm font-medium transition-all duration-300 disabled:opacity-50"
+                className="px-6 py-3.5 rounded-lg bg-[#3d5a45] hover:bg-[#4a6b52] text-[#e8e8e8] text-sm font-medium transition-all duration-300 disabled:opacity-50 whitespace-nowrap"
               >
-                {loading ? '...' : 'Join waitlist'}
+                {loading ? '...' : 'Join 56 others'}
               </button>
             </form>
           ) : (
@@ -87,12 +87,16 @@ export default function LandingPage() {
           )}
 
           <p className="text-xs text-[#555]">
-            Free beta · No card required
+            Beta spots limited · No card required
           </p>
 
-          <p className="text-xs text-[#666] mt-6">
-            <span className="text-[#6b8f71]">56 people</span> waiting to stop losing ideas
-          </p>
+          {/* Testimonial */}
+          <div className="mt-12 max-w-md mx-auto">
+            <p className="text-[#666] text-sm italic leading-relaxed">
+              "Captured 12 ideas on my morning walk yesterday. Before Taskflow, I'd have forgotten 11."
+            </p>
+            <p className="text-[#555] text-xs mt-3">— Early beta user</p>
+          </div>
         </div>
       </section>
 
@@ -184,7 +188,7 @@ export default function LandingPage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <input
                 type="email"
-                placeholder="email"
+                placeholder="your best email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-5 py-3.5 rounded-lg border border-[#222] bg-[#111] text-[#e8e8e8] placeholder-[#555] focus:border-[#3d5a45] focus:outline-none transition-colors duration-300 text-sm text-center"
@@ -195,7 +199,7 @@ export default function LandingPage() {
                 disabled={loading}
                 className="w-full px-6 py-3.5 rounded-lg bg-[#3d5a45] hover:bg-[#4a6b52] text-[#e8e8e8] text-sm font-medium transition-all duration-300 disabled:opacity-50"
               >
-                {loading ? '...' : 'Get early access'}
+                {loading ? '...' : 'Get early access →'}
               </button>
             </form>
           ) : (
