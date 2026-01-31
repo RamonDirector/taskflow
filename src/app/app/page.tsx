@@ -620,9 +620,9 @@ export default function AppDashboard() {
                 <button
                   onClick={startRecording}
                   disabled={processing}
-                  className="relative w-24 h-24 rounded-full bg-white shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:shadow-[0_8px_40px_rgba(34,197,94,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
+                  className="relative w-24 h-24 rounded-full bg-white shadow-[0_8px_30px_rgba(107,143,113,0.4)] hover:shadow-[0_8px_40px_rgba(107,143,113,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
                 >
-                  {!showProgress && <span className="absolute inset-[-4px] rounded-full border-2 border-green-300/50 animate-ping opacity-30" />}
+                  {!showProgress && <span className="absolute inset-[-4px] rounded-full border-2 border-[#6b8f71]/50 animate-ping opacity-30" />}
                   <img 
                     src="/icons/mic-button.png" 
                     alt="Grabar" 
