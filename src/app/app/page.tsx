@@ -956,8 +956,8 @@ export default function AppDashboard() {
                 const priority = task.priority || 'medium';
                 const colors = priorityColors[priority];
                 const isBeingSwiped = swipingTaskId === task.id;
-                const showComplete = swipeOffset > 50;
-                const showDelete = swipeOffset < -50;
+                const showComplete = isBeingSwiped && swipeOffset > 50;
+                const showDelete = isBeingSwiped && swipeOffset < -50;
                 
                 return (
                   <div
