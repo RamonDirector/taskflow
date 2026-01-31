@@ -832,47 +832,68 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Weekly Stats Card */}
+        {/* Weekly Stats - Progress Circle */}
         {tasks.length > 0 && showStats && (
-          <div className="mb-6 p-4 rounded-2xl bg-white/80 dark:bg-gray-800/80 border border-gray-100/50 dark:border-gray-700/50 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Esta semana
-              </h3>
-              <button
-                onClick={() => setShowStats(false)}
-                className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 p-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="mb-6 flex flex-col items-center">
+            <div className="relative w-40 h-40">
+              {/* Background circle with dots */}
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                {/* Dotted background circle */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray="2 4"
+                  className="text-gray-200 dark:text-gray-700"
+                />
+                {/* Background track */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  className="text-gray-100 dark:text-gray-800"
+                />
+                {/* Progress arc */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="url(#progressGradient)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0) * 264} 264`}
+                  className="transition-all duration-700 ease-out"
+                />
+                <defs>
+                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#22c55e" />
+                    <stop offset="100%" stopColor="#4ade80" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              {/* Center content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold text-gray-900 dark:text-white">{stats.weekCompleted}</span>
+                <span className="text-sm text-gray-400 dark:text-gray-500">de {stats.weekTotal}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-8">
-              {/* Completed */}
-              <div className="text-center">
-                <div className="text-3xl font-semibold text-gray-900 dark:text-white">{stats.weekCompleted}</div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">completadas</div>
-              </div>
-              {/* Divider */}
-              <div className="h-12 w-px bg-gray-200 dark:bg-gray-700" />
-              {/* Pending */}
-              <div className="text-center">
-                <div className="text-3xl font-semibold text-gray-900 dark:text-white">{pendingTasks.length}</div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">pendientes</div>
-              </div>
-            </div>
-            {/* Progress bar */}
-            {stats.weekTotal > 0 && (
-              <div className="mt-4">
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-green-500 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round((stats.weekCompleted / stats.weekTotal) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Label */}
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">tareas esta semana</p>
+            {/* Hide button */}
+            <button
+              onClick={() => setShowStats(false)}
+              className="text-xs text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mt-2"
+            >
+              ocultar
+            </button>
           </div>
         )}
 
