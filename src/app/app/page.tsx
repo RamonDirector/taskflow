@@ -136,6 +136,9 @@ export default function AppDashboard() {
   // Dark mode state
   const [darkMode, setDarkMode] = useState(false);
   
+  // Stats visibility
+  const [showStats, setShowStats] = useState(true);
+  
   // Swipe state
   const [swipingTaskId, setSwipingTaskId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -574,7 +577,6 @@ export default function AppDashboard() {
   };
   
   const stats = getWeeklyStats();
-  const [showStats, setShowStats] = useState(true);
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col pb-8 transition-colors">
