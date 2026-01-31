@@ -79,6 +79,33 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncRecordings() {
-  // This will be implemented for offline capture
-  console.log('Syncing offline recordings...');
+  // Notify all clients that sync is starting
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => {
+    client.postMessage({ type: 'SYNC_START' });
+  });
+  
+  console.log('Background sync triggered - notifying app to sync');
+  
+  // The actual sync logic is in sync-manager.ts
+  // Service worker just triggers the notification
+  clients.forEach(client => {
+    client.postMessage({ type: 'SYNC_NEEDED' });
+  });
 }
+
+// Listen for messages from the app
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Notify when back online
+self.addEventListener('online', () => {
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: 'ONLINE' });
+    });
+  });
+});
