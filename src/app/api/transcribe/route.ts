@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,8 +14,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
     }
 
+    // Convert to buffer and create a proper file for OpenAI
+    const buffer = Buffer.from(await audioFile.arrayBuffer());
+    
+    // Determine filename based on type
+    const mimeType = audioFile.type || 'audio/webm';
+    const ext = mimeType.includes('webm') ? 'webm' : 
+                mimeType.includes('ogg') ? 'ogg' : 
+                mimeType.includes('mp4') ? 'mp4' : 
+                mimeType.includes('mpeg') ? 'mp3' : 'webm';
+    
+    const file = await toFile(buffer, `audio.${ext}`, { type: mimeType });
+
     const transcription = await openai.audio.transcriptions.create({
-      file: audioFile,
+      file: file,
       model: 'whisper-1',
     });
 
