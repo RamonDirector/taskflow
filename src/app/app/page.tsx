@@ -535,15 +535,15 @@ export default function AppDashboard() {
     const weekCompleted = weekTasks.filter(t => t.completed).length;
     const weekTotal = weekTasks.length;
     
-    // Category breakdown
-    const categoryCount: Record<string, number> = {};
-    completedTasks.forEach(t => {
-      const cat = t.category || 'errands';
-      categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+    // Dominant priority from pending tasks
+    const priorityCount: Record<string, number> = { high: 0, medium: 0, low: 0 };
+    pendingTasks.forEach(t => {
+      const p = t.priority || 'medium';
+      priorityCount[p]++;
     });
-    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+    const dominantPriority = Object.entries(priorityCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'medium';
     
-    return { weekCompleted, weekTotal, topCategory };
+    return { weekCompleted, weekTotal, dominantPriority };
   };
   
   const stats = getWeeklyStats();
@@ -833,69 +833,80 @@ export default function AppDashboard() {
         )}
 
         {/* Weekly Stats - Progress Circle */}
-        {tasks.length > 0 && showStats && (
-          <div className="mb-6 flex flex-col items-center">
-            <div className="relative w-40 h-40">
-              {/* Background circle with dots */}
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                {/* Dotted background circle */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeDasharray="2 4"
-                  className="text-gray-200 dark:text-gray-700"
-                />
-                {/* Background track */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  className="text-gray-100 dark:text-gray-800"
-                />
-                {/* Progress arc */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="url(#progressGradient)"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0) * 264} 264`}
-                  className="transition-all duration-700 ease-out"
-                />
-                <defs>
-                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#22c55e" />
-                    <stop offset="100%" stopColor="#4ade80" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              {/* Center content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-gray-900 dark:text-white">{stats.weekCompleted}</span>
-                <span className="text-sm text-gray-400 dark:text-gray-500">de {stats.weekTotal}</span>
+        {tasks.length > 0 && showStats && (() => {
+          const progressColors = {
+            high: { start: '#ef4444', end: '#f87171' },
+            medium: { start: '#f59e0b', end: '#fbbf24' },
+            low: { start: '#22c55e', end: '#4ade80' },
+          };
+          const colors = progressColors[stats.dominantPriority as keyof typeof progressColors] || progressColors.low;
+          
+          return (
+            <div className="mb-6 flex flex-col items-center">
+              <div className="relative w-36 h-36">
+                {/* Background circle with dots */}
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  {/* Dotted background circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeDasharray="1.5 3"
+                    className="text-gray-200 dark:text-gray-700"
+                  />
+                  {/* Background track */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    className="text-gray-100 dark:text-gray-800"
+                  />
+                  {/* Progress arc */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke={`url(#progressGradient-${stats.dominantPriority})`}
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0) * 264} 264`}
+                    className="transition-all duration-700 ease-out"
+                  />
+                  <defs>
+                    <linearGradient id={`progressGradient-${stats.dominantPriority}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={colors.start} />
+                      <stop offset="100%" stopColor={colors.end} />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                {/* Center content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <svg className="w-7 h-7 mb-1" viewBox="0 0 24 24" fill="none" style={{ color: colors.start }}>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" opacity="0.3"/>
+                    <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.weekCompleted}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">de {stats.weekTotal} tareas</span>
+                </div>
               </div>
+              {/* Hide button */}
+              <button
+                onClick={() => setShowStats(false)}
+                className="text-xs text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mt-3"
+              >
+                ocultar
+              </button>
             </div>
-            {/* Label */}
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">tareas esta semana</p>
-            {/* Hide button */}
-            <button
-              onClick={() => setShowStats(false)}
-              className="text-xs text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mt-2"
-            >
-              ocultar
-            </button>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Hint de interacción */}
         {pendingTasks.length > 0 && (
