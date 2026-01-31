@@ -17,14 +17,13 @@ export async function POST(request: NextRequest) {
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
-      language: 'en',
     });
 
     return NextResponse.json({ text: transcription.text });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Transcription error:', error);
     return NextResponse.json(
-      { error: 'Failed to transcribe audio' },
+      { error: 'Failed to transcribe audio', details: error?.message || String(error) },
       { status: 500 }
     );
   }

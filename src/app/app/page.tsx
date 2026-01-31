@@ -70,20 +70,33 @@ const priorityColors: Record<string, { bg: string; ring: string; cardBg: string;
 const playTaskCreatedSound = () => {
   try {
     const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
     
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    // Create a richer, more elegant chime with harmonics
+    const playTone = (freq: number, startTime: number, duration: number, volume: number) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
     
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(1320, audioContext.currentTime + 0.1);
+    const now = audioContext.currentTime;
     
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    // Elegant two-note chime (like a gentle notification)
+    playTone(523.25, now, 0.4, 0.15);        // C5
+    playTone(659.25, now + 0.08, 0.35, 0.12); // E5
+    playTone(783.99, now + 0.16, 0.3, 0.08);  // G5 - subtle high harmonic
     
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
   } catch {
     // Silently fail if audio is not supported
   }
