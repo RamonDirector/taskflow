@@ -587,21 +587,58 @@ export default function AppDashboard() {
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
-        {/* Hero Record Button */}
-        <div className="flex flex-col items-center py-8 mb-4">
-          <button
-            onClick={startRecording}
-            disabled={processing}
-            className="relative w-24 h-24 rounded-full bg-white shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:shadow-[0_8px_40px_rgba(34,197,94,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
-          >
-            <span className="absolute inset-[-4px] rounded-full border-2 border-green-300/50 animate-ping opacity-30" />
-            <img 
-              src="/icons/mic-button.png" 
-              alt="Grabar" 
-              className="w-20 h-20 object-contain relative z-10"
-            />
-          </button>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Toca para grabar tus tareas</p>
+        {/* Hero Section - Mic + Progress side by side */}
+        <div className="flex items-center justify-center gap-6 py-8 mb-4">
+          {/* Progress Circle - subtle/faded */}
+          {tasks.length > 0 && showStats && (() => {
+            const progressColors = {
+              high: { start: '#ef4444', end: '#f87171' },
+              medium: { start: '#f59e0b', end: '#fbbf24' },
+              low: { start: '#22c55e', end: '#4ade80' },
+            };
+            const colors = progressColors[stats.dominantPriority as keyof typeof progressColors] || progressColors.low;
+            
+            return (
+              <div className="relative w-20 h-20 opacity-60 hover:opacity-80 transition-opacity cursor-pointer" onClick={() => setShowStats(false)}>
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="1.5 3" className="text-gray-200 dark:text-gray-700" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" className="text-gray-100 dark:text-gray-800" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke={`url(#progressGradient-${stats.dominantPriority})`} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${(stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0) * 264} 264`} className="transition-all duration-700 ease-out" />
+                  <defs>
+                    <linearGradient id={`progressGradient-${stats.dominantPriority}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={colors.start} />
+                      <stop offset="100%" stopColor={colors.end} />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {stats.weekTotal > 0 ? Math.round((stats.weekCompleted / stats.weekTotal) * 100) : 0}%
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+          
+          {/* Main Mic Button - protagonist */}
+          <div className="flex flex-col items-center">
+            <button
+              onClick={startRecording}
+              disabled={processing}
+              className="relative w-24 h-24 rounded-full bg-white shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:shadow-[0_8px_40px_rgba(34,197,94,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
+            >
+              <span className="absolute inset-[-4px] rounded-full border-2 border-green-300/50 animate-ping opacity-30" />
+              <img 
+                src="/icons/mic-button.png" 
+                alt="Grabar" 
+                className="w-20 h-20 object-contain relative z-10"
+              />
+            </button>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Toca para grabar tus tareas</p>
+          </div>
+          
+          {/* Spacer for balance when no progress */}
+          {(!tasks.length || !showStats) && <div className="w-20" />}
         </div>
 
         {/* Error */}
@@ -831,83 +868,6 @@ export default function AppDashboard() {
             </div>
           </div>
         )}
-
-        {/* Weekly Stats - Progress Circle */}
-        {tasks.length > 0 && showStats && (() => {
-          const progressColors = {
-            high: { start: '#ef4444', end: '#f87171' },
-            medium: { start: '#f59e0b', end: '#fbbf24' },
-            low: { start: '#22c55e', end: '#4ade80' },
-          };
-          const colors = progressColors[stats.dominantPriority as keyof typeof progressColors] || progressColors.low;
-          
-          return (
-            <div className="mb-6 flex flex-col items-center">
-              <div className="relative w-36 h-36">
-                {/* Background circle with dots */}
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  {/* Dotted background circle */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="42"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeDasharray="1.5 3"
-                    className="text-gray-200 dark:text-gray-700"
-                  />
-                  {/* Background track */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="42"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    className="text-gray-100 dark:text-gray-800"
-                  />
-                  {/* Progress arc */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="42"
-                    fill="none"
-                    stroke={`url(#progressGradient-${stats.dominantPriority})`}
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0) * 264} 264`}
-                    className="transition-all duration-700 ease-out"
-                  />
-                  <defs>
-                    <linearGradient id={`progressGradient-${stats.dominantPriority}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor={colors.start} />
-                      <stop offset="100%" stopColor={colors.end} />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                {/* Center content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <svg className="w-10 h-10 mb-1" viewBox="0 0 24 24" fill="none" style={{ color: colors.start }}>
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" opacity="0.3"/>
-                    <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    {stats.weekTotal > 0 ? Math.round((stats.weekCompleted / stats.weekTotal) * 100) : 0}%
-                  </span>
-                </div>
-              </div>
-              {/* Hide button */}
-              <button
-                onClick={() => setShowStats(false)}
-                className="text-xs text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 mt-3"
-              >
-                ocultar
-              </button>
-            </div>
-          );
-        })()}
 
         {/* Hint de interacción */}
         {pendingTasks.length > 0 && (
