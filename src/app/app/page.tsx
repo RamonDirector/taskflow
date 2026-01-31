@@ -551,6 +551,31 @@ export default function AppDashboard() {
   const pendingTasks = tasks.filter((t) => !t.completed);
   const completedTasks = tasks.filter((t) => t.completed);
 
+  // Calculate weekly stats
+  const getWeeklyStats = () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const weekTasks = tasks.filter(t => new Date(t.created_at) >= startOfWeek);
+    const weekCompleted = weekTasks.filter(t => t.completed).length;
+    const weekTotal = weekTasks.length;
+    
+    // Category breakdown
+    const categoryCount: Record<string, number> = {};
+    completedTasks.forEach(t => {
+      const cat = t.category || 'errands';
+      categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+    });
+    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+    
+    return { weekCompleted, weekTotal, topCategory };
+  };
+  
+  const stats = getWeeklyStats();
+  const [showStats, setShowStats] = useState(true);
+
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col pb-8 transition-colors">
       {/* Header - minimal & seamless */}
@@ -832,6 +857,65 @@ export default function AppDashboard() {
                 Descartar
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Weekly Stats Card */}
+        {tasks.length > 0 && showStats && (
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100/50 dark:border-green-800/30 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-lg">📊</span> Esta semana
+              </h3>
+              <button
+                onClick={() => setShowStats(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {/* Completed */}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.weekCompleted}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">completadas</div>
+              </div>
+              {/* Pending */}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pendingTasks.length}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">pendientes</div>
+              </div>
+              {/* Top category */}
+              <div className="text-center">
+                {stats.topCategory ? (
+                  <>
+                    <div className="text-2xl">{categoryEmojis[stats.topCategory[0]] || '📋'}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{stats.topCategory[0]}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl">🎯</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">top cat.</div>
+                  </>
+                )}
+              </div>
+            </div>
+            {/* Progress bar */}
+            {stats.weekTotal > 0 && (
+              <div className="mt-3">
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((stats.weekCompleted / stats.weekTotal) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
+                  {Math.round((stats.weekCompleted / stats.weekTotal) * 100)}% completado
+                </p>
+              </div>
+            )}
           </div>
         )}
 
