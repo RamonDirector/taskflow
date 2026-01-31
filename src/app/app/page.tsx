@@ -582,12 +582,14 @@ export default function AppDashboard() {
           <button
             onClick={startRecording}
             disabled={processing}
-            className="relative w-20 h-20 rounded-full bg-green-500 hover:bg-green-600 active:bg-green-700 shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:shadow-[0_8px_40px_rgba(34,197,94,0.5)] flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
+            className="relative w-24 h-24 rounded-full bg-white shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:shadow-[0_8px_40px_rgba(34,197,94,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
           >
             <span className="absolute inset-[-4px] rounded-full border-2 border-green-300/50 animate-ping opacity-30" />
-            <svg className="w-9 h-9 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
+            <img 
+              src="/icons/mic-button.png" 
+              alt="Grabar" 
+              className="w-20 h-20 object-contain relative z-10"
+            />
           </button>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Toca para grabar tus tareas</p>
         </div>
