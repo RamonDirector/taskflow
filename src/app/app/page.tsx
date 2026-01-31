@@ -446,6 +446,18 @@ export default function AppDashboard() {
     setShowCategoryDropdown(false);
   };
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (editingTask) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [editingTask]);
+
   const saveEditedTask = async () => {
     if (!editingTask) return;
 
@@ -670,8 +682,8 @@ export default function AppDashboard() {
 
         {/* Edit Modal */}
         {editingTask && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Task</h2>
               
               <div className="space-y-4">
@@ -701,7 +713,7 @@ export default function AppDashboard() {
                     </svg>
                   </button>
                   {showCategoryDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-xl z-10 overflow-hidden">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-xl z-10 overflow-hidden max-h-60 overflow-y-auto">
                       {categories.map((cat) => (
                         <button
                           key={cat}
