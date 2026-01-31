@@ -274,7 +274,7 @@ export default function AppDashboard() {
         setRecordingTime((t) => t + 1);
       }, 1000);
     } catch {
-      setError('Microphone access denied. Please allow microphone access and try again.');
+      setError('Acceso al micrófono denegado. Por favor, permite el acceso e inténtalo de nuevo.');
     }
   };
 
@@ -295,24 +295,24 @@ export default function AppDashboard() {
 
     // If offline, save locally and show message
     if (!isOnline) {
-      setProcessingStep('Saving for later...');
+      setProcessingStep('Guardando para después...');
       try {
         await saveRecordingOffline(audioBlob);
         setError('');
         setProcessingStep('');
         setProcessing(false);
         // Show success message
-        setTranscript('📴 Recording saved! Will process when back online.');
+        setTranscript('📴 ¡Grabación guardada! Se procesará cuando vuelvas a estar online.');
         setTimeout(() => setTranscript(''), 3000);
         return;
       } catch {
-        setError('Failed to save recording offline.');
+        setError('Error al guardar la grabación offline.');
         setProcessing(false);
         return;
       }
     }
 
-    setProcessingStep('Transcribing audio...');
+    setProcessingStep('Transcribiendo audio...');
 
     try {
       const formData = new FormData();
@@ -327,7 +327,7 @@ export default function AppDashboard() {
       const { text } = await transcribeRes.json();
       setTranscript(text);
 
-      setProcessingStep('Extracting tasks...');
+      setProcessingStep('Extrayendo tareas...');
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -338,7 +338,7 @@ export default function AppDashboard() {
       const { tasks: extracted } = await extractRes.json();
 
       if (extracted.length === 0) {
-        setError('No actionable tasks found. Try being more specific.');
+        setError('No se encontraron tareas. Intenta ser más específico.');
         setProcessing(false);
         setProcessingStep('');
         return;
@@ -351,9 +351,9 @@ export default function AppDashboard() {
       // If online request fails, try saving offline
       try {
         await saveRecordingOffline(audioBlob);
-        setError('Network error. Recording saved for later.');
+        setError('Error de red. Grabación guardada para después.');
       } catch {
-        setError('Failed to process audio. Please try again.');
+        setError('Error al procesar el audio. Inténtalo de nuevo.');
       }
     }
     setProcessing(false);
@@ -374,7 +374,7 @@ export default function AppDashboard() {
     const { error } = await supabase.from('tasks').insert(rows);
 
     if (error) {
-      setError('Failed to save tasks. Please try again.');
+      setError('Error al guardar las tareas. Inténtalo de nuevo.');
       return;
     }
 
@@ -522,9 +522,9 @@ export default function AppDashboard() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    if (d.toDateString() === today.toDateString()) return 'Today';
-    if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
-    return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    if (d.toDateString() === today.toDateString()) return 'Hoy';
+    if (d.toDateString() === tomorrow.toDateString()) return 'Mañana';
+    return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
   if (loading) {
@@ -589,7 +589,7 @@ export default function AppDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </button>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Tap to record your tasks</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Toca para grabar tus tareas</p>
         </div>
 
         {/* Error */}
@@ -684,11 +684,11 @@ export default function AppDashboard() {
         {editingTask && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Task</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Editar Tarea</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Title</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Título</label>
                   <input
                     type="text"
                     value={editTitle}
@@ -698,7 +698,7 @@ export default function AppDashboard() {
                 </div>
                 
                 <div className="relative">
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Category</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Categoría</label>
                   <button
                     type="button"
                     onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
@@ -737,7 +737,7 @@ export default function AppDashboard() {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Due Date</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Fecha límite</label>
                   <input
                     type="date"
                     value={editDueDate}
@@ -752,13 +752,13 @@ export default function AppDashboard() {
                   onClick={saveEditedTask}
                   className="flex-1 py-3 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 transition-all"
                 >
-                  Save
+                  Guardar
                 </button>
                 <button
                   onClick={closeEditModal}
                   className="px-6 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 >
-                  Cancel
+                  Cancelar
                 </button>
               </div>
             </div>
@@ -769,7 +769,7 @@ export default function AppDashboard() {
         {showExtracted && extractedTasks.length > 0 && (
           <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100/50 dark:border-gray-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] animate-fade-in">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-              Found {extractedTasks.length} task{extractedTasks.length > 1 ? 's' : ''}
+              {extractedTasks.length} tarea{extractedTasks.length > 1 ? 's' : ''} encontrada{extractedTasks.length > 1 ? 's' : ''}
             </h3>
             {transcript && (
               <p className="text-sm text-gray-400 dark:text-gray-500 mb-4 italic">&ldquo;{transcript}&rdquo;</p>
@@ -783,7 +783,7 @@ export default function AppDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {task.due_date ? formatDueDate(task.due_date) : 'No date'} • {task.category}
+                      {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'} • {task.category}
                     </p>
                   </div>
                   <button
@@ -802,22 +802,22 @@ export default function AppDashboard() {
                 onClick={() => saveTasks(extractedTasks)}
                 className="flex-1 py-3 rounded-xl font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 transition-all shadow-md"
               >
-                Save All
+                Guardar Todo
               </button>
               <button
                 onClick={() => { setShowExtracted(false); setExtractedTasks([]); }}
                 className="px-6 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
-                Discard
+                Descartar
               </button>
             </div>
           </div>
         )}
 
-        {/* Swipe hint */}
+        {/* Hint de interacción */}
         {pendingTasks.length > 0 && (
           <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-3">
-            Swipe right to complete • Swipe left to delete • Tap to edit
+            Toca para editar • Desliza → completar • Desliza ← eliminar
           </p>
         )}
 
@@ -873,7 +873,7 @@ export default function AppDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
                         <p className="text-sm text-gray-400 dark:text-gray-400">
-                          {task.due_date ? formatDueDate(task.due_date) : 'No date'}
+                          {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
                           {task.category && ` • ${task.category}`}
                         </p>
                       </div>
@@ -893,7 +893,7 @@ export default function AppDashboard() {
           {completedTasks.length > 0 && (
             <div className="mt-8">
               <h3 className="text-sm font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
-                Completed ({completedTasks.length})
+                Completadas ({completedTasks.length})
               </h3>
               {completedTasks.map((task) => (
                 <div
@@ -935,8 +935,8 @@ export default function AppDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No tasks yet</h3>
-              <p className="text-gray-400 dark:text-gray-500">Tap the mic button to add your first task</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Sin tareas aún</h3>
+              <p className="text-gray-400 dark:text-gray-500">Toca el micrófono para añadir tu primera tarea</p>
             </div>
           )}
         </div>
