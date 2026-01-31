@@ -1,24 +1,34 @@
 {
   "name": "Taskflow",
   "short_name": "Taskflow",
-  "description": "Stop losing tasks. Just say them.",
+  "description": "Capture ideas in 2 seconds. Never lose one.",
   "start_url": "/app",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#f97316",
+  "background_color": "#fafafa",
+  "theme_color": "#22c55e",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Quick Capture",
+      "short_name": "Capture",
+      "description": "Start recording immediately",
+      "url": "/app?capture=true",
+      "icons": [{ "src": "/icons/mic-96.png", "sizes": "96x96" }]
     }
   ]
 }

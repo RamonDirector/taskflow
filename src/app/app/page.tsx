@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
+import { InstallPrompt } from '../components/InstallPrompt';
 
 interface Task {
   id: string;
@@ -897,6 +898,9 @@ export default function AppDashboard() {
           )}
         </div>
       </div>
+      
+      {/* Install prompt for PWA */}
+      <InstallPrompt />
     </main>
   );
 }

@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ServiceWorkerRegistration } from "./sw-register";
 
 export const metadata: Metadata = {
-  title: "Taskflow — Stop losing tasks. Just say them.",
-  description: "You think 10 tasks a day but only write down 6. Taskflow captures your voice and turns it into organized action.",
-  keywords: ["tasks", "voice", "ai", "productivity", "taskflow"],
+  title: "Taskflow — Capture ideas in 2 seconds",
+  description: "One tap. Speak. Done. Your thoughts become tasks before you forget them.",
+  keywords: ["tasks", "voice", "productivity", "capture", "ideas"],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -12,20 +13,20 @@ export const metadata: Metadata = {
     title: "Taskflow",
   },
   openGraph: {
-    title: "Taskflow — Stop losing tasks. Just say them.",
-    description: "Capture tasks by voice. AI organizes them. You execute.",
+    title: "Taskflow — Capture ideas in 2 seconds",
+    description: "One tap. Speak. Done. Your thoughts become tasks before you forget them.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Taskflow — Stop losing tasks. Just say them.",
-    description: "Capture tasks by voice. AI organizes them. You execute.",
+    title: "Taskflow — Capture ideas in 2 seconds",
+    description: "One tap. Speak. Done. Your thoughts become tasks before you forget them.",
     creator: "@RamonPrietoX",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f97316",
+  themeColor: "#22c55e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -40,9 +41,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <ServiceWorkerRegistration />
+      </body>
     </html>
   );
 }
