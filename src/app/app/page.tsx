@@ -643,81 +643,168 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Recording fullscreen - sleek minimal design */}
+        {/* Recording fullscreen - craftsmanship matcha design */}
         {(recording || processing) && (
-          <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900' : 'bg-[#fafafa]'} z-50 flex flex-col`}>
+          <div className="fixed inset-0 bg-[#0a0a0a] z-50 flex flex-col">
+            {/* Subtle grain texture overlay */}
+            <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")'}} />
+            
             {/* Minimal header */}
-            <div className="px-5 py-4 flex items-center">
+            <div className="relative z-10 px-6 py-5 flex items-center justify-between">
               <button
                 onClick={() => { stopRecording(); setProcessing(false); }}
-                className={`w-10 h-10 rounded-full ${darkMode ? 'bg-gray-800/60' : 'bg-black/5'} flex items-center justify-center transition-colors hover:bg-black/10`}
+                className="w-10 h-10 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center transition-all hover:border-[#3d5a45] hover:bg-[#1f1f1f]"
               >
-                <svg className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+              
+              {recording && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#6b8f71] animate-pulse" />
+                  <span className="text-xs uppercase tracking-[0.15em] text-[#555]">Listening</span>
+                </div>
+              )}
             </div>
 
             {/* Main content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-8">
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8">
               {recording ? (
                 <>
-                  {/* Waveform - main visual element */}
-                  <div className="flex items-center justify-center gap-[3px] h-24 mb-8">
-                    {[...Array(40)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-1 bg-green-500 rounded-full"
-                        style={{
-                          height: `${20 + Math.sin(i * 0.3) * 30 + Math.random() * 40}%`,
-                          animation: `wave 0.5s ease-in-out infinite`,
-                          animationDelay: `${i * 25}ms`,
-                        }}
-                      />
-                    ))}
+                  {/* Heartbeat visualization */}
+                  <div className="relative w-48 h-48 mb-10">
+                    {/* Outer pulse rings */}
+                    <div className="absolute inset-0 rounded-full border border-[#3d5a45]/20 animate-heartbeat-ring" />
+                    <div className="absolute inset-4 rounded-full border border-[#3d5a45]/30 animate-heartbeat-ring-delay" />
+                    <div className="absolute inset-8 rounded-full border border-[#3d5a45]/40 animate-heartbeat-ring-delay-2" />
+                    
+                    {/* Core heartbeat circle */}
+                    <div className="absolute inset-12 rounded-full bg-gradient-to-br from-[#3d5a45] to-[#2a3d2f] shadow-[0_0_60px_rgba(61,90,69,0.4)] animate-heartbeat flex items-center justify-center">
+                      {/* Inner glow */}
+                      <div className="w-16 h-16 rounded-full bg-[#6b8f71]/30 animate-heartbeat-inner" />
+                    </div>
+                    
+                    {/* Voice reactive bars */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-[#6b8f71] rounded-full animate-voice-bar"
+                            style={{
+                              height: '24px',
+                              animationDelay: `${i * 100}ms`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Timer */}
-                  <p className={`text-3xl font-light ${darkMode ? 'text-white' : 'text-gray-900'} tabular-nums mb-8`}>
+                  <p className="text-4xl font-extralight text-[#e8e8e8] tabular-nums tracking-wider mb-4">
                     {formatTime(recordingTime)}
                   </p>
+                  
+                  {/* Subtle hint */}
+                  <p className="text-xs text-[#444] tracking-wide mb-8">
+                    Speak naturally
+                  </p>
 
-                  {/* Live transcription - only shows when there's text */}
+                  {/* Live transcription */}
                   {liveTranscript && (
-                    <div className={`w-full max-w-md px-4 py-3 ${darkMode ? 'bg-gray-800/40' : 'bg-black/5'} rounded-2xl`}>
-                      <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} text-center text-sm`}>
-                        {liveTranscript}
+                    <div className="w-full max-w-md">
+                      <div className="h-px bg-gradient-to-r from-transparent via-[#2a2a2a] to-transparent mb-6" />
+                      <p className="text-[#888] text-center text-sm font-light leading-relaxed">
+                        "{liveTranscript}"
                       </p>
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 mx-auto mb-6 border-[3px] border-green-500 border-t-transparent rounded-full animate-spin" />
-                  <p className={`text-lg ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{processingStep}</p>
+                  {/* Processing state */}
+                  <div className="relative w-20 h-20 mb-8">
+                    <div className="absolute inset-0 rounded-full border-2 border-[#2a2a2a]" />
+                    <div className="absolute inset-0 rounded-full border-2 border-[#6b8f71] border-t-transparent animate-spin" />
+                  </div>
+                  <p className="text-lg text-[#888] font-light">{processingStep}</p>
                 </>
               )}
             </div>
 
             {/* Stop button */}
             {recording && (
-              <div className="px-8 pb-16">
+              <div className="relative z-10 px-8 pb-16">
                 <div className="flex flex-col items-center">
                   <button
                     onClick={stopRecording}
-                    className="w-20 h-20 rounded-full bg-green-500 shadow-[0_4px_20px_rgba(34,197,94,0.4)] flex items-center justify-center hover:bg-green-600 transition-all hover:scale-105 active:scale-95"
+                    className="w-20 h-20 rounded-full bg-[#3d5a45] shadow-[0_0_40px_rgba(61,90,69,0.5)] flex items-center justify-center hover:bg-[#4a6b52] transition-all hover:scale-105 active:scale-95 border border-[#4a6b52]"
                   >
-                    <div className="w-6 h-6 bg-white rounded-sm" />
+                    <div className="w-5 h-5 bg-[#e8e8e8] rounded-sm" />
                   </button>
+                  <p className="text-xs text-[#444] mt-4 tracking-wide">Tap to finish</p>
                 </div>
               </div>
             )}
 
-            {/* CSS for wave animation */}
+            {/* CSS for heartbeat animations */}
             <style jsx>{`
-              @keyframes wave {
-                0%, 100% { transform: scaleY(1); }
-                50% { transform: scaleY(0.6); }
+              @keyframes heartbeat {
+                0%, 100% { transform: scale(1); }
+                15% { transform: scale(1.08); }
+                30% { transform: scale(1); }
+                45% { transform: scale(1.05); }
+                60% { transform: scale(1); }
+              }
+              @keyframes heartbeat-inner {
+                0%, 100% { opacity: 0.3; transform: scale(1); }
+                15% { opacity: 0.6; transform: scale(1.2); }
+                30% { opacity: 0.3; transform: scale(1); }
+                45% { opacity: 0.5; transform: scale(1.1); }
+                60% { opacity: 0.3; transform: scale(1); }
+              }
+              @keyframes heartbeat-ring {
+                0% { transform: scale(1); opacity: 0.3; }
+                50% { transform: scale(1.1); opacity: 0.1; }
+                100% { transform: scale(1.2); opacity: 0; }
+              }
+              @keyframes heartbeat-ring-delay {
+                0% { transform: scale(1); opacity: 0.3; }
+                50% { transform: scale(1.15); opacity: 0.1; }
+                100% { transform: scale(1.25); opacity: 0; }
+              }
+              @keyframes heartbeat-ring-delay-2 {
+                0% { transform: scale(1); opacity: 0.4; }
+                50% { transform: scale(1.1); opacity: 0.2; }
+                100% { transform: scale(1.2); opacity: 0; }
+              }
+              @keyframes voice-bar {
+                0%, 100% { height: 8px; opacity: 0.4; }
+                25% { height: 28px; opacity: 1; }
+                50% { height: 16px; opacity: 0.7; }
+                75% { height: 32px; opacity: 1; }
+              }
+              .animate-heartbeat {
+                animation: heartbeat 1.2s ease-in-out infinite;
+              }
+              .animate-heartbeat-inner {
+                animation: heartbeat-inner 1.2s ease-in-out infinite;
+              }
+              .animate-heartbeat-ring {
+                animation: heartbeat-ring 2s ease-out infinite;
+              }
+              .animate-heartbeat-ring-delay {
+                animation: heartbeat-ring-delay 2s ease-out infinite;
+                animation-delay: 0.3s;
+              }
+              .animate-heartbeat-ring-delay-2 {
+                animation: heartbeat-ring-delay-2 2s ease-out infinite;
+                animation-delay: 0.6s;
+              }
+              .animate-voice-bar {
+                animation: voice-bar 0.8s ease-in-out infinite;
               }
             `}</style>
           </div>
