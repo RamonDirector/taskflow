@@ -889,12 +889,10 @@ export default function AppDashboard() {
                 </svg>
                 {/* Center content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <svg className="w-7 h-7 mb-1" viewBox="0 0 24 24" fill="none" style={{ color: colors.start }}>
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" opacity="0.3"/>
-                    <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.weekCompleted}</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">de {stats.weekTotal} tareas</span>
+                  <span className="text-3xl font-semibold text-gray-900 dark:text-white">
+                    {stats.weekTotal > 0 ? Math.round((stats.weekCompleted / stats.weekTotal) * 100) : 0}%
+                  </span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">completado</span>
                 </div>
               </div>
               {/* Hide button */}
