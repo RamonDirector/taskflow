@@ -148,6 +148,9 @@ export default function AppDashboard() {
   // Collapsed ideas state (for toggling action points visibility)
   const [collapsedIdeas, setCollapsedIdeas] = useState<Set<string>>(new Set());
   
+  // Inline generation state (which idea is currently generating)
+  const [generatingIdeaId, setGeneratingIdeaId] = useState<string | null>(null);
+  
   // Debate/Chat state
   const [debateMessages, setDebateMessages] = useState<{role: 'user' | 'assistant'; content: string}[]>([]);
   const [debateInput, setDebateInput] = useState('');
@@ -636,6 +639,61 @@ export default function AppDashboard() {
   };
 
   // Action Plan functions
+  // Inline action plan generation (no modal)
+  const generateActionPlanInline = async (idea: Task) => {
+    if (!user) return;
+    
+    setGeneratingIdeaId(idea.id);
+    // Expand the idea if collapsed
+    setCollapsedIdeas(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(idea.id);
+      return newSet;
+    });
+
+    try {
+      // Delete existing child tasks first
+      const oldChildren = tasks.filter(t => t.parent_idea_id === idea.id);
+      for (const child of oldChildren) {
+        await supabase.from('tasks').delete().eq('id', child.id);
+      }
+
+      // Generate new action plan
+      const res = await fetch('/api/action-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idea: idea.title }),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate plan');
+      const { action_points } = await res.json();
+      
+      if (action_points && action_points.length > 0) {
+        // Save new action points as child tasks
+        const rows = action_points.map((point: ActionPoint, index: number) => ({
+          user_id: user.id,
+          title: point.title,
+          category: point.category,
+          due_date: null,
+          priority: 'medium' as const,
+          completed: false,
+          type: 'task',
+          parent_idea_id: idea.id,
+          order_index: index,
+        }));
+        
+        await supabase.from('tasks').insert(rows);
+        playTaskCreatedSound();
+      }
+      
+      await fetchTasks();
+    } catch {
+      setError('Error al generar el plan. Inténtalo de nuevo.');
+    }
+    setGeneratingIdeaId(null);
+  };
+
+  // Legacy modal function (keeping for now but unused)
   const generateActionPlan = async (idea: Task) => {
     setActionPlanIdea(idea);
     setGeneratingPlan(true);
@@ -1334,8 +1392,10 @@ export default function AppDashboard() {
                   const completedChildren = children.filter(c => c.completed).length;
                   const isIdeaSelected = selectedItem?.type === 'idea' && selectedItem?.id === idea.id;
                   const isCollapsed = collapsedIdeas.has(idea.id);
+                  const isGenerating = generatingIdeaId === idea.id;
                   
                   const toggleCollapse = () => {
+                    if (isGenerating) return;
                     setCollapsedIdeas(prev => {
                       const newSet = new Set(prev);
                       if (newSet.has(idea.id)) {
@@ -1351,33 +1411,46 @@ export default function AppDashboard() {
                     <div key={idea.id} className="relative">
                       {/* Idea card - click to toggle, long press to select for voice edit */}
                       <div 
-                        onClick={() => hasChildren && !isIdeaSelected && toggleCollapse()}
-                        onTouchStart={() => handleLongPressStart('idea', idea.id)}
+                        onClick={() => hasChildren && !isIdeaSelected && !isGenerating && toggleCollapse()}
+                        onTouchStart={() => !isGenerating && handleLongPressStart('idea', idea.id)}
                         onTouchEnd={handleLongPressEnd}
                         onTouchCancel={handleLongPressEnd}
-                        onMouseDown={() => handleLongPressStart('idea', idea.id)}
+                        onMouseDown={() => !isGenerating && handleLongPressStart('idea', idea.id)}
                         onMouseUp={handleLongPressEnd}
                         onMouseLeave={handleLongPressEnd}
-                        className={`bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 transition-all flex items-center gap-4 cursor-pointer ${
-                          isIdeaSelected 
-                            ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02]' 
-                            : 'border-amber-200/50 dark:border-amber-700/30'
+                        className={`relative rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 transition-all flex items-center gap-4 cursor-pointer overflow-hidden ${
+                          isGenerating
+                            ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30'
+                            : isIdeaSelected 
+                              ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02]' 
+                              : 'border-amber-200/50 dark:border-amber-700/30 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20'
                         }`}
                       >
-                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm flex-shrink-0 transition-all overflow-hidden ${isIdeaSelected ? 'scale-110 ring-2 ring-[#6b8f71]' : ''}`}>
-                          {isIdeaSelected ? (
+                        {/* Animated gradient background when generating */}
+                        {isGenerating && (
+                          <div className="absolute inset-0 animate-gradient-flow opacity-80" />
+                        )}
+                        
+                        <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center shadow-sm flex-shrink-0 transition-all overflow-hidden ${
+                          isGenerating 
+                            ? 'bg-white/80 dark:bg-gray-800/80' 
+                            : 'bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50'
+                        } ${isIdeaSelected ? 'scale-110 ring-2 ring-[#6b8f71]' : ''}`}>
+                          {isGenerating ? (
+                            <div className="w-6 h-6 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
+                          ) : isIdeaSelected ? (
                             <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
                           ) : (
                             <img src="/icons/idea.png" alt="" className="w-8 h-8 object-contain" />
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-white truncate">{idea.title}</p>
+                        <div className="relative z-10 flex-1 min-w-0">
+                          <p className={`font-medium truncate ${isGenerating ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{idea.title}</p>
                           <div className="flex items-center gap-2">
-                            <p className="text-sm text-amber-600 dark:text-amber-400">
-                              {hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
+                            <p className={`text-sm ${isGenerating ? 'text-white/80' : 'text-amber-600 dark:text-amber-400'}`}>
+                              {isGenerating ? 'Generando plan...' : hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
                             </p>
-                            {hasChildren && (
+                            {hasChildren && !isGenerating && (
                               <svg 
                                 className={`w-4 h-4 text-amber-500 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`} 
                                 fill="none" 
@@ -1389,20 +1462,20 @@ export default function AppDashboard() {
                             )}
                           </div>
                         </div>
-                        {!isIdeaSelected && (
+                        {!isIdeaSelected && !isGenerating && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); generateActionPlan(idea); }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
+                            onClick={(e) => { e.stopPropagation(); generateActionPlanInline(idea); }}
+                            className="relative z-10 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 flex items-center justify-center transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
                           >
-                            {hasChildren ? 'Editar' : 'Plan'}
+                            <img src="/icons/edit-pencil.png" alt="" className="w-6 h-6 object-contain" />
                           </button>
                         )}
                         {isIdeaSelected && (
                           <button
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                            className="relative z-10 w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-all"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
