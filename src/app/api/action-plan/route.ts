@@ -10,16 +10,17 @@ export async function POST(request: NextRequest) {
 
     const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
-    const prompt = `You are a strategic execution coach. Break this idea into 3-5 small, immediately actionable steps.
+    const prompt = `You are a strategic execution coach. Create the best possible action plan to execute this idea.
 
 IDEA: "${idea}"
 
 Rules:
 - Detect language and respond in THE SAME LANGUAGE
-- Each step: 15-60 minutes max
-- Steps must be SPECIFIC and CONCRETE
-- Focus on FIRST actions to get started
-- Make it achievable, not overwhelming
+- Include ALL the steps necessary to successfully execute the idea
+- Each step should take 15-60 minutes max
+- Steps must be SPECIFIC and CONCRETE (not vague)
+- Order steps logically — what needs to happen first
+- Make each step immediately actionable
 
 Return ONLY valid JSON:
 {
