@@ -49,17 +49,6 @@ const categoryIcons: Record<string, string> = {
   errands: '/icons/errands.png',
 };
 
-const categoryEmojis: Record<string, string> = {
-  work: '💼',
-  personal: '👤',
-  health: '💪',
-  finance: '💰',
-  home: '🏠',
-  social: '👥',
-  learning: '📚',
-  errands: '📋',
-};
-
 // Icon component for category
 const CategoryIcon = ({ category, size = 32 }: { category: string; size?: number }) => (
   <img 
