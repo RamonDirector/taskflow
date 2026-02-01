@@ -145,6 +145,9 @@ export default function AppDashboard() {
   const [planAnimationKey, setPlanAnimationKey] = useState(0);
   const [generatingPlan, setGeneratingPlan] = useState(false);
   
+  // Collapsed ideas state (for toggling action points visibility)
+  const [collapsedIdeas, setCollapsedIdeas] = useState<Set<string>>(new Set());
+  
   // Debate/Chat state
   const [debateMessages, setDebateMessages] = useState<{role: 'user' | 'assistant'; content: string}[]>([]);
   const [debateInput, setDebateInput] = useState('');
@@ -1311,18 +1314,32 @@ export default function AppDashboard() {
                   const hasChildren = children.length > 0;
                   const completedChildren = children.filter(c => c.completed).length;
                   const isIdeaSelected = selectedItem?.type === 'idea' && selectedItem?.id === idea.id;
+                  const isCollapsed = collapsedIdeas.has(idea.id);
+                  
+                  const toggleCollapse = () => {
+                    setCollapsedIdeas(prev => {
+                      const newSet = new Set(prev);
+                      if (newSet.has(idea.id)) {
+                        newSet.delete(idea.id);
+                      } else {
+                        newSet.add(idea.id);
+                      }
+                      return newSet;
+                    });
+                  };
                   
                   return (
                     <div key={idea.id} className="relative">
-                      {/* Idea card - long press to select for voice edit */}
+                      {/* Idea card - click to toggle, long press to select for voice edit */}
                       <div 
+                        onClick={() => hasChildren && !isIdeaSelected && toggleCollapse()}
                         onTouchStart={() => handleLongPressStart('idea', idea.id)}
                         onTouchEnd={handleLongPressEnd}
                         onTouchCancel={handleLongPressEnd}
                         onMouseDown={() => handleLongPressStart('idea', idea.id)}
                         onMouseUp={handleLongPressEnd}
                         onMouseLeave={handleLongPressEnd}
-                        className={`bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 transition-all flex items-center gap-4 ${
+                        className={`bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 transition-all flex items-center gap-4 cursor-pointer ${
                           isIdeaSelected 
                             ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02]' 
                             : 'border-amber-200/50 dark:border-amber-700/30'
@@ -1337,13 +1354,25 @@ export default function AppDashboard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 dark:text-white truncate">{idea.title}</p>
-                          <p className="text-sm text-amber-600 dark:text-amber-400">
-                            {hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-amber-600 dark:text-amber-400">
+                              {hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
+                            </p>
+                            {hasChildren && (
+                              <svg 
+                                className={`w-4 h-4 text-amber-500 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )}
+                          </div>
                         </div>
                         {!isIdeaSelected && (
                           <button
-                            onClick={() => generateActionPlan(idea)}
+                            onClick={(e) => { e.stopPropagation(); generateActionPlan(idea); }}
                             className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
                           >
                             {hasChildren ? 'Editar' : 'Plan'}
@@ -1351,19 +1380,21 @@ export default function AppDashboard() {
                         )}
                         {isIdeaSelected && (
                           <button
-                            onClick={clearSelection}
+                            onClick={(e) => { e.stopPropagation(); clearSelection(); }}
                             className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
                           >
-                            ✕
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                           </button>
                         )}
                       </div>
                       
-                      {/* Child tasks with connecting line */}
-                      {hasChildren && (
-                        <div className="relative ml-6 mt-2">
+                      {/* Child tasks with connecting line - collapsible */}
+                      {hasChildren && !isCollapsed && (
+                        <div className="relative ml-6 mt-2 animate-fade-in">
                           {/* Vertical connecting line */}
-                          <div className="absolute left-5 top-0 bottom-4 w-0.5 bg-gradient-to-b from-amber-300 to-[#6b8f71] dark:from-amber-600 dark:to-[#6b8f71]" />
+                          <div className="absolute left-5 top-0 bottom-4 w-0.5 bg-gradient-to-b from-amber-300 to-[#6b8f71] dark:from-amber-600 dark:to-[#6b8f71] animate-line-grow" />
                           
                           <div className="space-y-2">
                             {children.map((task, index) => {
