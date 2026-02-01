@@ -241,3 +241,81 @@ body {
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
+
+/* Premium gradient mesh for recording state */
+@keyframes gradient-mesh {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 0%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 100%;
+  }
+}
+
+.animate-gradient-mesh {
+  background: linear-gradient(
+    135deg,
+    #fef9f3 0%,
+    #fef3e2 15%,
+    #fde8d0 30%,
+    #fcd9b8 45%,
+    #fce4c8 60%,
+    #fef6e8 75%,
+    #fefcfa 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-mesh 8s ease infinite;
+}
+
+.dark .animate-gradient-mesh {
+  background: linear-gradient(
+    135deg,
+    #1a1a1a 0%,
+    #262320 15%,
+    #2d2820 30%,
+    #332d22 45%,
+    #2d2820 60%,
+    #262320 75%,
+    #1a1a1a 100%
+  );
+}
+
+/* Wave transition for theme switching */
+@keyframes wave-expand {
+  from {
+    clip-path: circle(0% at 50% 0%);
+  }
+  to {
+    clip-path: circle(150% at 50% 0%);
+  }
+}
+
+@keyframes wave-collapse {
+  from {
+    clip-path: circle(150% at 50% 0%);
+  }
+  to {
+    clip-path: circle(0% at 50% 0%);
+  }
+}
+
+.theme-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.theme-transition-expand {
+  animation: wave-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.theme-transition-collapse {
+  animation: wave-collapse 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

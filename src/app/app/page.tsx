@@ -1046,9 +1046,17 @@ export default function AppDashboard() {
   const stats = getWeeklyStats();
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col pb-8 transition-colors">
+    <main className={`min-h-screen flex flex-col pb-8 transition-colors duration-500 ${
+      recording 
+        ? 'animate-gradient-mesh' 
+        : 'bg-gray-50 dark:bg-gray-900'
+    }`}>
       {/* Header - minimal & seamless */}
-      <header className="px-5 pt-4 pb-2 sticky top-0 z-40 bg-gradient-to-b from-gray-50 via-gray-50 to-transparent dark:from-gray-900 dark:via-gray-900 dark:to-transparent">
+      <header className={`px-5 pt-4 pb-2 sticky top-0 z-40 transition-colors duration-500 ${
+        recording
+          ? 'bg-transparent'
+          : 'bg-gradient-to-b from-gray-50 via-gray-50 to-transparent dark:from-gray-900 dark:via-gray-900 dark:to-transparent'
+      }`}>
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200 tracking-tight">
             taskflow
