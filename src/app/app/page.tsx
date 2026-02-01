@@ -1064,14 +1064,8 @@ export default function AppDashboard() {
                     // Processing: show spinner text
                     <span className="text-gray-400 text-xs">...</span>
                   ) : hasSelection ? (
-                    // Selection mode: show edit mic icon
-                    <div className="flex flex-col items-center">
-                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                      </svg>
-                      <span className="text-white text-[10px] mt-1">Editar</span>
-                    </div>
+                    // Selection mode: show edit mic icon (no text, intuitive)
+                    <img src="/icons/mic-selected.png" alt="" className="w-14 h-14 object-contain" />
                   ) : showProgress ? (
                     // Normal with tasks: fade cycle between stats and mic
                     <>
@@ -1103,15 +1097,6 @@ export default function AppDashboard() {
             );
           })()}
           
-          {/* Selection context hint */}
-          {selectedItem && !recording && !processing && (
-            <p className="text-sm text-[#6b8f71] mt-3 text-center animate-fade-in">
-              {selectedItem.type === 'idea' && '💡 Editando plan completo'}
-              {selectedItem.type === 'action-point' && `📝 Editando paso ${(selectedItem.index || 0) + 1}`}
-              {selectedItem.type === 'task' && '✏️ Editando tarea'}
-              <span className="text-gray-400 ml-2">• Habla para cambiar</span>
-            </p>
-          )}
         </div>
 
         {/* Error */}
@@ -1234,7 +1219,7 @@ export default function AppDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      ✅ Tarea • {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'} • {task.category}
+                      Tarea • {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'} • {task.category}
                     </p>
                   </div>
                   <button
@@ -1250,13 +1235,13 @@ export default function AppDashboard() {
               {/* Ideas */}
               {extractedIdeas.map((idea, i) => (
                 <li key={`idea-${i}`} className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/50 dark:border-amber-700/30 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm">
-                    <span className="text-2xl">💡</span>
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm overflow-hidden">
+                    <img src="/icons/idea.png" alt="" className="w-8 h-8 object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{idea.title}</p>
                     <p className="text-sm text-amber-600 dark:text-amber-400">
-                      💡 Idea • {idea.category}
+                      Idea • {idea.category}
                     </p>
                   </div>
                   <button
@@ -1336,13 +1321,17 @@ export default function AppDashboard() {
                             : 'border-amber-200/50 dark:border-amber-700/30'
                         }`}
                       >
-                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm flex-shrink-0 transition-all ${isIdeaSelected ? 'scale-110' : ''}`}>
-                          <span className="text-2xl">{isIdeaSelected ? '🎤' : '💡'}</span>
+                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm flex-shrink-0 transition-all overflow-hidden ${isIdeaSelected ? 'scale-110 ring-2 ring-[#6b8f71]' : ''}`}>
+                          {isIdeaSelected ? (
+                            <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
+                          ) : (
+                            <img src="/icons/idea.png" alt="" className="w-8 h-8 object-contain" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 dark:text-white truncate">{idea.title}</p>
                           <p className="text-sm text-amber-600 dark:text-amber-400">
-                            {isIdeaSelected ? 'Habla para editar el plan' : hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
+                            {hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
                           </p>
                         </div>
                         {!isIdeaSelected && (
@@ -1350,7 +1339,7 @@ export default function AppDashboard() {
                             onClick={() => generateActionPlan(idea)}
                             className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
                           >
-                            {hasChildren ? '✏️ Editar' : '🚀 Plan'}
+                            {hasChildren ? 'Editar' : 'Plan'}
                           </button>
                         )}
                         {isIdeaSelected && (
@@ -1382,14 +1371,22 @@ export default function AppDashboard() {
                                   <div className="absolute left-5 w-4 h-0.5 bg-[#6b8f71]" style={{ top: '50%' }} />
                                   
                                   {/* Step number circle */}
-                                  <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all ${
+                                  <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all overflow-hidden ${
                                     isStepSelected
                                       ? 'bg-[#6b8f71] text-white scale-110 ring-2 ring-[#6b8f71]/30'
                                       : task.completed 
                                         ? 'bg-[#6b8f71] text-white' 
                                         : 'bg-white dark:bg-gray-800 border-2 border-[#6b8f71] text-[#6b8f71]'
                                   }`}>
-                                    {isStepSelected ? '🎤' : task.completed ? '✓' : index + 1}
+                                    {isStepSelected ? (
+                                      <img src="/icons/mic-selected.png" alt="" className="w-6 h-6 object-contain" />
+                                    ) : task.completed ? (
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    ) : (
+                                      index + 1
+                                    )}
                                   </div>
                                   
                                   {/* Task card - long press to select */}
@@ -1410,7 +1407,7 @@ export default function AppDashboard() {
                                     }`}
                                   >
                                     <p className={`font-medium text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
-                                      {isStepSelected ? 'Habla para editar este paso' : task.title}
+                                      {task.title}
                                     </p>
                                   </div>
                                   
@@ -1420,7 +1417,9 @@ export default function AppDashboard() {
                                       onClick={clearSelection}
                                       className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
                                     >
-                                      ✕
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
                                     </button>
                                   ) : (
                                     <button
@@ -1506,22 +1505,20 @@ export default function AppDashboard() {
                           onClick={(e) => { e.stopPropagation(); if (!isTaskSelected) cyclePriority(task.id, priority); }}
                           className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden ${
                             isTaskSelected 
-                              ? 'bg-[#6b8f71] scale-110' 
+                              ? 'bg-[#6b8f71] scale-110 ring-2 ring-[#6b8f71]/30' 
                               : `bg-white/80 ring-2 ${colors.ring} hover:scale-105 active:scale-95`
                           }`}
                         >
                           {isTaskSelected ? (
-                            <span className="text-2xl">🎤</span>
+                            <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
                           ) : (
                             <CategoryIcon category={task.category || 'errands'} size={36} />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-white truncate">
-                            {isTaskSelected ? 'Habla para editar esta tarea' : task.title}
-                          </p>
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
                           <p className="text-sm text-gray-400">
-                            {isTaskSelected ? task.title : task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
+                            {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
                           </p>
                         </div>
                         {isTaskSelected ? (
@@ -1529,7 +1526,9 @@ export default function AppDashboard() {
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
                           >
-                            ✕
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                           </button>
                         ) : (
                           <button
@@ -1610,8 +1609,8 @@ export default function AppDashboard() {
           >
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center">
-                <span className="text-2xl">🚀</span>
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#6b8f71]/20 to-[#8fb096]/20 dark:from-[#6b8f71]/30 dark:to-[#8fb096]/30 flex items-center justify-center overflow-hidden">
+                <img src="/icons/action-plan.png" alt="" className="w-8 h-8 object-contain" />
               </div>
               <div className="flex-1">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Action Plan</h2>
@@ -1659,7 +1658,7 @@ export default function AppDashboard() {
                         <div className="flex-1 pb-2">
                           <p className="font-medium text-gray-900 dark:text-white text-sm leading-snug">{point.title}</p>
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            ⏱️ {point.time_estimate}
+                            {point.time_estimate}
                           </p>
                         </div>
                       </div>
@@ -1779,7 +1778,7 @@ export default function AppDashboard() {
                     onClick={deployActionPlan}
                     className="flex-1 py-3 rounded-xl font-semibold text-white bg-[#6b8f71] hover:bg-[#5a7a60] transition-all shadow-md flex items-center justify-center gap-2"
                   >
-                    <span>✅</span> Crear Tareas
+Crear Tareas
                   </button>
                   <button
                     onClick={closeActionPlanModal}
