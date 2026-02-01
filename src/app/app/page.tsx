@@ -17,6 +17,7 @@ interface Task {
   type?: 'task' | 'idea';
   parent_idea_id?: string;
   order_index?: number;
+  voice_context?: string;
 }
 
 interface ExtractedTask {
@@ -538,7 +539,7 @@ export default function AppDashboard() {
       type: 'task',
     }));
 
-    // Save ideas
+    // Save ideas (with voice context for AI plan generation)
     const ideaRows = extractedIdeas.map((idea) => ({
       user_id: user.id,
       title: idea.title,
@@ -547,6 +548,7 @@ export default function AppDashboard() {
       priority: idea.priority,
       completed: false,
       type: 'idea',
+      voice_context: transcript || null,
     }));
 
     const allRows = [...taskRows, ...ideaRows];
@@ -711,11 +713,11 @@ export default function AppDashboard() {
         await supabase.from('tasks').delete().eq('id', child.id);
       }
 
-      // Generate new action plan
+      // Generate new action plan (using voice context as primary input)
       const res = await fetch('/api/action-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idea: idea.title }),
+        body: JSON.stringify({ idea: idea.title, voiceContext: idea.voice_context }),
       });
 
       if (!res.ok) throw new Error('Failed to generate plan');
@@ -757,7 +759,7 @@ export default function AppDashboard() {
       const res = await fetch('/api/action-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idea: idea.title }),
+        body: JSON.stringify({ idea: idea.title, voiceContext: idea.voice_context }),
       });
 
       if (!res.ok) throw new Error('Failed to generate plan');
