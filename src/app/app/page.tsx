@@ -902,7 +902,7 @@ export default function AppDashboard() {
 
   // Lock body scroll when modal is open
   useEffect(() => {
-    if (editingTask || actionPlanIdea) {
+    if (actionPlanIdea) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -910,7 +910,7 @@ export default function AppDashboard() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [editingTask]);
+  }, [actionPlanIdea]);
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent, taskId: string) => {
