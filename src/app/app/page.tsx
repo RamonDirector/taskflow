@@ -63,10 +63,11 @@ const CategoryIcon = ({ category, size = 32 }: { category: string; size?: number
 
 const categories = ['work', 'personal', 'health', 'finance', 'home', 'social', 'learning', 'errands'];
 
+// Neutral colors for all tasks (no priority coloring)
 const priorityColors: Record<string, { bg: string; ring: string; cardBg: string; cardBgDark: string }> = {
-  high: { bg: 'bg-red-50 dark:bg-red-900/30', ring: 'ring-red-400', cardBg: 'bg-red-50/60', cardBgDark: 'dark:bg-red-900/20' },
-  medium: { bg: 'bg-amber-50 dark:bg-amber-900/30', ring: 'ring-amber-400', cardBg: 'bg-amber-50/60', cardBgDark: 'dark:bg-amber-900/20' },
-  low: { bg: 'bg-green-50 dark:bg-green-900/30', ring: 'ring-green-400', cardBg: 'bg-green-50/60', cardBgDark: 'dark:bg-green-900/20' },
+  high: { bg: 'bg-white dark:bg-gray-800', ring: 'ring-gray-200 dark:ring-gray-700', cardBg: 'bg-white', cardBgDark: 'dark:bg-gray-800' },
+  medium: { bg: 'bg-white dark:bg-gray-800', ring: 'ring-gray-200 dark:ring-gray-700', cardBg: 'bg-white', cardBgDark: 'dark:bg-gray-800' },
+  low: { bg: 'bg-white dark:bg-gray-800', ring: 'ring-gray-200 dark:ring-gray-700', cardBg: 'bg-white', cardBgDark: 'dark:bg-gray-800' },
 };
 
 // Satisfying "ding" sound using Web Audio API
