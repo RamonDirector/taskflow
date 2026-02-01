@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,9 +13,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No idea provided' }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
-    const prompt = `You are a strategic execution coach. Take this idea and break it into 3-5 small, immediately actionable steps.
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a strategic execution coach. Take this idea and break it into 3-5 small, immediately actionable steps.
 
 IDEA: "${idea}"
 
@@ -24,7 +30,7 @@ IMPORTANT:
 - Focus on the FIRST actions to get started, not the entire project
 - Make it feel achievable, not overwhelming
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "action_points": [
     {
@@ -33,18 +39,17 @@ Return ONLY valid JSON (no markdown, no code blocks):
       "category": "work" | "personal" | "learning" | "errands" | "health" | "finance"
     }
   ]
-}`;
+}`,
+        },
+      ],
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const content = response.text();
-
-    if (!content) {
+    const content = message.content[0];
+    if (content.type !== 'text' || !content.text) {
       return NextResponse.json({ action_points: [] });
     }
 
-    // Clean up response
-    let cleanContent = content.trim();
+    let cleanContent = content.text.trim();
     if (cleanContent.startsWith('```json')) {
       cleanContent = cleanContent.slice(7);
     } else if (cleanContent.startsWith('```')) {

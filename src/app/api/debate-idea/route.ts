@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-}
-
-interface ActionPoint {
-  title: string;
-  time_estimate: string;
-  category: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -22,9 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing idea or message' }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
-    // Build conversation context
     let conversationContext = '';
     if (messages && messages.length > 0) {
       conversationContext = messages.map((m: Message) => 
@@ -32,7 +25,13 @@ export async function POST(request: NextRequest) {
       ).join('\n');
     }
 
-    const prompt = `You are a strategic execution coach helping refine an idea into actionable steps.
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a strategic execution coach helping refine an idea into actionable steps.
 
 CONTEXT:
 - Original idea: "${idea}"
@@ -52,7 +51,7 @@ IMPORTANT:
 - Be conversational but concise
 - If the user asks a question, answer it AND update the plan if relevant
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "response": "Your conversational response to the user",
   "action_points": [
@@ -63,13 +62,13 @@ Return ONLY valid JSON (no markdown, no code blocks):
     }
   ],
   "plan_changed": true | false
-}`;
+}`,
+        },
+      ],
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const content = response.text();
-
-    if (!content) {
+    const content = message.content[0];
+    if (content.type !== 'text' || !content.text) {
       return NextResponse.json({ 
         response: 'No pude procesar tu mensaje. Intenta de nuevo.',
         action_points: currentPlan || [],
@@ -77,8 +76,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
       });
     }
 
-    // Clean up response
-    let cleanContent = content.trim();
+    let cleanContent = content.text.trim();
     if (cleanContent.startsWith('```json')) {
       cleanContent = cleanContent.slice(7);
     } else if (cleanContent.startsWith('```')) {

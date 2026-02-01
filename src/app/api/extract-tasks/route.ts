@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,9 +16,13 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
-    const prompt = `You are a Brain Dump assistant that extracts BOTH actionable tasks AND creative ideas from voice transcripts.
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a Brain Dump assistant that extracts BOTH actionable tasks AND creative ideas from voice transcripts.
 
 Today is ${dayOfWeek}, ${today}.
 
@@ -56,7 +62,7 @@ Rules:
 - ALWAYS match the input language
 - When uncertain, classify as IDEA (better to capture than lose)
 
-Return ONLY valid JSON format (no markdown, no code blocks):
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "items": [
     {
@@ -69,18 +75,18 @@ Return ONLY valid JSON format (no markdown, no code blocks):
   ]
 }
 
-User input: ${text}`;
+User input: ${text}`,
+        },
+      ],
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const content = response.text();
-    
-    if (!content) {
+    const content = message.content[0];
+    if (content.type !== 'text' || !content.text) {
       return NextResponse.json({ items: [], tasks: [], ideas: [] });
     }
 
-    // Clean up response - remove markdown code blocks if present
-    let cleanContent = content.trim();
+    // Clean up response
+    let cleanContent = content.text.trim();
     if (cleanContent.startsWith('```json')) {
       cleanContent = cleanContent.slice(7);
     } else if (cleanContent.startsWith('```')) {
@@ -94,7 +100,6 @@ User input: ${text}`;
     const parsed = JSON.parse(cleanContent);
     const items = parsed.items || [];
     
-    // Separate tasks and ideas for backward compatibility
     const tasks = items.filter((item: { type: string }) => item.type === 'task');
     const ideas = items.filter((item: { type: string }) => item.type === 'idea');
 

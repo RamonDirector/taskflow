@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
     const { 
-      editType, // 'idea' | 'task' | 'action-point'
+      editType,
       voiceInput,
-      context // varies by editType
+      context
     } = await request.json();
 
     if (!editType || !voiceInput) {
       return NextResponse.json({ error: 'Missing editType or voiceInput' }, { status: 400 });
     }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     let prompt = '';
 
@@ -36,7 +36,7 @@ Rules:
 - Detect language from user input and respond in SAME language
 - Steps should be immediately actionable
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "action_points": [
     {
@@ -65,7 +65,7 @@ Rules:
 - Time estimate: 15min, 30min, 45min, or 1h
 - Detect language and respond in same language
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "title": "Updated step title",
   "time_estimate": "15min" | "30min" | "45min" | "1h",
@@ -89,7 +89,7 @@ Rules:
 - Detect language and respond in same language
 - If user mentions a due date, parse it
 
-Return ONLY valid JSON (no markdown, no code blocks):
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "title": "Updated task title",
   "category": "work" | "personal" | "learning" | "errands" | "health" | "finance" | "home" | "social",
@@ -102,16 +102,18 @@ Return ONLY valid JSON (no markdown, no code blocks):
         return NextResponse.json({ error: 'Invalid editType' }, { status: 400 });
     }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const content = response.text();
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
-    if (!content) {
+    const content = message.content[0];
+    if (content.type !== 'text' || !content.text) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
 
-    // Clean up response
-    let cleanContent = content.trim();
+    let cleanContent = content.text.trim();
     if (cleanContent.startsWith('```json')) {
       cleanContent = cleanContent.slice(7);
     } else if (cleanContent.startsWith('```')) {
