@@ -39,29 +39,19 @@ interface ActionPoint {
   category: string;
 }
 
-const categoryIcons: Record<string, string> = {
-  work: '/icons/work.png',
-  personal: '/icons/personal.png',
-  health: '/icons/health.png',
-  finance: '/icons/finance.png',
-  home: '/icons/home.png',
-  social: '/icons/social.png',
-  learning: '/icons/learning.png',
-  errands: '/icons/errands.png',
-};
-
-// Icon component for category
-const CategoryIcon = ({ category, size = 32 }: { category: string; size?: number }) => (
-  <img 
-    src={categoryIcons[category] || categoryIcons.errands} 
-    alt={category}
-    width={size}
-    height={size}
-    className="object-contain"
-  />
-);
-
 const categories = ['work', 'personal', 'health', 'finance', 'home', 'social', 'learning', 'errands'];
+
+// Category labels for display
+const categoryLabels: Record<string, string> = {
+  work: 'Work',
+  personal: 'Personal', 
+  health: 'Health',
+  finance: 'Finance',
+  home: 'Home',
+  social: 'Social',
+  learning: 'Learning',
+  errands: 'Errands',
+};
 
 // Neutral colors for all tasks (no priority coloring)
 const priorityColors: Record<string, { bg: string; ring: string; cardBg: string; cardBgDark: string }> = {
@@ -1185,8 +1175,11 @@ export default function AppDashboard() {
                     // Processing: animated gradient button
                     <div className="absolute inset-0 rounded-full animate-gradient-flow animate-gradient-pulse" />
                   ) : hasSelection ? (
-                    // Selection mode: show edit mic icon (no text, intuitive)
-                    <img src="/icons/mic-selected.png" alt="" className="w-14 h-14 object-contain" />
+                    // Selection mode: mic icon in white (edit mode)
+                    <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
                   ) : showProgress ? (
                     // Normal with tasks: fade cycle between stats and mic
                     <>
@@ -1196,21 +1189,19 @@ export default function AppDashboard() {
                         <span className="text-[10px] text-gray-400 uppercase tracking-wide">esta semana</span>
                       </div>
                       {/* Mic icon - fades in second */}
-                      <img 
-                        src="/icons/mic-button.png" 
-                        alt="Grabar" 
-                        className="w-20 h-20 object-contain relative z-10 animate-fade-cycle-second"
-                      />
+                      <svg className="w-10 h-10 text-[#6b8f71] relative z-10 animate-fade-cycle-second" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                      </svg>
                     </>
                   ) : (
                     // No tasks yet: just mic with subtle pulse
                     <>
                       <span className="absolute inset-[-4px] rounded-full border-2 border-[#6b8f71]/50 animate-ping opacity-30" />
-                      <img 
-                        src="/icons/mic-button.png" 
-                        alt="Grabar" 
-                        className="w-20 h-20 object-contain relative z-10"
-                      />
+                      <svg className="w-10 h-10 text-[#6b8f71] relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                      </svg>
                     </>
                   )}
                 </button>
@@ -1236,46 +1227,42 @@ export default function AppDashboard() {
               {extractedTasks.length > 0 && extractedIdeas.length > 0 && ' + '}
               {extractedIdeas.length > 0 && `${extractedIdeas.length} idea${extractedIdeas.length > 1 ? 's' : ''}`}
             </h3>
-            <ul className="space-y-3 mb-5">
-              {/* Tasks */}
+            <ul className="space-y-1 mb-5">
+              {/* Tasks - minimal list style */}
               {extractedTasks.map((task, i) => (
-                <li key={`task-${i}`} className={`p-4 rounded-xl ${priorityColors[task.priority].bg} flex items-center gap-4`}>
-                  <div className={`w-12 h-12 rounded-full bg-white dark:bg-gray-700 ring-3 ${priorityColors[task.priority].ring} flex items-center justify-center shadow-sm overflow-hidden`}>
-                    <CategoryIcon category={task.category} size={36} />
-                  </div>
+                <li key={`task-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
+                  <div className="w-1 h-8 bg-gray-300 dark:bg-gray-600 rounded-full" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Tarea • {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'} • {task.category}
+                    <p className="text-sm text-gray-400">
+                      {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
                     </p>
                   </div>
                   <button
                     onClick={() => removeExtractedTask(i)}
-                    className="text-gray-300 dark:text-gray-500 hover:text-red-500 transition-colors p-1"
+                    className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </li>
               ))}
-              {/* Ideas */}
+              {/* Ideas - minimal list style */}
               {extractedIdeas.map((idea, i) => (
-                <li key={`idea-${i}`} className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/50 dark:border-amber-700/30 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm overflow-hidden">
-                    <img src="/icons/idea.png" alt="" className="w-8 h-8 object-contain" />
-                  </div>
+                <li key={`idea-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
+                  <div className="w-1 h-8 bg-amber-400 dark:bg-amber-500 rounded-full" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{idea.title}</p>
-                    <p className="text-sm text-amber-600 dark:text-amber-400">
-                      Idea • {idea.category}
+                    <p className="text-sm text-amber-500 dark:text-amber-400">
+                      Idea
                     </p>
                   </div>
                   <button
                     onClick={() => setExtractedIdeas(prev => prev.filter((_, idx) => idx !== i))}
-                    className="text-gray-300 dark:text-gray-500 hover:text-red-500 transition-colors p-1"
+                    className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -1408,19 +1395,14 @@ export default function AppDashboard() {
                           <div className="absolute inset-0 animate-gradient-flow opacity-80" />
                         )}
                         
-                        <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center shadow-sm flex-shrink-0 transition-all overflow-hidden ${
+                        {/* Minimal indicator line */}
+                        <div className={`w-1 h-12 rounded-full flex-shrink-0 transition-all ${
                           isGenerating 
-                            ? 'bg-white/80 dark:bg-gray-800/80' 
-                            : 'bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50'
-                        } ${isIdeaSelected ? 'scale-110 ring-2 ring-[#6b8f71]' : ''}`}>
-                          {isGenerating ? (
-                            <div className="w-6 h-6 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
-                          ) : isIdeaSelected ? (
-                            <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
-                          ) : (
-                            <img src="/icons/idea.png" alt="" className="w-8 h-8 object-contain" />
-                          )}
-                        </div>
+                            ? 'bg-[#6b8f71] animate-pulse' 
+                            : isIdeaSelected
+                              ? 'bg-[#6b8f71]'
+                              : 'bg-amber-400 dark:bg-amber-500'
+                        }`} />
                         <div className="relative z-10 flex-1 min-w-0">
                           <p className={`font-medium truncate ${isGenerating ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{idea.title}</p>
                           <div className="flex items-center gap-2">
@@ -1442,9 +1424,9 @@ export default function AppDashboard() {
                         {!isIdeaSelected && !isGenerating && (
                           <button
                             onClick={(e) => { e.stopPropagation(); generateActionPlanInline(idea); }}
-                            className="relative z-10 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 flex items-center justify-center transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
+                            className="relative z-10 px-3 py-1.5 rounded-full bg-[#6b8f71]/10 hover:bg-[#6b8f71]/20 text-[#6b8f71] text-sm font-medium transition-all flex-shrink-0"
                           >
-                            <img src="/icons/edit-pencil.png" alt="" className="w-6 h-6 object-contain" />
+                            Plan
                           </button>
                         )}
                         {isIdeaSelected && (
@@ -1486,7 +1468,10 @@ export default function AppDashboard() {
                                         : 'bg-white dark:bg-gray-800 border-2 border-[#6b8f71] text-[#6b8f71]'
                                   }`}>
                                     {isStepSelected ? (
-                                      <img src="/icons/mic-selected.png" alt="" className="w-6 h-6 object-contain" />
+                                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                      </svg>
                                     ) : task.completed ? (
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -1649,14 +1634,19 @@ export default function AppDashboard() {
                             }`}
                           >
                             {isTaskSelected ? (
-                              <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
+                              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                              </svg>
                             ) : (
-                              <CategoryIcon category={task.category || 'errands'} size={36} />
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                {(task.category || 'task').slice(0, 2)}
+                              </span>
                             )}
                           </div>
                           {/* Inline category dropdown */}
                           {inlineEdit?.taskId === task.id && inlineEdit?.field === 'category' && (
-                            <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl z-50 overflow-hidden animate-fade-in">
+                            <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl z-50 overflow-hidden animate-fade-in min-w-[120px]">
                               {categories.map((cat) => (
                                 <button
                                   key={cat}
@@ -1664,11 +1654,9 @@ export default function AppDashboard() {
                                     e.stopPropagation();
                                     saveInlineEdit(task.id, 'category', cat);
                                   }}
-                                  className={`w-full px-3 py-2 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${task.category === cat ? 'bg-[#6b8f71]/10' : ''}`}
+                                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${task.category === cat ? 'bg-[#6b8f71]/10 text-[#6b8f71]' : 'text-gray-700 dark:text-gray-300'}`}
                                 >
-                                  <div className="w-8 h-8 rounded-lg overflow-hidden">
-                                    <CategoryIcon category={cat} size={32} />
-                                  </div>
+                                  {categoryLabels[cat] || cat}
                                 </button>
                               ))}
                             </div>
@@ -1760,11 +1748,9 @@ export default function AppDashboard() {
               {completedTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-4 mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-gray-100/50 dark:border-gray-700/50 flex items-center gap-4 group hover:shadow-[0_2px_15px_rgba(0,0,0,0.08)] transition-all"
+                  className="py-3 px-4 mb-1 flex items-center gap-3 group hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-all"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center opacity-50 overflow-hidden">
-                    <CategoryIcon category={task.category || 'errands'} size={36} />
-                  </div>
+                  <div className="w-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full opacity-50" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-400 dark:text-gray-500 line-through truncate">{task.title}</p>
                   </div>
@@ -1816,11 +1802,9 @@ export default function AppDashboard() {
           >
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#6b8f71]/20 to-[#8fb096]/20 dark:from-[#6b8f71]/30 dark:to-[#8fb096]/30 flex items-center justify-center overflow-hidden">
-                <img src="/icons/action-plan.png" alt="" className="w-8 h-8 object-contain" />
-              </div>
+              <div className="w-1 h-10 bg-[#6b8f71] rounded-full" />
               <div className="flex-1">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Action Plan</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Plan</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{actionPlanIdea.title}</p>
               </div>
             </div>
