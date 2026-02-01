@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
     const prompt = `You are a Brain Dump assistant that extracts BOTH actionable tasks AND creative ideas from voice transcripts.
 

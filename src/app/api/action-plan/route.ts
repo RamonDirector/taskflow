@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const { idea } = await request.json();
     if (!idea) return NextResponse.json({ error: 'No idea provided' }, { status: 400 });
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
     const prompt = `You are a strategic execution coach. Break this idea into 3-5 small, immediately actionable steps.
 
