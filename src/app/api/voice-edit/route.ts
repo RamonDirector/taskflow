@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const { editType, voiceInput, context } = await request.json();
     if (!editType || !voiceInput) return NextResponse.json({ error: 'Missing editType or voiceInput' }, { status: 400 });
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
     let prompt = '';
 
     switch (editType) {
