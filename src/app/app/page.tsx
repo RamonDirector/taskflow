@@ -350,7 +350,10 @@ export default function AppDashboard() {
         body: formData,
       });
 
-      if (!transcribeRes.ok) throw new Error('Transcription failed');
+      if (!transcribeRes.ok) {
+        const errData = await transcribeRes.json().catch(() => ({}));
+        throw new Error(`Transcription failed: ${errData.details || errData.error || transcribeRes.status}`);
+      }
       const { text } = await transcribeRes.json();
       setTranscript(text);
 
@@ -371,7 +374,10 @@ export default function AppDashboard() {
         body: JSON.stringify({ text }),
       });
 
-      if (!extractRes.ok) throw new Error('Extraction failed');
+      if (!extractRes.ok) {
+        const errData = await extractRes.json().catch(() => ({}));
+        throw new Error(`Extraction failed: ${errData.error || extractRes.status}`);
+      }
       const { tasks: extractedTasksResult, ideas: extractedIdeasResult } = await extractRes.json();
 
       if ((!extractedTasksResult || extractedTasksResult.length === 0) && 
@@ -386,8 +392,9 @@ export default function AppDashboard() {
       setExtractedIdeas(extractedIdeasResult || []);
       setShowExtracted(true);
       setProcessingStep('');
-    } catch {
-      setError('Error al procesar el audio. Inténtalo de nuevo.');
+    } catch (err: any) {
+      console.error('Audio processing error:', err);
+      setError(err?.message || 'Error al procesar el audio. Inténtalo de nuevo.');
     }
     setProcessing(false);
   };
