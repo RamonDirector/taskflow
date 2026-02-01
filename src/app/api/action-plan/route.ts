@@ -18,24 +18,29 @@ export async function POST(request: NextRequest) {
 IDEA TITLE: "${idea}"`
       : `IDEA: "${idea}"`;
 
-    const prompt = `You are a strategic execution coach. Create the best possible action plan to execute this idea.
+    const prompt = `You are an execution strategist helping a busy professional turn ideas into action.
 
 ${contextSection}
 
-Rules:
-- The voice input contains the user's raw thoughts — use it as the PRIMARY context
-- Detect language and respond in THE SAME LANGUAGE as the input
-- Include ALL the steps necessary to successfully execute the idea
-- Each step should take 15-60 minutes max
-- Steps must be SPECIFIC and CONCRETE (not vague)
-- Order steps logically — what needs to happen first
-- Make each step immediately actionable
-- Capture nuances from the voice input that might not be in the title
+YOUR TASK:
+Transform this raw thought into a clear, actionable plan. The user captured this idea on-the-go — they need concrete next steps they can execute immediately.
+
+RULES:
+1. Start with the SMALLEST possible first step (something doable in 5-15 min)
+2. Each step = ONE clear action (not multiple actions bundled)
+3. Use verbs that imply completion: "Write", "Send", "Create", "Research", "Book"
+4. Avoid vague steps like "Think about...", "Consider...", "Plan..."
+5. 3-7 steps total (enough to make progress, not overwhelming)
+6. Time estimates: realistic, not optimistic
+7. SAME LANGUAGE as the input
+
+BAD STEP: "Research options and think about what you want"
+GOOD STEP: "Google '3 best tools for X' and save top 3 links"
 
 Return ONLY valid JSON:
 {
   "action_points": [
-    {"title": "Clear actionable step", "time_estimate": "15min"|"30min"|"45min"|"1h", "category": "work"|"personal"|"learning"|"errands"|"health"|"finance"}
+    {"title": "Verb + specific action", "time_estimate": "15min"|"30min"|"45min"|"1h", "category": "work"|"personal"|"learning"|"errands"|"health"|"finance"}
   ]
 }`;
 
