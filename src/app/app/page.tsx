@@ -1044,12 +1044,31 @@ export default function AppDashboard() {
                   </>
                 )}
                 
-                {/* Processing spinner */}
+                {/* Processing - animated gradient with orbiting circles */}
                 {processing && (
-                  <svg className="absolute inset-[-8px] w-[calc(100%+16px)] h-[calc(100%+16px)] animate-spin" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200/30 dark:text-gray-700/30" />
-                    <circle cx="50" cy="50" r="47" fill="none" stroke="#6b8f71" strokeWidth="3" strokeLinecap="round" strokeDasharray="100 295" />
-                  </svg>
+                  <>
+                    {/* Gradient glow background */}
+                    <div className="absolute inset-[-20px] rounded-full animate-gradient-flow opacity-60 blur-xl" />
+                    
+                    {/* Orbiting circles */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute w-3 h-3 rounded-full bg-[#6b8f71]/60 animate-orbit" style={{ animationDuration: '3s' }} />
+                      <div className="absolute w-2 h-2 rounded-full bg-[#8fb096]/60 animate-orbit" style={{ animationDuration: '4s', animationDelay: '-1s' }} />
+                      <div className="absolute w-2.5 h-2.5 rounded-full bg-[#a8c4ad]/60 animate-orbit" style={{ animationDuration: '5s', animationDelay: '-2s' }} />
+                    </div>
+                    
+                    {/* Subtle spinner ring */}
+                    <svg className="absolute inset-[-8px] w-[calc(100%+16px)] h-[calc(100%+16px)] animate-spin" style={{ animationDuration: '2s' }} viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6b8f71]/20" />
+                      <circle cx="50" cy="50" r="47" fill="none" stroke="url(#processingGradient)" strokeWidth="2" strokeLinecap="round" strokeDasharray="80 295" />
+                      <defs>
+                        <linearGradient id="processingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#6b8f71" />
+                          <stop offset="100%" stopColor="#a8c4ad" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </>
                 )}
                 
                 {/* Main button */}
@@ -1071,8 +1090,8 @@ export default function AppDashboard() {
                       <div className="w-4 h-4 bg-white rounded-sm mt-1" />
                     </div>
                   ) : processing ? (
-                    // Processing: show spinner text
-                    <span className="text-gray-400 text-xs">...</span>
+                    // Processing: animated gradient button
+                    <div className="absolute inset-0 rounded-full animate-gradient-flow animate-gradient-pulse" />
                   ) : hasSelection ? (
                     // Selection mode: show edit mic icon (no text, intuitive)
                     <img src="/icons/mic-selected.png" alt="" className="w-14 h-14 object-contain" />
