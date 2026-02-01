@@ -26,13 +26,15 @@ YOUR TASK:
 Transform this raw thought into a clear, actionable plan. The user captured this idea on-the-go — they need concrete next steps they can execute immediately.
 
 RULES:
-1. Start with the SMALLEST possible first step (something doable in 5-15 min)
+1. Start with the SMALLEST possible first step (reduces friction to start)
 2. Each step = ONE clear action (not multiple actions bundled)
 3. Use verbs that imply completion: "Write", "Send", "Create", "Research", "Book"
 4. Avoid vague steps like "Think about...", "Consider...", "Plan..."
-5. 3-7 steps total (enough to make progress, not overwhelming)
+5. Include ALL steps needed — give a complete mental model of what to do
 6. Time estimates: realistic, not optimistic
 7. SAME LANGUAGE as the input
+
+The goal: user sees the plan and instantly knows the FULL path from idea to done.
 
 BAD STEP: "Research options and think about what you want"
 GOOD STEP: "Google '3 best tools for X' and save top 3 links"
