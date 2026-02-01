@@ -150,16 +150,14 @@ export default function AppDashboard() {
   const debateChunksRef = useRef<Blob[]>([]);
   const [recordingTime, setRecordingTime] = useState(0);
   
-  // Edit modal state
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  // Inline edit state (in-place editing, no modals)
+  const [inlineEdit, setInlineEdit] = useState<{ taskId: string; field: 'title' | 'category' | 'date' } | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
+  const inlineInputRef = useRef<HTMLInputElement>(null);
   
   // Voice-first selection state (long-press to select, then mic to edit)
   const [selectedItem, setSelectedItem] = useState<{ type: 'idea' | 'task' | 'action-point'; id: string; index?: number } | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editCategory, setEditCategory] = useState('');
-  const [editDueDate, setEditDueDate] = useState('');
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   
   // Dark mode state
   const [darkMode, setDarkMode] = useState(false);
@@ -611,21 +609,49 @@ export default function AppDashboard() {
     }
   };
 
-  // Edit task functions
-  const openEditModal = (task: Task) => {
-    setEditingTask(task);
-    setEditTitle(task.title);
-    setEditCategory(task.category || 'personal');
-    setEditDueDate(task.due_date || '');
+  // Inline edit functions (in-place, no modals)
+  const startInlineEdit = (task: Task, field: 'title' | 'category' | 'date') => {
+    const value = field === 'title' ? task.title : 
+                  field === 'category' ? (task.category || 'personal') : 
+                  (task.due_date || '');
+    setInlineEdit({ taskId: task.id, field });
+    setInlineEditValue(value);
+    // Auto-focus happens via useEffect
   };
 
-  const closeEditModal = () => {
-    setEditingTask(null);
-    setEditTitle('');
-    setEditCategory('');
-    setEditDueDate('');
-    setShowCategoryDropdown(false);
+  const cancelInlineEdit = () => {
+    setInlineEdit(null);
+    setInlineEditValue('');
   };
+
+  const saveInlineEdit = async (taskId: string, field: 'title' | 'category' | 'date', value: string) => {
+    const updateData: Partial<Task> = {};
+    if (field === 'title') updateData.title = value;
+    if (field === 'category') updateData.category = value;
+    if (field === 'date') updateData.due_date = value || undefined;
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(field === 'date' ? { due_date: value || null } : updateData)
+      .eq('id', taskId);
+
+    if (!error) {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, ...updateData } : t
+        )
+      );
+    }
+    cancelInlineEdit();
+  };
+
+  // Auto-focus inline input when editing title
+  useEffect(() => {
+    if (inlineEdit?.field === 'title' && inlineInputRef.current) {
+      inlineInputRef.current.focus();
+      inlineInputRef.current.select();
+    }
+  }, [inlineEdit]);
 
   // Action Plan functions
   // Inline action plan generation (no modal)
@@ -885,30 +911,6 @@ export default function AppDashboard() {
       document.body.style.overflow = '';
     };
   }, [editingTask]);
-
-  const saveEditedTask = async () => {
-    if (!editingTask) return;
-
-    const { error } = await supabase
-      .from('tasks')
-      .update({
-        title: editTitle,
-        category: editCategory,
-        due_date: editDueDate || null,
-      })
-      .eq('id', editingTask.id);
-
-    if (!error) {
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === editingTask.id
-            ? { ...t, title: editTitle, category: editCategory, due_date: editDueDate || undefined }
-            : t
-        )
-      );
-      closeEditModal();
-    }
-  };
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent, taskId: string) => {
@@ -1183,97 +1185,6 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Edit Modal */}
-        {editingTask && (
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
-            onClick={closeEditModal}
-          >
-            <div 
-              className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl my-auto max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Editar Tarea</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Título</label>
-                  <input
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-[#6b8f71] focus:ring-2 focus:ring-[#6b8f71]/20 outline-none transition-all"
-                  />
-                </div>
-                
-                <div className="relative">
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Categoría</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-[#6b8f71] focus:ring-2 focus:ring-[#6b8f71]/20 outline-none transition-all flex items-center gap-3 text-left"
-                  >
-                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                      <CategoryIcon category={editCategory || 'personal'} size={32} />
-                    </div>
-                    <span className="flex-1">{(editCategory || 'personal').charAt(0).toUpperCase() + (editCategory || 'personal').slice(1)}</span>
-                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {showCategoryDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-xl z-10 overflow-hidden max-h-60 overflow-y-auto">
-                      {categories.map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => { setEditCategory(cat); setShowCategoryDropdown(false); }}
-                          className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors ${editCategory === cat ? 'bg-green-50 dark:bg-green-900/30' : ''}`}
-                        >
-                          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                            <CategoryIcon category={cat} size={32} />
-                          </div>
-                          <span className="text-gray-900 dark:text-white">{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
-                          {editCategory === cat && (
-                            <svg className="w-4 h-4 text-[#6b8f71] ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">Fecha límite</label>
-                  <input
-                    type="date"
-                    value={editDueDate}
-                    onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-[#6b8f71] focus:ring-2 focus:ring-[#6b8f71]/20 outline-none transition-all"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={saveEditedTask}
-                  className="flex-1 py-3 rounded-xl font-semibold text-white bg-[#6b8f71] hover:bg-[#5a7a60] transition-all"
-                >
-                  Guardar
-                </button>
-                <button
-                  onClick={closeEditModal}
-                  className="px-6 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Extracted tasks and ideas confirmation */}
         {showExtracted && (extractedTasks.length > 0 || extractedIdeas.length > 0) && (
           <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100/50 dark:border-gray-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] animate-fade-in">
@@ -1508,16 +1419,15 @@ export default function AppDashboard() {
                                     )}
                                   </div>
                                   
-                                  {/* Task card - long press to select */}
+                                  {/* Task card - long press to select, tap to edit inline */}
                                   <div 
-                                    onTouchStart={() => handleLongPressStart('action-point', idea.id, index)}
+                                    onTouchStart={() => !inlineEdit && handleLongPressStart('action-point', idea.id, index)}
                                     onTouchEnd={handleLongPressEnd}
                                     onTouchCancel={handleLongPressEnd}
-                                    onMouseDown={() => handleLongPressStart('action-point', idea.id, index)}
+                                    onMouseDown={() => !inlineEdit && handleLongPressStart('action-point', idea.id, index)}
                                     onMouseUp={handleLongPressEnd}
                                     onMouseLeave={handleLongPressEnd}
-                                    onClick={() => !isStepSelected && openEditModal(task)}
-                                    className={`flex-1 ml-3 p-3 rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${
+                                    className={`flex-1 ml-3 p-3 rounded-xl transition-all hover:shadow-md border-2 ${
                                       isStepSelected
                                         ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-[#6b8f71]/10'
                                         : task.completed 
@@ -1525,9 +1435,28 @@ export default function AppDashboard() {
                                           : `${colors.cardBg} ${colors.cardBgDark} border-gray-100/50 dark:border-gray-700/50`
                                     }`}
                                   >
-                                    <p className={`font-medium text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
-                                      {task.title}
-                                    </p>
+                                    {inlineEdit?.taskId === task.id && inlineEdit?.field === 'title' ? (
+                                      <input
+                                        ref={inlineInputRef}
+                                        type="text"
+                                        value={inlineEditValue}
+                                        onChange={(e) => setInlineEditValue(e.target.value)}
+                                        onBlur={() => saveInlineEdit(task.id, 'title', inlineEditValue)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') saveInlineEdit(task.id, 'title', inlineEditValue);
+                                          if (e.key === 'Escape') cancelInlineEdit();
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full font-medium text-sm text-gray-900 dark:text-white bg-transparent border-b-2 border-[#6b8f71] outline-none animate-fade-in"
+                                      />
+                                    ) : (
+                                      <p 
+                                        onClick={() => !isStepSelected && startInlineEdit(task, 'title')}
+                                        className={`font-medium text-sm cursor-text hover:text-[#6b8f71] transition-colors ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}
+                                      >
+                                        {task.title}
+                                      </p>
+                                    )}
                                   </div>
                                   
                                   {/* Complete button or cancel selection */}
@@ -1595,50 +1524,128 @@ export default function AppDashboard() {
                       
                       <div
                         onTouchStart={(e) => {
-                          if (!isTaskSelected) {
+                          if (!isTaskSelected && !inlineEdit) {
                             handleTouchStart(e, task.id);
                             handleLongPressStart('task', task.id);
                           }
                         }}
-                        onTouchMove={(e) => !isTaskSelected && handleTouchMove(e)}
+                        onTouchMove={(e) => !isTaskSelected && !inlineEdit && handleTouchMove(e)}
                         onTouchEnd={() => {
                           handleLongPressEnd();
-                          if (!isTaskSelected) handleTouchEnd(task);
+                          if (!isTaskSelected && !inlineEdit) handleTouchEnd(task);
                         }}
                         onTouchCancel={handleLongPressEnd}
-                        onMouseDown={() => handleLongPressStart('task', task.id)}
+                        onMouseDown={() => !inlineEdit && handleLongPressStart('task', task.id)}
                         onMouseUp={handleLongPressEnd}
                         onMouseLeave={handleLongPressEnd}
-                        onClick={() => !isBeingSwiped && !isTaskSelected && openEditModal(task)}
                         style={{
                           transform: isBeingSwiped && !isTaskSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                           transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
                         }}
-                        className={`rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 flex items-center gap-4 group transition-all cursor-pointer ${
+                        className={`rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 flex items-center gap-4 group transition-all ${
                           isTaskSelected
                             ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-[#6b8f71]/10 scale-[1.02]'
                             : `${colors.cardBg} ${colors.cardBgDark} border-gray-100/50 dark:border-gray-700/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]`
                         }`}
                       >
-                        <div
-                          onClick={(e) => { e.stopPropagation(); if (!isTaskSelected) cyclePriority(task.id, priority); }}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden ${
-                            isTaskSelected 
-                              ? 'bg-[#6b8f71] scale-110 ring-2 ring-[#6b8f71]/30' 
-                              : `bg-white/80 ring-2 ${colors.ring} hover:scale-105 active:scale-95`
-                          }`}
-                        >
-                          {isTaskSelected ? (
-                            <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
-                          ) : (
-                            <CategoryIcon category={task.category || 'errands'} size={36} />
+                        {/* Category icon - tap to change category */}
+                        <div className="relative">
+                          <div
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if (!isTaskSelected) {
+                                if (inlineEdit?.taskId === task.id && inlineEdit?.field === 'category') {
+                                  cancelInlineEdit();
+                                } else {
+                                  startInlineEdit(task, 'category');
+                                }
+                              }
+                            }}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden cursor-pointer ${
+                              isTaskSelected 
+                                ? 'bg-[#6b8f71] scale-110 ring-2 ring-[#6b8f71]/30' 
+                                : `bg-white/80 ring-2 ${colors.ring} hover:scale-105 active:scale-95`
+                            }`}
+                          >
+                            {isTaskSelected ? (
+                              <img src="/icons/mic-selected.png" alt="" className="w-8 h-8 object-contain" />
+                            ) : (
+                              <CategoryIcon category={task.category || 'errands'} size={36} />
+                            )}
+                          </div>
+                          {/* Inline category dropdown */}
+                          {inlineEdit?.taskId === task.id && inlineEdit?.field === 'category' && (
+                            <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl z-50 overflow-hidden animate-fade-in">
+                              {categories.map((cat) => (
+                                <button
+                                  key={cat}
+                                  onClick={(e) => { 
+                                    e.stopPropagation();
+                                    saveInlineEdit(task.id, 'category', cat);
+                                  }}
+                                  className={`w-full px-3 py-2 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${task.category === cat ? 'bg-[#6b8f71]/10' : ''}`}
+                                >
+                                  <div className="w-8 h-8 rounded-lg overflow-hidden">
+                                    <CategoryIcon category={cat} size={32} />
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
                           )}
                         </div>
+                        {/* Title and date - tap each to edit inline */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
-                          <p className="text-sm text-gray-400">
-                            {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
-                          </p>
+                          {/* Title - inline editable */}
+                          {inlineEdit?.taskId === task.id && inlineEdit?.field === 'title' ? (
+                            <input
+                              ref={inlineInputRef}
+                              type="text"
+                              value={inlineEditValue}
+                              onChange={(e) => setInlineEditValue(e.target.value)}
+                              onBlur={() => saveInlineEdit(task.id, 'title', inlineEditValue)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveInlineEdit(task.id, 'title', inlineEditValue);
+                                if (e.key === 'Escape') cancelInlineEdit();
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full font-medium text-gray-900 dark:text-white bg-transparent border-b-2 border-[#6b8f71] outline-none py-1 animate-fade-in"
+                            />
+                          ) : (
+                            <p 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (!isTaskSelected && !isBeingSwiped) startInlineEdit(task, 'title'); 
+                              }}
+                              className="font-medium text-gray-900 dark:text-white truncate cursor-text hover:text-[#6b8f71] transition-colors"
+                            >
+                              {task.title}
+                            </p>
+                          )}
+                          {/* Date - inline editable */}
+                          {inlineEdit?.taskId === task.id && inlineEdit?.field === 'date' ? (
+                            <input
+                              type="date"
+                              value={inlineEditValue}
+                              onChange={(e) => {
+                                setInlineEditValue(e.target.value);
+                                saveInlineEdit(task.id, 'date', e.target.value);
+                              }}
+                              onBlur={() => cancelInlineEdit()}
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                              className="text-sm text-gray-600 dark:text-gray-300 bg-transparent border-b-2 border-[#6b8f71] outline-none py-1 animate-fade-in"
+                            />
+                          ) : (
+                            <p 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (!isTaskSelected && !isBeingSwiped) startInlineEdit(task, 'date'); 
+                              }}
+                              className="text-sm text-gray-400 cursor-text hover:text-[#6b8f71] transition-colors"
+                            >
+                              {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
+                            </p>
+                          )}
                         </div>
                         {isTaskSelected ? (
                           <button
