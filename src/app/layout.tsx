@@ -3,25 +3,53 @@ import "./globals.css";
 import { ServiceWorkerRegistration } from "./sw-register";
 
 export const metadata: Metadata = {
-  title: "Taskflow — Capture ideas in 2 seconds",
-  description: "One tap. Speak. Done. Your thoughts become tasks before you forget them.",
-  keywords: ["tasks", "voice", "productivity", "capture", "ideas"],
+  title: "Taskflow — Voice to Task in 2 Seconds",
+  description: "Stop losing ideas. One tap, speak, done. AI transforms your voice into organized tasks before you forget them. Built for founders, creators, and overthinkers.",
+  keywords: ["voice to text", "task management", "productivity app", "voice notes", "AI tasks", "capture ideas", "ADHD productivity", "voice recorder", "task automation"],
+  authors: [{ name: "Ramon Prieto", url: "https://x.com/RamonPrietoX" }],
+  creator: "Ramon Prieto",
+  publisher: "Taskflow",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
   manifest: "/manifest.json",
+  metadataBase: new URL("https://taskflow-lyart-beta.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Taskflow",
   },
   openGraph: {
-    title: "Taskflow — Capture ideas in 2 seconds",
-    description: "One tap. Speak. Done. Your thoughts become tasks before you forget them.",
+    title: "Taskflow — Voice to Task in 2 Seconds",
+    description: "Stop losing ideas. One tap, speak, done. AI transforms your voice into organized tasks before you forget them.",
+    url: "https://taskflow-lyart-beta.vercel.app",
+    siteName: "Taskflow",
+    locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Taskflow — Voice to Task in 2 Seconds",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Taskflow — Capture ideas in 2 seconds",
-    description: "One tap. Speak. Done. Your thoughts become tasks before you forget them.",
+    title: "Taskflow — Voice to Task in 2 Seconds",
+    description: "Stop losing ideas. One tap, speak, done. AI transforms your voice into organized tasks.",
     creator: "@RamonPrietoX",
+    site: "@RamonPrietoX",
+    images: ["/og-image.png"],
   },
 };
 

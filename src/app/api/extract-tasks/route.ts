@@ -21,46 +21,55 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are a Brain Dump task extraction assistant. Given a voice transcript (which may be a long monologue with multiple ideas), extract ALL actionable tasks with rich metadata.
+          content: `You are a Brain Dump assistant that extracts BOTH actionable tasks AND creative ideas from voice transcripts.
 
 Today is ${dayOfWeek}, ${today}.
 
-IMPORTANT: Detect the language of the input and write task titles in THE SAME LANGUAGE.
-- If input is in Spanish → titles in Spanish
-- If input is in English → titles in English
-- If input is in any other language → titles in that language
+IMPORTANT: Detect the language of the input and write in THE SAME LANGUAGE.
 
-For EACH task, extract:
-1. **title**: Clear, concise action item IN THE SAME LANGUAGE as the input (clean up filler words like "um", "uh", "like", "eh", "o sea")
-2. **category**: Auto-detect from content. One of: work, personal, health, finance, home, social, learning, errands
-3. **due_date**: Parse natural language dates (in any language). Examples:
-   - "tomorrow" / "mañana" → tomorrow's date
-   - "next friday" / "el viernes que viene" → calculate the date
-   - "before the weekend" / "antes del fin de semana" → Friday's date
-   - "this week" / "esta semana" → end of this week
-   - If no date mentioned → null
-4. **priority**: Detect urgency from language:
-   - "urgent", "ASAP", "critical", "need to", "must", "urgente", "tengo que", "debo" → high
-   - "should", "important", "debería", "importante" → medium  
-   - "when I can", "eventually", "maybe", "cuando pueda", "eventualmente", "quizás" → low
-   - Default → medium
+For each item in the transcript, determine if it's a TASK or an IDEA:
+
+**TASK** = Something actionable that needs to be done
+- "I need to call mom" → TASK
+- "Remember to buy groceries" → TASK
+- "Finish the report by Friday" → TASK
+
+**IDEA** = A thought, concept, or creative notion to explore later
+- "What if we built an app that..." → IDEA
+- "It would be cool to try..." → IDEA
+- "I've been thinking about starting..." → IDEA
+- "Maybe we could..." → IDEA
+
+For TASKS, extract:
+1. **title**: Clear, concise action item (clean up filler words)
+2. **type**: "task"
+3. **category**: work, personal, health, finance, home, social, learning, errands
+4. **due_date**: Parse natural language dates or null
+5. **priority**: high, medium, low (default: medium)
+
+For IDEAS, extract:
+1. **title**: The core concept/thought
+2. **type**: "idea"
+3. **category**: business, product, content, lifestyle, learning, creative, other
+4. **due_date**: null (ideas don't have due dates)
+5. **priority**: Based on excitement/potential (high = "this could be huge", medium = interesting, low = random thought)
 
 Rules:
-- Extract EVERY distinct task, even from long rambling monologues
-- If someone mentions the same thing twice, only include it once
-- Separate compound tasks: "call mom and buy groceries" / "llamar a mamá y comprar comida" → 2 tasks
-- Clean up the language while preserving intent
-- Be generous with extraction - it's better to extract too many than miss something
-- ALWAYS match the input language for task titles
+- Extract EVERY distinct item from the transcript
+- Separate compound statements into multiple items
+- Clean up filler words (um, uh, like, eh, o sea)
+- ALWAYS match the input language
+- When uncertain, classify as IDEA (better to capture than lose)
 
 Return JSON format:
 {
-  "tasks": [
+  "items": [
     {
-      "title": "string (in same language as input)",
-      "category": "work|personal|health|finance|home|social|learning|errands",
-      "due_date": "YYYY-MM-DD" or null,
-      "priority": "high|medium|low"
+      "title": "string",
+      "type": "task" | "idea",
+      "category": "string",
+      "due_date": "YYYY-MM-DD" | null,
+      "priority": "high" | "medium" | "low"
     }
   ]
 }`,
@@ -76,33 +85,22 @@ Return JSON format:
 
     const content = completion.choices[0].message.content;
     if (!content) {
-      return NextResponse.json({ tasks: [] });
+      return NextResponse.json({ items: [], tasks: [] });
     }
 
     const parsed = JSON.parse(content);
-    const tasks = parsed.tasks || [];
+    const items = parsed.items || [];
+    
+    // Separate tasks and ideas for backward compatibility
+    const tasks = items.filter((item: any) => item.type === 'task');
+    const ideas = items.filter((item: any) => item.type === 'idea');
 
-    return NextResponse.json({ tasks });
+    return NextResponse.json({ items, tasks, ideas });
   } catch (error) {
-    console.error('Task extraction error:', error);
+    console.error('Extraction error:', error);
     return NextResponse.json(
-      { error: 'Failed to extract tasks' },
+      { error: 'Failed to extract items' },
       { status: 500 }
     );
   }
-}
-
-// Helper to get tomorrow's date in prompt (for example)
-function getNextDay(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().split('T')[0];
-}
-
-function getNextSaturday(): string {
-  const d = new Date();
-  const day = d.getDay();
-  const daysUntilSaturday = (6 - day + 7) % 7 || 7;
-  d.setDate(d.getDate() + daysUntilSaturday);
-  return d.toISOString().split('T')[0];
 }

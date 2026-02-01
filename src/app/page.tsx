@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import VideoShowcase from './components/VideoShowcase';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -51,14 +52,14 @@ export default function LandingPage() {
           
           {/* Headline */}
           <h1 className="text-[2.75rem] sm:text-[3.5rem] md:text-[4rem] font-light leading-[1.1] mb-8 tracking-[-0.02em] text-[#f0f0f0]">
-            Thoughts fade.
+            De idea fugaz
             <br />
-            <span className="text-[#6b8f71]">Capture them.</span>
+            <span className="text-[#6b8f71]">a acción real.</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg sm:text-xl text-[#777] mb-14 max-w-md mx-auto leading-relaxed font-light">
-            Voice to task, in seconds. No typing, no friction — just speak.
+            Captura tus pensamientos en 2 segundos. AI los convierte en el plan de acción para hacerlos realidad.
           </p>
 
           {/* CTA */}
@@ -93,10 +94,17 @@ export default function LandingPage() {
           {/* Testimonial */}
           <div className="mt-12 max-w-md mx-auto">
             <p className="text-[#666] text-sm italic leading-relaxed">
-              "Captured 12 ideas on my morning walk yesterday. Before Taskflow, I'd have forgotten 11."
+              "Ayer capturé 12 ideas en mi paseo matutino. Antes de Taskflow, habría olvidado 11."
             </p>
-            <p className="text-[#555] text-xs mt-3">— Early beta user</p>
+            <p className="text-[#555] text-xs mt-3">— Usuario beta</p>
           </div>
+        </div>
+      </section>
+
+      {/* Video Showcase */}
+      <section className="relative z-10 px-8 pb-28">
+        <div className="max-w-md mx-auto">
+          <VideoShowcase />
         </div>
       </section>
 
@@ -117,24 +125,24 @@ export default function LandingPage() {
               <div className="w-12 h-12 mx-auto mb-6 rounded-full border border-[#2a2a2a] flex items-center justify-center">
                 <span className="text-[#6b8f71] text-sm font-light">01</span>
               </div>
-              <h3 className="text-sm font-medium mb-3 text-[#c8c8c8]">Speak</h3>
-              <p className="text-[#666] text-sm leading-relaxed">Tap once, say everything on your mind.</p>
+              <h3 className="text-sm font-medium mb-3 text-[#c8c8c8]">Captura</h3>
+              <p className="text-[#666] text-sm leading-relaxed">Un tap, di todo lo que tengas en mente.</p>
             </div>
             
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-6 rounded-full border border-[#2a2a2a] flex items-center justify-center">
                 <span className="text-[#6b8f71] text-sm font-light">02</span>
               </div>
-              <h3 className="text-sm font-medium mb-3 text-[#c8c8c8]">Process</h3>
-              <p className="text-[#666] text-sm leading-relaxed">AI extracts tasks, assigns priority and context.</p>
+              <h3 className="text-sm font-medium mb-3 text-[#c8c8c8]">Procesa</h3>
+              <p className="text-[#666] text-sm leading-relaxed">AI separa tareas de ideas y crea tu plan de acción.</p>
             </div>
             
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-6 rounded-full border border-[#2a2a2a] flex items-center justify-center">
                 <span className="text-[#6b8f71] text-sm font-light">03</span>
               </div>
-              <h3 className="text-sm font-medium mb-3 text-[#c8c8c8]">Done</h3>
-              <p className="text-[#666] text-sm leading-relaxed">Your tasks, organized. Ready to complete.</p>
+              <h3 className="text-sm font-medium mb-3 text-[#c8c8c8]">Ejecuta</h3>
+              <p className="text-[#666] text-sm leading-relaxed">Tus ideas convertidas en acciones concretas.</p>
             </div>
           </div>
         </div>
@@ -149,11 +157,14 @@ export default function LandingPage() {
       <section className="relative z-10 px-8 py-28">
         <div className="max-w-xl mx-auto text-center">
           <p className="text-[#666] text-lg leading-relaxed mb-8 font-light">
-            Ideas arrive at inconvenient moments — walking, showering, half-asleep. 
-            By the time you find an app, they're gone.
+            Las ideas llegan en los peores momentos — caminando, en la ducha, medio dormido. 
+            Cuando encuentras una app, ya se fueron.
+          </p>
+          <p className="text-[#777] text-base mb-2 font-light">
+            Una idea sin ejecución es solo un sueño que olvidaste.
           </p>
           <p className="text-[#888] text-sm">
-            Average capture time: <span className="text-[#6b8f71]">2.3 seconds</span>
+            Tiempo de captura: <span className="text-[#6b8f71]">2 segundos</span>
           </p>
         </div>
       </section>
@@ -182,7 +193,7 @@ export default function LandingPage() {
       <section className="relative z-10 px-8 py-28">
         <div className="max-w-sm mx-auto text-center">
           <h2 className="text-2xl font-light mb-10 text-[#c8c8c8]">
-            Stop losing thoughts.
+            Deja de perder ideas.<br/>Empieza a ejecutarlas.
           </h2>
           {!submitted ? (
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">

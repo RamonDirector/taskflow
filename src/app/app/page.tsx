@@ -14,6 +14,9 @@ interface Task {
   category?: string;
   due_date?: string;
   priority?: 'high' | 'medium' | 'low';
+  type?: 'task' | 'idea';
+  parent_idea_id?: string;
+  order_index?: number;
 }
 
 interface ExtractedTask {
@@ -21,6 +24,18 @@ interface ExtractedTask {
   category: string;
   due_date: string | null;
   priority: 'high' | 'medium' | 'low';
+}
+
+interface ExtractedIdea {
+  title: string;
+  category: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface ActionPoint {
+  title: string;
+  time_estimate: string;
+  category: string;
 }
 
 const categoryIcons: Record<string, string> = {
@@ -120,12 +135,32 @@ export default function AppDashboard() {
   const [transcript, setTranscript] = useState('');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
+  const [extractedIdeas, setExtractedIdeas] = useState<ExtractedIdea[]>([]);
   const [showExtracted, setShowExtracted] = useState(false);
   const [error, setError] = useState('');
+  
+  // Action Plan modal state
+  const [actionPlanIdea, setActionPlanIdea] = useState<Task | null>(null);
+  const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]);
+  const [planAnimationKey, setPlanAnimationKey] = useState(0);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+  
+  // Debate/Chat state
+  const [debateMessages, setDebateMessages] = useState<{role: 'user' | 'assistant'; content: string}[]>([]);
+  const [debateInput, setDebateInput] = useState('');
+  const [debating, setDebating] = useState(false);
+  const debateChatRef = useRef<HTMLDivElement>(null);
+  const [debateRecording, setDebateRecording] = useState(false);
+  const debateMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const debateChunksRef = useRef<Blob[]>([]);
   const [recordingTime, setRecordingTime] = useState(0);
   
   // Edit modal state
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  
+  // Voice-first selection state (long-press to select, then mic to edit)
+  const [selectedItem, setSelectedItem] = useState<{ type: 'idea' | 'task' | 'action-point'; id: string; index?: number } | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
@@ -319,24 +354,36 @@ export default function AppDashboard() {
       const { text } = await transcribeRes.json();
       setTranscript(text);
 
-      setProcessingStep('Extrayendo tareas...');
+      // Check if we have a selected item for voice editing
+      if (selectedItem) {
+        setProcessingStep('Editando...');
+        await processVoiceEdit(text);
+        setProcessing(false);
+        setProcessingStep('');
+        return;
+      }
+
+      // Normal flow: extract new tasks/ideas
+      setProcessingStep('Procesando...');
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
 
-      if (!extractRes.ok) throw new Error('Task extraction failed');
-      const { tasks: extracted } = await extractRes.json();
+      if (!extractRes.ok) throw new Error('Extraction failed');
+      const { tasks: extractedTasksResult, ideas: extractedIdeasResult } = await extractRes.json();
 
-      if (extracted.length === 0) {
-        setError('No se encontraron tareas. Intenta ser más específico.');
+      if ((!extractedTasksResult || extractedTasksResult.length === 0) && 
+          (!extractedIdeasResult || extractedIdeasResult.length === 0)) {
+        setError('No se encontraron tareas ni ideas. Intenta ser más específico.');
         setProcessing(false);
         setProcessingStep('');
         return;
       }
 
-      setExtractedTasks(extracted);
+      setExtractedTasks(extractedTasksResult || []);
+      setExtractedIdeas(extractedIdeasResult || []);
       setShowExtracted(true);
       setProcessingStep('');
     } catch {
@@ -345,28 +392,174 @@ export default function AppDashboard() {
     setProcessing(false);
   };
 
-  const saveTasks = async (tasksToSave: ExtractedTask[]) => {
+  // Process voice edit for selected items
+  const processVoiceEdit = async (voiceInput: string) => {
+    if (!selectedItem) return;
+
+    try {
+      let context: Record<string, unknown> = {};
+
+      switch (selectedItem.type) {
+        case 'idea': {
+          // Find the idea and its current plan
+          const idea = tasks.find(t => t.id === selectedItem.id);
+          if (!idea) return;
+          
+          // Get children tasks (action points) for this idea
+          const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id);
+          context = {
+            ideaTitle: idea.title,
+            currentPlan: childTasks.map(t => ({
+              title: t.title,
+              time_estimate: '30min',
+              category: t.category || 'work'
+            }))
+          };
+          break;
+        }
+        case 'action-point': {
+          // Find the parent idea and the specific step
+          const parentIdea = tasks.find(t => t.id === selectedItem.id);
+          const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id);
+          const step = childTasks[selectedItem.index || 0];
+          if (!parentIdea || !step) return;
+          
+          context = {
+            ideaTitle: parentIdea.title,
+            stepTitle: step.title,
+            stepIndex: selectedItem.index || 0,
+            totalSteps: childTasks.length
+          };
+          break;
+        }
+        case 'task': {
+          const task = tasks.find(t => t.id === selectedItem.id);
+          if (!task) return;
+          
+          context = {
+            taskTitle: task.title,
+            category: task.category || 'personal'
+          };
+          break;
+        }
+      }
+
+      const res = await fetch('/api/voice-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          editType: selectedItem.type,
+          voiceInput,
+          context
+        }),
+      });
+
+      if (!res.ok) throw new Error('Voice edit failed');
+      const { editType, result } = await res.json();
+
+      // Apply the edit based on type
+      switch (editType) {
+        case 'idea': {
+          // Delete old child tasks and create new ones
+          const oldChildren = tasks.filter(t => t.parent_idea_id === selectedItem.id);
+          for (const child of oldChildren) {
+            await supabase.from('tasks').delete().eq('id', child.id);
+          }
+          
+          // Insert new action points
+          if (result.action_points && user) {
+            const rows = result.action_points.map((point: ActionPoint, index: number) => ({
+              user_id: user.id,
+              title: point.title,
+              category: point.category,
+              due_date: null,
+              priority: 'medium' as const,
+              completed: false,
+              type: 'task',
+              parent_idea_id: selectedItem.id,
+              order_index: index,
+            }));
+            await supabase.from('tasks').insert(rows);
+          }
+          playTaskCreatedSound();
+          break;
+        }
+        case 'action-point': {
+          // Update the specific child task
+          const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
+            .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+          const taskToUpdate = childTasks[selectedItem.index || 0];
+          if (taskToUpdate) {
+            await supabase.from('tasks').update({
+              title: result.title,
+              category: result.category,
+            }).eq('id', taskToUpdate.id);
+          }
+          break;
+        }
+        case 'task': {
+          // Update the standalone task
+          await supabase.from('tasks').update({
+            title: result.title,
+            category: result.category,
+            due_date: result.due_date,
+            priority: result.priority,
+          }).eq('id', selectedItem.id);
+          break;
+        }
+      }
+
+      // Refresh tasks and clear selection
+      await fetchTasks();
+      setSelectedItem(null);
+      setTranscript('');
+
+    } catch (err) {
+      console.error('Voice edit error:', err);
+      setError('Error al editar. Inténtalo de nuevo.');
+    }
+  };
+
+  const saveAllItems = async () => {
     if (!user) return;
 
-    const rows = tasksToSave.map((task) => ({
+    // Save tasks
+    const taskRows = extractedTasks.map((task) => ({
       user_id: user.id,
       title: task.title,
       category: task.category,
       due_date: task.due_date,
       priority: task.priority,
       completed: false,
+      type: 'task',
     }));
 
-    const { error } = await supabase.from('tasks').insert(rows);
+    // Save ideas
+    const ideaRows = extractedIdeas.map((idea) => ({
+      user_id: user.id,
+      title: idea.title,
+      category: idea.category,
+      due_date: null,
+      priority: idea.priority,
+      completed: false,
+      type: 'idea',
+    }));
+
+    const allRows = [...taskRows, ...ideaRows];
+    
+    if (allRows.length === 0) return;
+
+    const { error } = await supabase.from('tasks').insert(allRows);
 
     if (error) {
-      setError('Error al guardar las tareas. Inténtalo de nuevo.');
+      setError('Error al guardar. Inténtalo de nuevo.');
       return;
     }
 
     playTaskCreatedSound();
     setShowExtracted(false);
     setExtractedTasks([]);
+    setExtractedIdeas([]);
     setTranscript('');
     setLiveTranscript('');
     await fetchTasks();
@@ -432,9 +625,201 @@ export default function AppDashboard() {
     setShowCategoryDropdown(false);
   };
 
+  // Action Plan functions
+  const generateActionPlan = async (idea: Task) => {
+    setActionPlanIdea(idea);
+    setGeneratingPlan(true);
+    setActionPoints([]);
+    setPlanAnimationKey(0); // Reset animation
+
+    try {
+      const res = await fetch('/api/action-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idea: idea.title }),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate plan');
+      const { action_points } = await res.json();
+      setActionPoints(action_points || []);
+    } catch {
+      setError('Error al generar el plan. Inténtalo de nuevo.');
+      setActionPlanIdea(null);
+    }
+    setGeneratingPlan(false);
+  };
+
+  const deployActionPlan = async () => {
+    if (!user || !actionPlanIdea || actionPoints.length === 0) return;
+
+    // Convert action points to tasks linked to parent idea
+    const rows = actionPoints.map((point, index) => ({
+      user_id: user.id,
+      title: point.title,
+      category: point.category,
+      due_date: null,
+      priority: 'medium' as const,
+      completed: false,
+      type: 'task',
+      parent_idea_id: actionPlanIdea.id,
+      order_index: index,
+    }));
+
+    const { error } = await supabase.from('tasks').insert(rows);
+
+    if (error) {
+      setError('Error al crear las tareas.');
+      return;
+    }
+
+    // Keep idea active (not completed) - it's the parent of the chain
+    // await supabase.from('tasks').update({ completed: true }).eq('id', actionPlanIdea.id);
+
+    playTaskCreatedSound();
+    setActionPlanIdea(null);
+    setActionPoints([]);
+    setDebateMessages([]);
+    await fetchTasks();
+  };
+
+  const closeActionPlanModal = () => {
+    setActionPlanIdea(null);
+    setActionPoints([]);
+    setDebateMessages([]);
+    setDebateInput('');
+  };
+
+  const sendDebateMessage = async () => {
+    if (!debateInput.trim() || !actionPlanIdea || debating) return;
+
+    const userMessage = debateInput.trim();
+    setDebateInput('');
+    setDebating(true);
+
+    // Add user message to chat
+    const newMessages = [...debateMessages, { role: 'user' as const, content: userMessage }];
+    setDebateMessages(newMessages);
+
+    try {
+      const res = await fetch('/api/debate-idea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea: actionPlanIdea.title,
+          currentPlan: actionPoints,
+          messages: debateMessages,
+          userMessage,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to debate');
+      const { response, action_points, plan_changed } = await res.json();
+
+      // Add assistant response
+      setDebateMessages([...newMessages, { role: 'assistant', content: response }]);
+
+      // Update plan if changed - trigger re-animation
+      if (plan_changed && action_points) {
+        setActionPoints(action_points);
+        setPlanAnimationKey(k => k + 1);
+      }
+
+      // Scroll to bottom of chat
+      setTimeout(() => {
+        debateChatRef.current?.scrollTo({ top: debateChatRef.current.scrollHeight, behavior: 'smooth' });
+      }, 100);
+    } catch {
+      setDebateMessages([...newMessages, { role: 'assistant', content: 'Error al procesar. Intenta de nuevo.' }]);
+    }
+    setDebating(false);
+  };
+
+  const startDebateRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm',
+      });
+
+      debateChunksRef.current = [];
+      debateMediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          debateChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        
+        // Transcribe and send
+        const audioBlob = new Blob(debateChunksRef.current, { type: 'audio/webm' });
+        setDebating(true);
+        
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+          
+          const transcribeRes = await fetch('/api/transcribe', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (transcribeRes.ok) {
+            const { text } = await transcribeRes.json();
+            if (text && actionPlanIdea) {
+              // Add user message and send directly
+              const newMessages = [...debateMessages, { role: 'user' as const, content: text }];
+              setDebateMessages(newMessages);
+              
+              // Call debate API
+              const res = await fetch('/api/debate-idea', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  idea: actionPlanIdea.title,
+                  currentPlan: actionPoints,
+                  messages: debateMessages,
+                  userMessage: text,
+                }),
+              });
+              
+              if (res.ok) {
+                const { response, action_points, plan_changed } = await res.json();
+                setDebateMessages([...newMessages, { role: 'assistant', content: response }]);
+                if (plan_changed && action_points) {
+                  setActionPoints(action_points);
+                  setPlanAnimationKey(k => k + 1);
+                }
+              }
+            }
+          }
+        } catch {
+          setError('Error al transcribir');
+        }
+        setDebating(false);
+      };
+
+      mediaRecorder.start(250);
+      setDebateRecording(true);
+    } catch {
+      setError('No se pudo acceder al micrófono');
+    }
+  };
+
+  const stopDebateRecording = () => {
+    if (debateMediaRecorderRef.current && debateMediaRecorderRef.current.state !== 'inactive') {
+      debateMediaRecorderRef.current.stop();
+    }
+    setDebateRecording(false);
+  };
+
   // Lock body scroll when modal is open
   useEffect(() => {
-    if (editingTask) {
+    if (editingTask || actionPlanIdea) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -490,6 +875,26 @@ export default function AppDashboard() {
     }
     setSwipingTaskId(null);
     setSwipeOffset(0);
+  };
+
+  // Long-press handlers for voice-first selection
+  const handleLongPressStart = (type: 'idea' | 'task' | 'action-point', id: string, index?: number) => {
+    longPressTimer.current = setTimeout(() => {
+      setSelectedItem({ type, id, index });
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 500); // 500ms for long press
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedItem(null);
   };
 
   const removeExtractedTask = (index: number) => {
@@ -587,7 +992,7 @@ export default function AppDashboard() {
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
-        {/* Hero Record Button with Progress Ring */}
+        {/* Hero Record Button with Progress Ring - INLINE RECORDING */}
         <div className="flex flex-col items-center py-8 mb-4">
           {(() => {
             const progressColors = {
@@ -597,16 +1002,20 @@ export default function AppDashboard() {
             };
             const colors = progressColors[stats.dominantPriority as keyof typeof progressColors] || progressColors.low;
             const progress = stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0;
-            const showProgress = tasks.length > 0 && showStats;
+            const showProgress = tasks.length > 0 && showStats && !recording && !processing && !selectedItem;
+            const hasSelection = !!selectedItem;
             
             return (
               <div className="relative">
-                {/* Progress ring around mic button */}
+                {/* Selection indicator ring */}
+                {hasSelection && !recording && !processing && (
+                  <div className="absolute inset-[-8px] rounded-full border-3 border-[#6b8f71] animate-pulse" />
+                )}
+                
+                {/* Progress ring - normal state (hidden when selection active) */}
                 {showProgress && (
                   <svg className="absolute inset-[-8px] w-[calc(100%+16px)] h-[calc(100%+16px)] -rotate-90" viewBox="0 0 100 100">
-                    {/* Background track */}
                     <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200/50 dark:text-gray-700/50" />
-                    {/* Progress arc */}
                     <circle cx="50" cy="50" r="47" fill="none" stroke={`url(#micProgressGradient)`} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${progress * 295} 295`} className="transition-all duration-700 ease-out" />
                     <defs>
                       <linearGradient id="micProgressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -616,23 +1025,93 @@ export default function AppDashboard() {
                     </defs>
                   </svg>
                 )}
-                {/* Mic button */}
+                
+                {/* Recording pulse rings */}
+                {recording && (
+                  <>
+                    <div className="absolute inset-[-12px] rounded-full border-2 border-[#6b8f71]/30 animate-ping" />
+                    <div className="absolute inset-[-6px] rounded-full border-2 border-[#6b8f71]/50 animate-pulse" />
+                  </>
+                )}
+                
+                {/* Processing spinner */}
+                {processing && (
+                  <svg className="absolute inset-[-8px] w-[calc(100%+16px)] h-[calc(100%+16px)] animate-spin" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200/30 dark:text-gray-700/30" />
+                    <circle cx="50" cy="50" r="47" fill="none" stroke="#6b8f71" strokeWidth="3" strokeLinecap="round" strokeDasharray="100 295" />
+                  </svg>
+                )}
+                
+                {/* Main button */}
                 <button
-                  onClick={startRecording}
+                  onClick={recording ? stopRecording : startRecording}
                   disabled={processing}
-                  className="relative w-24 h-24 rounded-full bg-white shadow-[0_8px_30px_rgba(107,143,113,0.4)] hover:shadow-[0_8px_40px_rgba(107,143,113,0.5)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 overflow-hidden ${
+                    recording 
+                      ? 'bg-[#6b8f71] shadow-[0_8px_40px_rgba(107,143,113,0.6)] scale-110' 
+                      : hasSelection
+                        ? 'bg-[#6b8f71] shadow-[0_8px_40px_rgba(107,143,113,0.6)] scale-105'
+                        : 'bg-white shadow-[0_8px_30px_rgba(107,143,113,0.4)] hover:shadow-[0_8px_40px_rgba(107,143,113,0.5)] hover:scale-105'
+                  } ${!recording && !processing && showProgress ? 'animate-heartbeat' : ''}`}
                 >
-                  {!showProgress && <span className="absolute inset-[-4px] rounded-full border-2 border-[#6b8f71]/50 animate-ping opacity-30" />}
-                  <img 
-                    src="/icons/mic-button.png" 
-                    alt="Grabar" 
-                    className="w-20 h-20 object-contain relative z-10"
-                  />
+                  {recording ? (
+                    // Recording: show timer and stop icon
+                    <div className="flex flex-col items-center">
+                      <span className="text-white text-xl font-light tabular-nums">{formatTime(recordingTime)}</span>
+                      <div className="w-4 h-4 bg-white rounded-sm mt-1" />
+                    </div>
+                  ) : processing ? (
+                    // Processing: show spinner text
+                    <span className="text-gray-400 text-xs">...</span>
+                  ) : hasSelection ? (
+                    // Selection mode: show edit mic icon
+                    <div className="flex flex-col items-center">
+                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                      </svg>
+                      <span className="text-white text-[10px] mt-1">Editar</span>
+                    </div>
+                  ) : showProgress ? (
+                    // Normal with tasks: fade cycle between stats and mic
+                    <>
+                      {/* Stats overlay - fades in first */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-cycle-first">
+                        <span className="text-2xl font-bold text-[#6b8f71]">{stats.weekCompleted}/{stats.weekTotal}</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">esta semana</span>
+                      </div>
+                      {/* Mic icon - fades in second */}
+                      <img 
+                        src="/icons/mic-button.png" 
+                        alt="Grabar" 
+                        className="w-20 h-20 object-contain relative z-10 animate-fade-cycle-second"
+                      />
+                    </>
+                  ) : (
+                    // No tasks yet: just mic with subtle pulse
+                    <>
+                      <span className="absolute inset-[-4px] rounded-full border-2 border-[#6b8f71]/50 animate-ping opacity-30" />
+                      <img 
+                        src="/icons/mic-button.png" 
+                        alt="Grabar" 
+                        className="w-20 h-20 object-contain relative z-10"
+                      />
+                    </>
+                  )}
                 </button>
               </div>
             );
           })()}
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-3">Aquí cuando me necesites</p>
+          
+          {/* Selection context hint */}
+          {selectedItem && !recording && !processing && (
+            <p className="text-sm text-[#6b8f71] mt-3 text-center animate-fade-in">
+              {selectedItem.type === 'idea' && '💡 Editando plan completo'}
+              {selectedItem.type === 'action-point' && `📝 Editando paso ${(selectedItem.index || 0) + 1}`}
+              {selectedItem.type === 'task' && '✏️ Editando tarea'}
+              <span className="text-gray-400 ml-2">• Habla para cambiar</span>
+            </p>
+          )}
         </div>
 
         {/* Error */}
@@ -640,164 +1119,6 @@ export default function AppDashboard() {
           <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center justify-between shadow-sm">
             <span>{error}</span>
             <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600 font-bold">×</button>
-          </div>
-        )}
-
-        {/* Recording fullscreen - craftsmanship matcha design */}
-        {(recording || processing) && (
-          <div className="fixed inset-0 bg-[#0a0a0a] z-50 flex flex-col">
-            {/* Subtle grain texture overlay */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")'}} />
-            
-            {/* Minimal header */}
-            <div className="relative z-10 px-6 py-5 flex items-center justify-between">
-              <button
-                onClick={() => { stopRecording(); setProcessing(false); }}
-                className="w-10 h-10 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center transition-all hover:border-[#3d5a45] hover:bg-[#1f1f1f]"
-              >
-                <svg className="w-4 h-4 text-[#666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              
-              {recording && (
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#6b8f71] animate-pulse" />
-                  <span className="text-xs uppercase tracking-[0.15em] text-[#555]">Listening</span>
-                </div>
-              )}
-            </div>
-
-            {/* Main content */}
-            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8">
-              {recording ? (
-                <>
-                  {/* Heartbeat visualization - tap to stop */}
-                  <button
-                    onClick={stopRecording}
-                    className="relative w-52 h-52 mb-8 group cursor-pointer focus:outline-none"
-                  >
-                    {/* Outer pulse rings */}
-                    <div className="absolute inset-0 rounded-full border border-[#3d5a45]/20 animate-heartbeat-ring" />
-                    <div className="absolute inset-4 rounded-full border border-[#3d5a45]/30 animate-heartbeat-ring-delay" />
-                    <div className="absolute inset-8 rounded-full border border-[#3d5a45]/40 animate-heartbeat-ring-delay-2" />
-                    
-                    {/* Core heartbeat circle */}
-                    <div className="absolute inset-12 rounded-full bg-gradient-to-br from-[#3d5a45] to-[#2a3d2f] shadow-[0_0_60px_rgba(61,90,69,0.4)] animate-heartbeat flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_0_80px_rgba(107,143,113,0.5)] group-active:scale-95">
-                      {/* Inner glow - transforms to stop icon on hover */}
-                      <div className="relative w-16 h-16 flex items-center justify-center">
-                        <div className="absolute inset-0 rounded-full bg-[#6b8f71]/30 animate-heartbeat-inner group-hover:opacity-0 transition-opacity duration-300" />
-                        {/* Voice reactive bars - hide on hover */}
-                        <div className="flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-300">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-1 bg-[#6b8f71] rounded-full animate-voice-bar"
-                              style={{
-                                height: '24px',
-                                animationDelay: `${i * 100}ms`,
-                              }}
-                            />
-                          ))}
-                        </div>
-                        {/* Stop icon - show on hover */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="w-5 h-5 bg-[#e8e8e8] rounded-sm" />
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Timer */}
-                  <p className="text-4xl font-extralight text-[#e8e8e8] tabular-nums tracking-wider mb-3">
-                    {formatTime(recordingTime)}
-                  </p>
-                  
-                  {/* Subtle hint */}
-                  <p className="text-xs text-[#444] tracking-wide mb-6">
-                    Tap to finish
-                  </p>
-
-                  {/* Live transcription */}
-                  {liveTranscript && (
-                    <div className="w-full max-w-md">
-                      <div className="h-px bg-gradient-to-r from-transparent via-[#2a2a2a] to-transparent mb-6" />
-                      <p className="text-[#888] text-center text-sm font-light leading-relaxed">
-                        "{liveTranscript}"
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {/* Processing state */}
-                  <div className="relative w-20 h-20 mb-8">
-                    <div className="absolute inset-0 rounded-full border-2 border-[#2a2a2a]" />
-                    <div className="absolute inset-0 rounded-full border-2 border-[#6b8f71] border-t-transparent animate-spin" />
-                  </div>
-                  <p className="text-lg text-[#888] font-light">{processingStep}</p>
-                </>
-              )}
-            </div>
-
-            {/* CSS for heartbeat animations */}
-            <style jsx>{`
-              @keyframes heartbeat {
-                0%, 100% { transform: scale(1); }
-                15% { transform: scale(1.08); }
-                30% { transform: scale(1); }
-                45% { transform: scale(1.05); }
-                60% { transform: scale(1); }
-              }
-              @keyframes heartbeat-inner {
-                0%, 100% { opacity: 0.3; transform: scale(1); }
-                15% { opacity: 0.6; transform: scale(1.2); }
-                30% { opacity: 0.3; transform: scale(1); }
-                45% { opacity: 0.5; transform: scale(1.1); }
-                60% { opacity: 0.3; transform: scale(1); }
-              }
-              @keyframes heartbeat-ring {
-                0% { transform: scale(1); opacity: 0.3; }
-                50% { transform: scale(1.1); opacity: 0.1; }
-                100% { transform: scale(1.2); opacity: 0; }
-              }
-              @keyframes heartbeat-ring-delay {
-                0% { transform: scale(1); opacity: 0.3; }
-                50% { transform: scale(1.15); opacity: 0.1; }
-                100% { transform: scale(1.25); opacity: 0; }
-              }
-              @keyframes heartbeat-ring-delay-2 {
-                0% { transform: scale(1); opacity: 0.4; }
-                50% { transform: scale(1.1); opacity: 0.2; }
-                100% { transform: scale(1.2); opacity: 0; }
-              }
-              @keyframes voice-bar {
-                0%, 100% { height: 8px; opacity: 0.4; }
-                25% { height: 28px; opacity: 1; }
-                50% { height: 16px; opacity: 0.7; }
-                75% { height: 32px; opacity: 1; }
-              }
-              .animate-heartbeat {
-                animation: heartbeat 1.2s ease-in-out infinite;
-              }
-              .animate-heartbeat-inner {
-                animation: heartbeat-inner 1.2s ease-in-out infinite;
-              }
-              .animate-heartbeat-ring {
-                animation: heartbeat-ring 2s ease-out infinite;
-              }
-              .animate-heartbeat-ring-delay {
-                animation: heartbeat-ring-delay 2s ease-out infinite;
-                animation-delay: 0.3s;
-              }
-              .animate-heartbeat-ring-delay-2 {
-                animation: heartbeat-ring-delay-2 2s ease-out infinite;
-                animation-delay: 0.6s;
-              }
-              .animate-voice-bar {
-                animation: voice-bar 0.8s ease-in-out infinite;
-              }
-            `}</style>
           </div>
         )}
 
@@ -892,25 +1213,28 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Extracted tasks confirmation */}
-        {showExtracted && extractedTasks.length > 0 && (
+        {/* Extracted tasks and ideas confirmation */}
+        {showExtracted && (extractedTasks.length > 0 || extractedIdeas.length > 0) && (
           <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100/50 dark:border-gray-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] animate-fade-in">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-              {extractedTasks.length} tarea{extractedTasks.length > 1 ? 's' : ''} encontrada{extractedTasks.length > 1 ? 's' : ''}
+              {extractedTasks.length > 0 && `${extractedTasks.length} tarea${extractedTasks.length > 1 ? 's' : ''}`}
+              {extractedTasks.length > 0 && extractedIdeas.length > 0 && ' + '}
+              {extractedIdeas.length > 0 && `${extractedIdeas.length} idea${extractedIdeas.length > 1 ? 's' : ''}`}
             </h3>
             {transcript && (
               <p className="text-sm text-gray-400 dark:text-gray-500 mb-4 italic">&ldquo;{transcript}&rdquo;</p>
             )}
             <ul className="space-y-3 mb-5">
+              {/* Tasks */}
               {extractedTasks.map((task, i) => (
-                <li key={i} className={`p-4 rounded-xl ${priorityColors[task.priority].bg} flex items-center gap-4`}>
+                <li key={`task-${i}`} className={`p-4 rounded-xl ${priorityColors[task.priority].bg} flex items-center gap-4`}>
                   <div className={`w-12 h-12 rounded-full bg-white dark:bg-gray-700 ring-3 ${priorityColors[task.priority].ring} flex items-center justify-center shadow-sm overflow-hidden`}>
                     <CategoryIcon category={task.category} size={36} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'} • {task.category}
+                      ✅ Tarea • {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'} • {task.category}
                     </p>
                   </div>
                   <button
@@ -923,16 +1247,38 @@ export default function AppDashboard() {
                   </button>
                 </li>
               ))}
+              {/* Ideas */}
+              {extractedIdeas.map((idea, i) => (
+                <li key={`idea-${i}`} className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/50 dark:border-amber-700/30 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm">
+                    <span className="text-2xl">💡</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white">{idea.title}</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      💡 Idea • {idea.category}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setExtractedIdeas(prev => prev.filter((_, idx) => idx !== i))}
+                    className="text-gray-300 dark:text-gray-500 hover:text-red-500 transition-colors p-1"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
             </ul>
             <div className="flex gap-3">
               <button
-                onClick={() => saveTasks(extractedTasks)}
+                onClick={saveAllItems}
                 className="flex-1 py-3 rounded-xl font-semibold text-white bg-[#6b8f71] hover:bg-[#5a7a60] active:bg-[#4a6b52] transition-all shadow-md"
               >
                 Guardar Todo
               </button>
               <button
-                onClick={() => { setShowExtracted(false); setExtractedTasks([]); }}
+                onClick={() => { setShowExtracted(false); setExtractedTasks([]); setExtractedIdeas([]); }}
                 className="px-6 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Descartar
@@ -941,80 +1287,263 @@ export default function AppDashboard() {
           </div>
         )}
 
-        {/* Hint de interacción */}
-        {pendingTasks.length > 0 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-3">
-            Toca para editar • Desliza → completar • Desliza ← eliminar
-          </p>
-        )}
+        {/* Unified list - Tasks and Ideas with Tree View */}
+        <div className="space-y-4">
+          {(() => {
+            // Separate ideas, child tasks, and standalone tasks
+            const ideas = pendingTasks.filter(t => t.type === 'idea');
+            const childTasks = pendingTasks.filter(t => t.parent_idea_id);
+            const standaloneTasks = pendingTasks.filter(t => t.type !== 'idea' && !t.parent_idea_id);
+            
+            // Group child tasks by parent idea
+            const childrenByIdea: Record<string, Task[]> = {};
+            childTasks.forEach(task => {
+              if (task.parent_idea_id) {
+                if (!childrenByIdea[task.parent_idea_id]) {
+                  childrenByIdea[task.parent_idea_id] = [];
+                }
+                childrenByIdea[task.parent_idea_id].push(task);
+              }
+            });
+            
+            // Sort children by order_index
+            Object.keys(childrenByIdea).forEach(ideaId => {
+              childrenByIdea[ideaId].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            });
 
-        {/* Task list */}
-        <div className="space-y-3">
-          {pendingTasks.length > 0 && (
-            <>
-              {pendingTasks.map((task) => {
-                const priority = task.priority || 'medium';
-                const colors = priorityColors[priority];
-                const isBeingSwiped = swipingTaskId === task.id;
-                const showComplete = isBeingSwiped && swipeOffset > 50;
-                const showDelete = isBeingSwiped && swipeOffset < -50;
+            return (
+              <>
+                {/* Ideas with their child tasks (tree view) */}
+                {ideas.map((idea) => {
+                  const children = childrenByIdea[idea.id] || [];
+                  const hasChildren = children.length > 0;
+                  const completedChildren = children.filter(c => c.completed).length;
+                  const isIdeaSelected = selectedItem?.type === 'idea' && selectedItem?.id === idea.id;
+                  
+                  return (
+                    <div key={idea.id} className="relative">
+                      {/* Idea card - long press to select for voice edit */}
+                      <div 
+                        onTouchStart={() => handleLongPressStart('idea', idea.id)}
+                        onTouchEnd={handleLongPressEnd}
+                        onTouchCancel={handleLongPressEnd}
+                        onMouseDown={() => handleLongPressStart('idea', idea.id)}
+                        onMouseUp={handleLongPressEnd}
+                        onMouseLeave={handleLongPressEnd}
+                        className={`bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 transition-all flex items-center gap-4 ${
+                          isIdeaSelected 
+                            ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02]' 
+                            : 'border-amber-200/50 dark:border-amber-700/30'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center shadow-sm flex-shrink-0 transition-all ${isIdeaSelected ? 'scale-110' : ''}`}>
+                          <span className="text-2xl">{isIdeaSelected ? '🎤' : '💡'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{idea.title}</p>
+                          <p className="text-sm text-amber-600 dark:text-amber-400">
+                            {isIdeaSelected ? 'Habla para editar el plan' : hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
+                          </p>
+                        </div>
+                        {!isIdeaSelected && (
+                          <button
+                            onClick={() => generateActionPlan(idea)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
+                          >
+                            {hasChildren ? '✏️ Editar' : '🚀 Plan'}
+                          </button>
+                        )}
+                        {isIdeaSelected && (
+                          <button
+                            onClick={clearSelection}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Child tasks with connecting line */}
+                      {hasChildren && (
+                        <div className="relative ml-6 mt-2">
+                          {/* Vertical connecting line */}
+                          <div className="absolute left-5 top-0 bottom-4 w-0.5 bg-gradient-to-b from-amber-300 to-[#6b8f71] dark:from-amber-600 dark:to-[#6b8f71]" />
+                          
+                          <div className="space-y-2">
+                            {children.map((task, index) => {
+                              const isLast = index === children.length - 1;
+                              const priority = task.priority || 'medium';
+                              const colors = priorityColors[priority];
+                              const isStepSelected = selectedItem?.type === 'action-point' && selectedItem?.id === idea.id && selectedItem?.index === index;
+                              
+                              return (
+                                <div key={task.id} className="relative flex items-center">
+                                  {/* Horizontal connector */}
+                                  <div className="absolute left-5 w-4 h-0.5 bg-[#6b8f71]" style={{ top: '50%' }} />
+                                  
+                                  {/* Step number circle */}
+                                  <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all ${
+                                    isStepSelected
+                                      ? 'bg-[#6b8f71] text-white scale-110 ring-2 ring-[#6b8f71]/30'
+                                      : task.completed 
+                                        ? 'bg-[#6b8f71] text-white' 
+                                        : 'bg-white dark:bg-gray-800 border-2 border-[#6b8f71] text-[#6b8f71]'
+                                  }`}>
+                                    {isStepSelected ? '🎤' : task.completed ? '✓' : index + 1}
+                                  </div>
+                                  
+                                  {/* Task card - long press to select */}
+                                  <div 
+                                    onTouchStart={() => handleLongPressStart('action-point', idea.id, index)}
+                                    onTouchEnd={handleLongPressEnd}
+                                    onTouchCancel={handleLongPressEnd}
+                                    onMouseDown={() => handleLongPressStart('action-point', idea.id, index)}
+                                    onMouseUp={handleLongPressEnd}
+                                    onMouseLeave={handleLongPressEnd}
+                                    onClick={() => !isStepSelected && openEditModal(task)}
+                                    className={`flex-1 ml-3 p-3 rounded-xl cursor-pointer transition-all hover:shadow-md border-2 ${
+                                      isStepSelected
+                                        ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-[#6b8f71]/10'
+                                        : task.completed 
+                                          ? 'bg-gray-100 dark:bg-gray-800/50 border-transparent' 
+                                          : `${colors.cardBg} ${colors.cardBgDark} border-gray-100/50 dark:border-gray-700/50`
+                                    }`}
+                                  >
+                                    <p className={`font-medium text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
+                                      {isStepSelected ? 'Habla para editar este paso' : task.title}
+                                    </p>
+                                  </div>
+                                  
+                                  {/* Complete button or cancel selection */}
+                                  {isStepSelected ? (
+                                    <button
+                                      onClick={clearSelection}
+                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                                    >
+                                      ✕
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => toggleTask(task.id, task.completed)}
+                                      className={`ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all ${
+                                        task.completed 
+                                          ? 'bg-[#6b8f71] text-white' 
+                                          : 'border-2 border-gray-200 dark:border-gray-600 hover:border-[#6b8f71]'
+                                      }`}
+                                    >
+                                      {task.completed && (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 
-                return (
-                  <div
-                    key={task.id}
-                    className="relative overflow-hidden rounded-2xl"
-                  >
-                    {/* Swipe backgrounds */}
-                    <div className="absolute inset-0 flex">
-                      <div className={`flex-1 bg-[#6b8f71] flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div className={`flex-1 bg-[#4a1c20] flex items-center justify-end pr-6 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                {/* Standalone tasks (no parent idea) */}
+                {standaloneTasks.map((task) => {
+                  const priority = task.priority || 'medium';
+                  const colors = priorityColors[priority];
+                  const isBeingSwiped = swipingTaskId === task.id;
+                  const showComplete = isBeingSwiped && swipeOffset > 50;
+                  const showDelete = isBeingSwiped && swipeOffset < -50;
+                  const isTaskSelected = selectedItem?.type === 'task' && selectedItem?.id === task.id;
+                  
+                  return (
+                    <div key={task.id} className="relative overflow-hidden rounded-2xl">
+                      {/* Swipe backgrounds */}
+                      {!isTaskSelected && (
+                        <div className="absolute inset-0 flex">
+                          <div className={`flex-1 bg-[#6b8f71] flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <div className={`flex-1 bg-[#4a1c20] flex items-center justify-end pr-6 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div
+                        onTouchStart={(e) => {
+                          if (!isTaskSelected) {
+                            handleTouchStart(e, task.id);
+                            handleLongPressStart('task', task.id);
+                          }
+                        }}
+                        onTouchMove={(e) => !isTaskSelected && handleTouchMove(e)}
+                        onTouchEnd={() => {
+                          handleLongPressEnd();
+                          if (!isTaskSelected) handleTouchEnd(task);
+                        }}
+                        onTouchCancel={handleLongPressEnd}
+                        onMouseDown={() => handleLongPressStart('task', task.id)}
+                        onMouseUp={handleLongPressEnd}
+                        onMouseLeave={handleLongPressEnd}
+                        onClick={() => !isBeingSwiped && !isTaskSelected && openEditModal(task)}
+                        style={{
+                          transform: isBeingSwiped && !isTaskSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                          transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
+                        }}
+                        className={`rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 flex items-center gap-4 group transition-all cursor-pointer ${
+                          isTaskSelected
+                            ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-[#6b8f71]/10 scale-[1.02]'
+                            : `${colors.cardBg} ${colors.cardBgDark} border-gray-100/50 dark:border-gray-700/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]`
+                        }`}
+                      >
+                        <div
+                          onClick={(e) => { e.stopPropagation(); if (!isTaskSelected) cyclePriority(task.id, priority); }}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden ${
+                            isTaskSelected 
+                              ? 'bg-[#6b8f71] scale-110' 
+                              : `bg-white/80 ring-2 ${colors.ring} hover:scale-105 active:scale-95`
+                          }`}
+                        >
+                          {isTaskSelected ? (
+                            <span className="text-2xl">🎤</span>
+                          ) : (
+                            <CategoryIcon category={task.category || 'errands'} size={36} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">
+                            {isTaskSelected ? 'Habla para editar esta tarea' : task.title}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            {isTaskSelected ? task.title : task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
+                          </p>
+                        </div>
+                        {isTaskSelected ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); clearSelection(); }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                          >
+                            ✕
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
+                            className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-600 hover:border-[#6b8f71] flex items-center justify-center transition-colors bg-white/50 dark:bg-gray-700/50"
+                          />
+                        )}
                       </div>
                     </div>
-                    
-                    {/* Task card */}
-                    <div
-                      onTouchStart={(e) => handleTouchStart(e, task.id)}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={() => handleTouchEnd(task)}
-                      onClick={() => !isBeingSwiped && openEditModal(task)}
-                      style={{
-                        transform: isBeingSwiped ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-                        transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
-                      }}
-                      className={`${colors.cardBg} ${colors.cardBgDark} rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border border-gray-100/50 dark:border-gray-700/50 flex items-center gap-4 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-shadow cursor-pointer active:scale-[0.99] relative`}
-                    >
-                      {/* Category icon - tap to cycle priority */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); cyclePriority(task.id, priority); }}
-                        className={`w-12 h-12 rounded-full bg-white/80 ring-2 ${colors.ring} flex items-center justify-center transition-all hover:scale-105 active:scale-95 overflow-hidden`}
-                      >
-                        <CategoryIcon category={task.category || 'errands'} size={36} />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
-                        <p className="text-sm text-gray-400 dark:text-gray-400">
-                          {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
-                          {task.category && ` • ${task.category}`}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}
-                        className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-gray-600 hover:border-[#6b8f71] flex items-center justify-center transition-colors bg-white/50 dark:bg-gray-700/50"
-                      >
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
+                  );
+                })}
+              </>
+            );
+          })()}
 
           {/* Completed tasks */}
           {completedTasks.length > 0 && (
@@ -1063,11 +1592,220 @@ export default function AppDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Sin tareas aún</h3>
-              <p className="text-gray-400 dark:text-gray-500">Toca el micrófono para añadir tu primera tarea</p>
+              <p className="text-gray-400 dark:text-gray-500">Toca el micrófono para añadir tu primera tarea o idea</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Action Plan Modal */}
+      {actionPlanIdea && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
+          onClick={closeActionPlanModal}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl my-auto max-h-[90vh] overflow-y-auto animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/50 dark:to-yellow-800/50 flex items-center justify-center">
+                <span className="text-2xl">🚀</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Action Plan</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{actionPlanIdea.title}</p>
+              </div>
+            </div>
+
+            {/* Loading state */}
+            {generatingPlan && (
+              <div className="py-8 text-center">
+                <div className="w-10 h-10 mx-auto mb-4 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-500 dark:text-gray-400">Generando plan de acción...</p>
+              </div>
+            )}
+
+            {/* Action points with sequential reveal animation */}
+            {!generatingPlan && actionPoints.length > 0 && (
+              <>
+                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-4 animate-step-reveal" style={{ animationDelay: '0ms' }}>
+                  Tu roadmap
+                </p>
+                
+                {/* Timeline container - key forces re-animation on plan change */}
+                <div key={planAnimationKey} className="relative ml-3 mb-4">
+                  {/* Vertical line that grows */}
+                  <div 
+                    className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-[#6b8f71] to-[#6b8f71]/30 animate-line-grow"
+                    style={{ animationDelay: '100ms', animationDuration: `${actionPoints.length * 200}ms` }}
+                  />
+                  
+                  {/* Steps */}
+                  <div className="space-y-3">
+                    {actionPoints.map((point, i) => (
+                      <div 
+                        key={i} 
+                        className="relative flex items-start gap-4 animate-step-reveal"
+                        style={{ animationDelay: `${(i + 1) * 200}ms` }}
+                      >
+                        {/* Step number circle */}
+                        <div className="relative z-10 w-6 h-6 rounded-full bg-[#6b8f71] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 shadow-md">
+                          {i + 1}
+                        </div>
+                        
+                        {/* Step content */}
+                        <div className="flex-1 pb-2">
+                          <p className="font-medium text-gray-900 dark:text-white text-sm leading-snug">{point.title}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            ⏱️ {point.time_estimate}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Voice-First Refinement */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  {/* Chat messages - compact */}
+                  {debateMessages.length > 0 && (
+                    <div 
+                      ref={debateChatRef}
+                      className="max-h-24 overflow-y-auto mb-4 space-y-2"
+                    >
+                      {debateMessages.map((msg, i) => (
+                        <div 
+                          key={i}
+                          className={`p-2 rounded-lg text-sm ${
+                            msg.role === 'user' 
+                              ? 'bg-[#6b8f71]/10 text-gray-800 dark:text-gray-200 ml-4' 
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 mr-4'
+                          }`}
+                        >
+                          {msg.content}
+                        </div>
+                      ))}
+                      {debating && (
+                        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg text-sm text-gray-500 mr-4 animate-pulse">
+                          Pensando...
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Voice-first: Big mic button centered */}
+                  <div className="flex flex-col items-center mb-4">
+                    <button
+                      onClick={debateRecording ? stopDebateRecording : startDebateRecording}
+                      disabled={debating}
+                      className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                        debateRecording 
+                          ? 'bg-red-500 shadow-[0_4px_20px_rgba(239,68,68,0.5)]' 
+                          : 'bg-[#6b8f71] shadow-[0_4px_20px_rgba(107,143,113,0.4)] hover:shadow-[0_4px_25px_rgba(107,143,113,0.5)]'
+                      }`}
+                    >
+                      {debateRecording && (
+                        <>
+                          <div className="absolute inset-[-6px] rounded-full border-2 border-red-400/50 animate-ping" />
+                          <div className="absolute inset-[-3px] rounded-full border-2 border-red-400/70 animate-pulse" />
+                        </>
+                      )}
+                      {debateRecording ? (
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <rect x="6" y="6" width="12" height="12" rx="2" />
+                        </svg>
+                      ) : (
+                        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                      )}
+                    </button>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                      {debateRecording ? 'Grabando... toca para parar' : 'Toca para ajustar con voz'}
+                    </p>
+                  </div>
+
+                  {/* Quick action chips */}
+                  <div className="flex flex-wrap gap-2 justify-center mb-4">
+                    {[
+                      { label: 'Más detalle', prompt: 'Dame más detalle en cada paso' },
+                      { label: 'Menos pasos', prompt: 'Simplifica el plan con menos pasos' },
+                      { label: 'Más rápido', prompt: 'Hazlo más rápido, menos tiempo total' },
+                      { label: 'Primer paso', prompt: 'Enfócate solo en el primer paso concreto' },
+                    ].map((chip) => (
+                      <button
+                        key={chip.label}
+                        onClick={() => {
+                          setDebateInput(chip.prompt);
+                          setTimeout(() => sendDebateMessage(), 50);
+                        }}
+                        disabled={debating}
+                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-[#6b8f71]/20 hover:text-[#6b8f71] dark:hover:text-[#8fb096] transition-all disabled:opacity-50"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Text input - secondary option */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={debateInput}
+                      onChange={(e) => setDebateInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendDebateMessage()}
+                      placeholder="O escribe tu ajuste..."
+                      className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:border-[#6b8f71] focus:ring-1 focus:ring-[#6b8f71]/20 outline-none transition-all"
+                      disabled={debating || debateRecording}
+                    />
+                    <button
+                      onClick={sendDebateMessage}
+                      disabled={!debateInput.trim() || debating}
+                      className="px-3 py-2 rounded-xl bg-[#6b8f71] text-white disabled:opacity-50 transition-all hover:bg-[#5a7a60]"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={deployActionPlan}
+                    className="flex-1 py-3 rounded-xl font-semibold text-white bg-[#6b8f71] hover:bg-[#5a7a60] transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <span>✅</span> Crear Tareas
+                  </button>
+                  <button
+                    onClick={closeActionPlanModal}
+                    className="px-4 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* No action points */}
+            {!generatingPlan && actionPoints.length === 0 && (
+              <div className="py-8 text-center">
+                <p className="text-gray-500 dark:text-gray-400">No se pudieron generar pasos de acción.</p>
+                <button
+                  onClick={closeActionPlanModal}
+                  className="mt-4 px-6 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Install prompt for PWA */}
       <InstallPrompt />
