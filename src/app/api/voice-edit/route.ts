@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-interface ActionPoint {
-  title: string;
-  time_estimate: string;
-  category: string;
-}
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,16 +15,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing editType or voiceInput' }, { status: 400 });
     }
 
-    let systemPrompt = '';
-    let responseFormat: { type: 'json_object' } | { type: 'text' } = { type: 'json_object' };
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    let prompt = '';
 
     switch (editType) {
       case 'idea':
-        // Regenerate entire action plan for an idea based on new voice input
-        systemPrompt = `You are a strategic execution coach. The user wants to modify their action plan.
+        prompt = `You are a strategic execution coach. The user wants to modify their action plan.
 
 ORIGINAL IDEA: "${context.ideaTitle}"
 CURRENT PLAN: ${JSON.stringify(context.currentPlan || [])}
+
+User's voice input: "${voiceInput}"
 
 Based on the user's voice input, generate a NEW action plan.
 
@@ -42,7 +36,7 @@ Rules:
 - Detect language from user input and respond in SAME language
 - Steps should be immediately actionable
 
-Return JSON:
+Return ONLY valid JSON (no markdown, no code blocks):
 {
   "action_points": [
     {
@@ -56,12 +50,13 @@ Return JSON:
         break;
 
       case 'action-point':
-        // Edit a specific step in the plan
-        systemPrompt = `You are helping edit a specific action step.
+        prompt = `You are helping edit a specific action step.
 
 PARENT IDEA: "${context.ideaTitle}"
 STEP TO EDIT: "${context.stepTitle}"
 STEP INDEX: ${context.stepIndex + 1} of ${context.totalSteps}
+
+User's voice input: "${voiceInput}"
 
 Based on the user's voice input, provide the updated step.
 
@@ -70,7 +65,7 @@ Rules:
 - Time estimate: 15min, 30min, 45min, or 1h
 - Detect language and respond in same language
 
-Return JSON:
+Return ONLY valid JSON (no markdown, no code blocks):
 {
   "title": "Updated step title",
   "time_estimate": "15min" | "30min" | "45min" | "1h",
@@ -79,11 +74,12 @@ Return JSON:
         break;
 
       case 'task':
-        // Edit a standalone task
-        systemPrompt = `You are helping edit a task based on voice input.
+        prompt = `You are helping edit a task based on voice input.
 
 CURRENT TASK: "${context.taskTitle}"
 CATEGORY: "${context.category}"
+
+User's voice input: "${voiceInput}"
 
 Based on the user's voice input, provide the updated task details.
 
@@ -93,7 +89,7 @@ Rules:
 - Detect language and respond in same language
 - If user mentions a due date, parse it
 
-Return JSON:
+Return ONLY valid JSON (no markdown, no code blocks):
 {
   "title": "Updated task title",
   "category": "work" | "personal" | "learning" | "errands" | "health" | "finance" | "home" | "social",
@@ -106,22 +102,27 @@ Return JSON:
         return NextResponse.json({ error: 'Invalid editType' }, { status: 400 });
     }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: voiceInput },
-      ],
-      temperature: 0.5,
-      response_format: responseFormat,
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
 
-    const content = completion.choices[0].message.content;
     if (!content) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
 
-    const parsed = JSON.parse(content);
+    // Clean up response
+    let cleanContent = content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.slice(7);
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.slice(3);
+    }
+    if (cleanContent.endsWith('```')) {
+      cleanContent = cleanContent.slice(0, -3);
+    }
+    cleanContent = cleanContent.trim();
+
+    const parsed = JSON.parse(cleanContent);
     return NextResponse.json({ editType, result: parsed });
 
   } catch (error) {

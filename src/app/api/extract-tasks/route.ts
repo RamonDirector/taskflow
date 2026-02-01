@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,12 +14,9 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a Brain Dump assistant that extracts BOTH actionable tasks AND creative ideas from voice transcripts.
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    const prompt = `You are a Brain Dump assistant that extracts BOTH actionable tasks AND creative ideas from voice transcripts.
 
 Today is ${dayOfWeek}, ${today}.
 
@@ -61,7 +56,7 @@ Rules:
 - ALWAYS match the input language
 - When uncertain, classify as IDEA (better to capture than lose)
 
-Return JSON format:
+Return ONLY valid JSON format (no markdown, no code blocks):
 {
   "items": [
     {
@@ -72,28 +67,36 @@ Return JSON format:
       "priority": "high" | "medium" | "low"
     }
   ]
-}`,
-        },
-        {
-          role: 'user',
-          content: text,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+}
 
-    const content = completion.choices[0].message.content;
+User input: ${text}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
+    
     if (!content) {
-      return NextResponse.json({ items: [], tasks: [] });
+      return NextResponse.json({ items: [], tasks: [], ideas: [] });
     }
 
-    const parsed = JSON.parse(content);
+    // Clean up response - remove markdown code blocks if present
+    let cleanContent = content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.slice(7);
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.slice(3);
+    }
+    if (cleanContent.endsWith('```')) {
+      cleanContent = cleanContent.slice(0, -3);
+    }
+    cleanContent = cleanContent.trim();
+
+    const parsed = JSON.parse(cleanContent);
     const items = parsed.items || [];
     
     // Separate tasks and ideas for backward compatibility
-    const tasks = items.filter((item: any) => item.type === 'task');
-    const ideas = items.filter((item: any) => item.type === 'idea');
+    const tasks = items.filter((item: { type: string }) => item.type === 'task');
+    const ideas = items.filter((item: { type: string }) => item.type === 'idea');
 
     return NextResponse.json({ items, tasks, ideas });
   } catch (error) {

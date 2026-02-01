@@ -1,73 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
     const { idea } = await request.json();
 
-    if (!idea || typeof idea !== 'string') {
+    if (!idea) {
       return NextResponse.json({ error: 'No idea provided' }, { status: 400 });
     }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a strategic execution coach. Your job is to break down ideas into clear, actionable first steps.
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-IMPORTANT: Detect the language of the input and respond in THE SAME LANGUAGE.
+    const prompt = `You are a strategic execution coach. Take this idea and break it into 3-5 small, immediately actionable steps.
 
-Given an idea, generate 3-5 concrete action points that are:
-1. **Immediately actionable** - can be done TODAY
-2. **Specific** - no vague "research" or "think about" steps
-3. **Small** - each takes 15-60 minutes max
-4. **Sequential** - ordered by what should come first
-5. **Momentum-building** - early wins to build confidence
+IDEA: "${idea}"
 
-Focus on the FIRST steps only. Don't plan the whole project - just what's needed to START.
+IMPORTANT:
+- Detect the language of the idea and respond in THE SAME LANGUAGE
+- Each step should take 15-60 minutes max
+- Steps should be SPECIFIC and CONCRETE (not vague)
+- Focus on the FIRST actions to get started, not the entire project
+- Make it feel achievable, not overwhelming
 
-Examples of GOOD action points:
-- "Escribir 3 ideas de nombre para el proyecto en una nota"
-- "Buscar 2 competidores y anotar qué hacen bien"
-- "Crear carpeta del proyecto y documento con la idea principal"
-- "Enviar mensaje a [persona] preguntando su opinión"
-
-Examples of BAD action points:
-- "Investigar el mercado" (too vague)
-- "Desarrollar el MVP" (too big)
-- "Pensar en la estrategia" (not actionable)
-
-Return JSON:
+Return ONLY valid JSON (no markdown, no code blocks):
 {
   "action_points": [
     {
-      "title": "string - clear actionable step",
+      "title": "Clear actionable step",
       "time_estimate": "15min" | "30min" | "45min" | "1h",
-      "category": "work" | "personal" | "learning" | "errands"
+      "category": "work" | "personal" | "learning" | "errands" | "health" | "finance"
     }
   ]
-}`,
-        },
-        {
-          role: 'user',
-          content: idea,
-        },
-      ],
-      temperature: 0.4,
-      response_format: { type: 'json_object' },
-    });
+}`;
 
-    const content = completion.choices[0].message.content;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
+
     if (!content) {
       return NextResponse.json({ action_points: [] });
     }
 
-    const parsed = JSON.parse(content);
+    // Clean up response
+    let cleanContent = content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.slice(7);
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.slice(3);
+    }
+    if (cleanContent.endsWith('```')) {
+      cleanContent = cleanContent.slice(0, -3);
+    }
+    cleanContent = cleanContent.trim();
+
+    const parsed = JSON.parse(cleanContent);
     return NextResponse.json({ action_points: parsed.action_points || [] });
   } catch (error) {
     console.error('Action plan error:', error);

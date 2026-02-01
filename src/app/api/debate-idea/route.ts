@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 interface Message {
   role: 'user' | 'assistant';
@@ -24,15 +22,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing idea or message' }, { status: 400 });
     }
 
-    // Build conversation history
-    const conversationHistory: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-      {
-        role: 'system',
-        content: `You are a strategic execution coach helping refine an idea into actionable steps.
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    // Build conversation context
+    let conversationContext = '';
+    if (messages && messages.length > 0) {
+      conversationContext = messages.map((m: Message) => 
+        `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+      ).join('\n');
+    }
+
+    const prompt = `You are a strategic execution coach helping refine an idea into actionable steps.
 
 CONTEXT:
 - Original idea: "${idea}"
 - Current action plan: ${JSON.stringify(currentPlan || [])}
+${conversationContext ? `\nConversation history:\n${conversationContext}` : ''}
+
+User's new input: "${userMessage}"
 
 Your job:
 1. Listen to the user's feedback, questions, or new context
@@ -45,45 +52,23 @@ IMPORTANT:
 - Be conversational but concise
 - If the user asks a question, answer it AND update the plan if relevant
 
-Return JSON format:
+Return ONLY valid JSON (no markdown, no code blocks):
 {
   "response": "Your conversational response to the user",
   "action_points": [
     {
-      "title": "string - clear actionable step",
+      "title": "clear actionable step",
       "time_estimate": "15min" | "30min" | "45min" | "1h",
       "category": "work" | "personal" | "learning" | "errands"
     }
   ],
   "plan_changed": true | false
-}`,
-      },
-    ];
+}`;
 
-    // Add conversation history
-    if (messages && messages.length > 0) {
-      for (const msg of messages) {
-        conversationHistory.push({
-          role: msg.role,
-          content: msg.content,
-        });
-      }
-    }
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
 
-    // Add current user message
-    conversationHistory.push({
-      role: 'user',
-      content: userMessage,
-    });
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: conversationHistory,
-      temperature: 0.5,
-      response_format: { type: 'json_object' },
-    });
-
-    const content = completion.choices[0].message.content;
     if (!content) {
       return NextResponse.json({ 
         response: 'No pude procesar tu mensaje. Intenta de nuevo.',
@@ -92,7 +77,19 @@ Return JSON format:
       });
     }
 
-    const parsed = JSON.parse(content);
+    // Clean up response
+    let cleanContent = content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.slice(7);
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.slice(3);
+    }
+    if (cleanContent.endsWith('```')) {
+      cleanContent = cleanContent.slice(0, -3);
+    }
+    cleanContent = cleanContent.trim();
+
+    const parsed = JSON.parse(cleanContent);
     return NextResponse.json({
       response: parsed.response || '',
       action_points: parsed.action_points || currentPlan || [],
