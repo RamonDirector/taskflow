@@ -151,8 +151,25 @@ export default function AppDashboard() {
   const [selectedItem, setSelectedItem] = useState<{ type: 'idea' | 'task' | 'action-point'; id: string; index?: number } | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  // Dark mode state
+  // Dark mode state with wave transition
   const [darkMode, setDarkMode] = useState(false);
+  const [themeTransition, setThemeTransition] = useState<'idle' | 'expanding' | 'collapsing'>('idle');
+  
+  // Animated theme toggle
+  const toggleThemeWithAnimation = () => {
+    const newDarkMode = !darkMode;
+    setThemeTransition('expanding');
+    
+    // Change theme at midpoint of animation
+    setTimeout(() => {
+      setDarkMode(newDarkMode);
+    }, 300);
+    
+    // Reset transition state after animation
+    setTimeout(() => {
+      setThemeTransition('idle');
+    }, 600);
+  };
   
   // Stats visibility
   const [showStats, setShowStats] = useState(true);
@@ -1051,6 +1068,15 @@ export default function AppDashboard() {
         ? 'animate-gradient-mesh' 
         : 'bg-gray-50 dark:bg-gray-900'
     }`}>
+      {/* Theme transition wave overlay */}
+      {themeTransition !== 'idle' && (
+        <div 
+          className={`theme-transition-overlay ${
+            themeTransition === 'expanding' ? 'theme-transition-expand' : 'theme-transition-collapse'
+          } ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}
+        />
+      )}
+      
       {/* Header - minimal & seamless */}
       <header className={`px-5 pt-4 pb-2 sticky top-0 z-40 transition-colors duration-500 ${
         recording
@@ -1063,7 +1089,7 @@ export default function AppDashboard() {
           </h1>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={toggleThemeWithAnimation}
               className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               title={darkMode ? 'Light mode' : 'Dark mode'}
             >
