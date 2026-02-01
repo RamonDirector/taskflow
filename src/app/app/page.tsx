@@ -1228,14 +1228,11 @@ export default function AppDashboard() {
         {/* Extracted tasks and ideas confirmation */}
         {showExtracted && (extractedTasks.length > 0 || extractedIdeas.length > 0) && (
           <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100/50 dark:border-gray-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] animate-fade-in">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
               {extractedTasks.length > 0 && `${extractedTasks.length} tarea${extractedTasks.length > 1 ? 's' : ''}`}
               {extractedTasks.length > 0 && extractedIdeas.length > 0 && ' + '}
               {extractedIdeas.length > 0 && `${extractedIdeas.length} idea${extractedIdeas.length > 1 ? 's' : ''}`}
             </h3>
-            {transcript && (
-              <p className="text-sm text-gray-400 dark:text-gray-500 mb-4 italic">&ldquo;{transcript}&rdquo;</p>
-            )}
             <ul className="space-y-3 mb-5">
               {/* Tasks */}
               {extractedTasks.map((task, i) => (
