@@ -976,12 +976,14 @@ export default function AppDashboard() {
     setSwipeOffset(0);
   };
 
-  // Long-press handlers for voice-first selection
+  // Long-press handlers for voice-first editing
   const handleLongPressStart = (type: 'idea' | 'task' | 'action-point', id: string, index?: number) => {
-    longPressTimer.current = setTimeout(() => {
+    longPressTimer.current = setTimeout(async () => {
       setSelectedItem({ type, id, index });
       // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(50);
+      // Auto-start recording for voice edit
+      await startRecording();
     }, 500); // 500ms for long press
   };
 
@@ -1616,12 +1618,16 @@ export default function AppDashboard() {
                           transform: isBeingSwiped && !isTaskSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                           transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
                         }}
-                        className={`rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 flex items-center gap-4 group transition-all ${
+                        className={`relative rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 flex items-center gap-4 group transition-all overflow-hidden ${
                           isTaskSelected
-                            ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-[#6b8f71]/10 scale-[1.02]'
+                            ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02]'
                             : `${colors.cardBg} ${colors.cardBgDark} border-gray-100/50 dark:border-gray-700/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]`
                         }`}
                       >
+                        {/* Animated gradient when recording/thinking */}
+                        {isTaskSelected && recording && (
+                          <div className="absolute inset-0 animate-gradient-flow opacity-80" />
+                        )}
                         {/* Category icon - tap to change category */}
                         <div className="relative">
                           <div
