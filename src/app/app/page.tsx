@@ -169,6 +169,10 @@ export default function AppDashboard() {
   const [swipingTaskId, setSwipingTaskId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
+  
+  // Double tap detection
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const DOUBLE_TAP_DELAY = 300; // ms
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -609,6 +613,17 @@ export default function AppDashboard() {
     }
   };
 
+  // Delete idea and all its child tasks
+  const deleteIdea = async (id: string) => {
+    // First delete all child tasks
+    await supabase.from('tasks').delete().eq('parent_idea_id', id);
+    // Then delete the idea itself
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (!error) {
+      setTasks((prev) => prev.filter((t) => t.id !== id && t.parent_idea_id !== id));
+    }
+  };
+
   // Inline edit functions (in-place, no modals)
   const startInlineEdit = (task: Task, field: 'title' | 'category' | 'date') => {
     const value = field === 'title' ? task.title : 
@@ -652,6 +667,29 @@ export default function AppDashboard() {
       inlineInputRef.current.select();
     }
   }, [inlineEdit]);
+
+  // Handle tap: single tap = voice select, double tap = inline edit
+  const handleItemTap = (task: Task, type: 'idea' | 'task' | 'action-point', index?: number) => {
+    const now = Date.now();
+    const lastTap = lastTapRef.current;
+    
+    if (lastTap && lastTap.id === task.id && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
+      // Double tap → inline edit with keyboard
+      lastTapRef.current = null;
+      startInlineEdit(task, 'title');
+    } else {
+      // Single tap → select for voice editing
+      lastTapRef.current = { id: task.id, time: now };
+      // Delay to wait for potential double tap
+      setTimeout(() => {
+        if (lastTapRef.current?.id === task.id && lastTapRef.current?.time === now) {
+          // Still single tap after delay → select for voice
+          setSelectedItem({ type, id: task.id, index });
+          lastTapRef.current = null;
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  };
 
   // Action Plan functions
   // Inline action plan generation (no modal)
@@ -1307,17 +1345,54 @@ export default function AppDashboard() {
                     });
                   };
                   
+                  const isIdeaSwiping = swipingTaskId === idea.id;
+                  const showIdeaDelete = isIdeaSwiping && swipeOffset < -50;
+                  
                   return (
-                    <div key={idea.id} className="relative">
-                      {/* Idea card - click to toggle, long press to select for voice edit */}
+                    <div key={idea.id} className="relative mb-2 overflow-hidden rounded-2xl">
+                      {/* Swipe background - delete */}
+                      {!isIdeaSelected && (
+                        <div className="absolute inset-0 flex">
+                          <div className="flex-1" />
+                          <div className={`flex-1 bg-[#4a1c20] flex items-center justify-end pr-6 transition-opacity rounded-r-2xl ${showIdeaDelete ? 'opacity-100' : 'opacity-0'}`}>
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Idea card - swipeable, click to toggle, tap for voice */}
                       <div 
-                        onClick={() => hasChildren && !isIdeaSelected && !isGenerating && toggleCollapse()}
-                        onTouchStart={() => !isGenerating && handleLongPressStart('idea', idea.id)}
-                        onTouchEnd={handleLongPressEnd}
-                        onTouchCancel={handleLongPressEnd}
-                        onMouseDown={() => !isGenerating && handleLongPressStart('idea', idea.id)}
-                        onMouseUp={handleLongPressEnd}
-                        onMouseLeave={handleLongPressEnd}
+                        onTouchStart={(e) => {
+                          if (!isIdeaSelected && !isGenerating) {
+                            handleTouchStart(e, idea.id);
+                          }
+                        }}
+                        onTouchMove={(e) => !isIdeaSelected && !isGenerating && handleTouchMove(e)}
+                        onTouchEnd={() => {
+                          if (!isIdeaSelected && !isGenerating) {
+                            // Handle swipe end for ideas
+                            if (swipeOffset < -100) {
+                              deleteIdea(idea.id);
+                            }
+                            setSwipeOffset(0);
+                            setSwipingTaskId(null);
+                          }
+                        }}
+                        onClick={() => {
+                          if (!isIdeaSwiping && !isIdeaSelected && !isGenerating) {
+                            if (hasChildren) {
+                              toggleCollapse();
+                            } else {
+                              handleItemTap(idea, 'idea');
+                            }
+                          }
+                        }}
+                        style={{
+                          transform: isIdeaSwiping && !isIdeaSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                          transition: isIdeaSwiping ? 'none' : 'transform 0.3s ease-out',
+                        }}
                         className={`relative rounded-2xl p-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_15px_rgba(0,0,0,0.3)] border-2 transition-all flex items-center gap-4 cursor-pointer overflow-hidden ${
                           isGenerating
                             ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30'
@@ -1451,8 +1526,8 @@ export default function AppDashboard() {
                                       />
                                     ) : (
                                       <p 
-                                        onClick={() => !isStepSelected && startInlineEdit(task, 'title')}
-                                        className={`font-medium text-sm cursor-text hover:text-[#6b8f71] transition-colors ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}
+                                        onClick={() => !isStepSelected && handleItemTap(task, 'action-point', index)}
+                                        className={`font-medium text-sm cursor-pointer hover:text-[#6b8f71] transition-colors ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}
                                       >
                                         {task.title}
                                       </p>
@@ -1614,9 +1689,9 @@ export default function AppDashboard() {
                             <p 
                               onClick={(e) => { 
                                 e.stopPropagation(); 
-                                if (!isTaskSelected && !isBeingSwiped) startInlineEdit(task, 'title'); 
+                                if (!isTaskSelected && !isBeingSwiped) handleItemTap(task, 'task'); 
                               }}
-                              className="font-medium text-gray-900 dark:text-white truncate cursor-text hover:text-[#6b8f71] transition-colors"
+                              className="font-medium text-gray-900 dark:text-white truncate cursor-pointer hover:text-[#6b8f71] transition-colors"
                             >
                               {task.title}
                             </p>
