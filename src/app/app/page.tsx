@@ -2035,7 +2035,7 @@ export default function AppDashboard() {
                                     )}
                                   </div>
                                   
-                                  {/* Confirm/Cancel buttons when pending edit, otherwise complete/delete */}
+                                  {/* Confirm/Cancel buttons when pending edit, stop when recording, X when selected, checkbox otherwise */}
                                   {pendingVoiceEdit?.taskId === task.id ? (
                                     // Confirm/Cancel buttons for voice edit preview
                                     <div className="flex gap-1 ml-2">
@@ -2056,18 +2056,25 @@ export default function AppDashboard() {
                                         </svg>
                                       </button>
                                     </div>
-                                  ) : isStepSelected ? (
+                                  ) : isStepSelected && recording ? (
+                                    // Stop button when recording
                                     <button
-                                      onClick={async (e) => {
+                                      onClick={(e) => {
                                         e.stopPropagation();
-                                        await supabase.from('tasks').delete().eq('id', task.id);
-                                        await fetchTasks();
-                                        clearSelection();
+                                        stopRecording();
                                       }}
-                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-all"
+                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-black dark:bg-white hover:opacity-80 transition-all"
+                                    >
+                                      <div className="w-3 h-3 bg-white dark:bg-black rounded-sm" />
+                                    </button>
+                                  ) : isStepSelected ? (
+                                    // X button to deselect when selected (not recording)
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); clearSelection(); }}
+                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-black dark:text-white hover:bg-gray-300 dark:hover:bg-[#48484a] transition-all"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                       </svg>
                                     </button>
                                   ) : (
