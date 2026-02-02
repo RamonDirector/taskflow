@@ -531,7 +531,8 @@ export default function AppDashboard() {
         case 'action-point': {
           // Find the parent idea and the specific step
           const parentIdea = tasks.find(t => t.id === selectedItem.id);
-          const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id);
+          const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
+            .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
           const step = childTasks[selectedItem.index || 0];
           if (!parentIdea || !step) return;
           
