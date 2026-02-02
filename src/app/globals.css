@@ -2,22 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Apple-style color palette */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --gray-1: #f5f5f7;
+  --gray-2: #e5e5ea;
+  --gray-3: #d1d1d6;
+  --gray-4: #8e8e93;
+  --gray-5: #636366;
+  --accent: #000000;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #1c1c1e;
+  --foreground: #ffffff;
+  --gray-1: #2c2c2e;
+  --gray-2: #38383a;
+  --gray-3: #48484a;
+  --gray-4: #8e8e93;
+  --gray-5: #aeaeb2;
+  --accent: #ffffff;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Prevent text selection on interactive elements (long press) */
@@ -31,7 +44,7 @@ body {
 }
 
 /* Apply to all task/idea cards */
-[class*="rounded-2xl"][class*="shadow"] {
+[class*="rounded-2xl"] {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -39,7 +52,7 @@ body {
   -webkit-touch-callout: none;
   touch-action: manipulation;
   position: relative;
-  z-index: 10; /* Above wave transition */
+  z-index: 10;
 }
 
 /* Main content above wave */
@@ -89,19 +102,19 @@ header {
   animation: breathe 2.5s ease-in-out infinite;
 }
 
-/* Heartbeat pulse animation - like a living button */
+/* Heartbeat pulse animation */
 @keyframes heartbeat {
   0%, 100% {
     transform: scale(1);
   }
   14% {
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
   28% {
     transform: scale(1);
   }
   42% {
-    transform: scale(1.03);
+    transform: scale(1.02);
   }
   56% {
     transform: scale(1);
@@ -109,7 +122,7 @@ header {
 }
 
 .animate-heartbeat {
-  animation: heartbeat 1.8s ease-in-out infinite;
+  animation: heartbeat 2s ease-in-out infinite;
 }
 
 /* Fade cycle for alternating content */
@@ -168,7 +181,7 @@ header {
   transform-origin: top;
 }
 
-/* Flowing gradient animation for processing state */
+/* Minimal gradient animation for processing state */
 @keyframes gradient-flow {
   0% {
     background-position: 0% 50%;
@@ -195,38 +208,33 @@ header {
 .animate-gradient-flow {
   background: linear-gradient(
     135deg,
-    #6b8f71 0%,
-    #8fb096 25%,
-    #a8c4ad 50%,
-    #8fb096 75%,
-    #6b8f71 100%
+    #000000 0%,
+    #333333 25%,
+    #4a4a4a 50%,
+    #333333 75%,
+    #000000 100%
   );
   background-size: 400% 400%;
   animation: gradient-flow 3s ease infinite;
+}
+
+.dark .animate-gradient-flow {
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #e5e5e5 25%,
+    #cccccc 50%,
+    #e5e5e5 75%,
+    #ffffff 100%
+  );
+  background-size: 400% 400%;
 }
 
 .animate-gradient-pulse {
   animation: gradient-pulse 2s ease-in-out infinite;
 }
 
-/* Floating circles/orbs animation */
-@keyframes float-up {
-  0% {
-    transform: translateY(100%) scale(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.6;
-  }
-  90% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-100%) scale(1);
-    opacity: 0;
-  }
-}
-
+/* Orbit animation */
 @keyframes orbit {
   0% {
     transform: rotate(0deg) translateX(40px) rotate(0deg);
@@ -236,25 +244,11 @@ header {
   }
 }
 
-.animate-float-up {
-  animation: float-up 3s ease-in-out infinite;
-}
-
 .animate-orbit {
   animation: orbit 4s linear infinite;
 }
 
-/* Processing overlay gradient */
-.processing-gradient {
-  background: radial-gradient(
-    circle at center,
-    rgba(107, 143, 113, 0.15) 0%,
-    rgba(143, 176, 150, 0.1) 40%,
-    transparent 70%
-  );
-}
-
-/* Shimmer effect */
+/* Shimmer effect - monochrome */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -268,54 +262,50 @@ header {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(107, 143, 113, 0.3) 50%,
+    rgba(0, 0, 0, 0.1) 50%,
     transparent 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
 
-/* Premium gradient mesh for recording state */
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Recording state - subtle warm glow */
 @keyframes gradient-mesh {
   0%, 100% {
     background-position: 0% 50%;
   }
-  25% {
-    background-position: 50% 0%;
-  }
   50% {
     background-position: 100% 50%;
-  }
-  75% {
-    background-position: 50% 100%;
   }
 }
 
 .animate-gradient-mesh {
   background: linear-gradient(
     135deg,
-    #fef9f3 0%,
-    #fef3e2 15%,
-    #fde8d0 30%,
-    #fcd9b8 45%,
-    #fce4c8 60%,
-    #fef6e8 75%,
-    #fefcfa 100%
+    #fafafa 0%,
+    #f5f5f5 50%,
+    #fafafa 100%
   );
-  background-size: 400% 400%;
-  animation: gradient-mesh 8s ease infinite;
+  background-size: 200% 200%;
+  animation: gradient-mesh 4s ease infinite;
 }
 
 .dark .animate-gradient-mesh {
   background: linear-gradient(
     135deg,
-    #1a1a1a 0%,
-    #262320 15%,
-    #2d2820 30%,
-    #332d22 45%,
-    #2d2820 60%,
-    #262320 75%,
-    #1a1a1a 100%
+    #1c1c1e 0%,
+    #2c2c2e 50%,
+    #1c1c1e 100%
   );
 }
 
@@ -341,7 +331,7 @@ header {
 .theme-transition-overlay {
   position: fixed;
   inset: 0;
-  z-index: 0; /* Behind content, so wave passes between elements */
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -351,4 +341,21 @@ header {
 
 .theme-transition-collapse {
   animation: wave-collapse 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Apple-style subtle shadows */
+.shadow-apple {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-apple-hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.dark .shadow-apple {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-apple-hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
