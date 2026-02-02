@@ -1560,13 +1560,27 @@ export default function AppDashboard() {
         {/* Mode choice after recording */}
         {showModeChoice && (
           <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in relative z-40">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">
-              "{pendingTranscript}"
-            </p>
+            {/* Header with dismiss button */}
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex-1">
+                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Tu transcripción</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-32 overflow-y-auto">
+                  {pendingTranscript}
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowModeChoice(false); setPendingTranscript(''); setTranscript(''); }}
+                className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-[#38383a] flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#48484a] transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={processAsExtract}
-                className="flex-1 py-3 px-4 rounded-xl font-medium text-white bg-black dark:bg-white dark:text-black hover:opacity-90 transition-all"
+                className="flex-1 py-3 px-4 rounded-xl font-medium text-black bg-[#c8d9cb] hover:bg-[#b8c9bb] transition-all"
               >
                 Extraer tareas
               </button>
