@@ -1902,15 +1902,14 @@ export default function AppDashboard() {
                             }`}
                           >
                             {recording ? (
-                              <div className="relative flex items-center justify-center">
-                                <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
-                                <svg className="w-6 h-6 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                                </svg>
+                              // Recording - stop icon with subtle ping
+                              <div className="relative flex items-center justify-center transition-all duration-300">
+                                <div className="absolute w-8 h-8 rounded-full bg-white/15 dark:bg-black/15 animate-ping" />
+                                <div className="w-4 h-4 bg-white dark:bg-black rounded-sm relative z-10 transition-all duration-300" />
                               </div>
                             ) : (
-                              <svg className="w-6 h-6 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                              // Ready to record - mic icon
+                              <svg className="w-6 h-6 text-white dark:text-black transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                               </svg>
@@ -1949,14 +1948,7 @@ export default function AppDashboard() {
                             Plan
                           </button>
                         )}
-                        {isIdeaSelected && recording ? (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); stopRecording(); }}
-                            className="relative z-10 w-10 h-10 rounded-full bg-black dark:bg-white flex items-center justify-center transition-all"
-                          >
-                            <div className="w-3.5 h-3.5 bg-white dark:bg-black rounded-sm" />
-                          </button>
-                        ) : isIdeaSelected ? (
+                        {isIdeaSelected ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
                             className="relative z-10 w-10 h-10 rounded-full bg-gray-200 dark:bg-[#38383a] flex items-center justify-center transition-all"
@@ -2010,17 +2002,14 @@ export default function AppDashboard() {
                                   }`}>
                                     {isStepSelected ? (
                                       recording ? (
-                                        // Recording animation - pulsing waves (identical to standalone task)
-                                        <div className="relative flex items-center justify-center">
-                                          <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
-                                          <svg className="w-6 h-6 text-black dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                                          </svg>
+                                        // Recording - stop icon with subtle ping
+                                        <div className="relative flex items-center justify-center transition-all duration-300">
+                                          <div className="absolute w-8 h-8 rounded-full bg-black/15 dark:bg-white/15 animate-ping" />
+                                          <div className="w-4 h-4 bg-black dark:bg-black rounded-sm relative z-10 transition-all duration-300" />
                                         </div>
                                       ) : (
                                         // Ready to record - mic icon
-                                        <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-6 h-6 text-black transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
                                           <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                                           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                                         </svg>
@@ -2120,17 +2109,6 @@ export default function AppDashboard() {
                                         </svg>
                                       </button>
                                     </div>
-                                  ) : isStepSelected && recording ? (
-                                    // Stop button when recording
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        stopRecording();
-                                      }}
-                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-black dark:bg-white hover:opacity-80 transition-all"
-                                    >
-                                      <div className="w-3 h-3 bg-white dark:bg-black rounded-sm" />
-                                    </button>
                                   ) : isStepSelected ? (
                                     // X button to deselect when selected (not recording)
                                     <button
@@ -2261,17 +2239,14 @@ export default function AppDashboard() {
                           >
                             {isTaskSelected ? (
                               recording ? (
-                                // Recording animation - pulsing waves
-                                <div className="relative flex items-center justify-center">
-                                  <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
-                                  <svg className="w-6 h-6 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                                  </svg>
+                                // Recording - stop icon with subtle ping
+                                <div className="relative flex items-center justify-center transition-all duration-300">
+                                  <div className="absolute w-8 h-8 rounded-full bg-white/15 dark:bg-black/15 animate-ping" />
+                                  <div className="w-4 h-4 bg-white dark:bg-black rounded-sm relative z-10 transition-all duration-300" />
                                 </div>
                               ) : (
                                 // Ready to record - mic icon
-                                <svg className="w-6 h-6 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-6 h-6 text-white dark:text-black transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                                   <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                                 </svg>
@@ -2384,13 +2359,6 @@ export default function AppDashboard() {
                               </svg>
                             </button>
                           </div>
-                        ) : isTaskSelected && recording ? (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); stopRecording(); }}
-                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black dark:bg-white transition-all"
-                          >
-                            <div className="w-3 h-3 bg-white dark:bg-black rounded-sm" />
-                          </button>
                         ) : isTaskSelected ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
