@@ -388,6 +388,16 @@ export default function AppDashboard() {
         throw new Error(`Transcription failed: ${errData.details || errData.error || transcribeRes.status}`);
       }
       const { text } = await transcribeRes.json();
+      
+      // If no voice input detected, reset to idle without doing anything
+      if (!text || !text.trim()) {
+        setProcessing(false);
+        setProcessingStep('');
+        setSelectedItem(null);
+        setSelectedExtractedIndex(null);
+        return;
+      }
+      
       setTranscript(text);
 
       // Check if we have a selected item for voice editing
