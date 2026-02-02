@@ -167,6 +167,17 @@ export default function AppDashboard() {
   const [selectedItem, setSelectedItem] = useState<{ type: 'idea' | 'task' | 'action-point'; id: string; index?: number } | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  // Pending voice edit preview (before confirming)
+  const [pendingVoiceEdit, setPendingVoiceEdit] = useState<{
+    type: 'action-point' | 'task' | 'idea';
+    id: string;
+    index?: number;
+    originalTitle: string;
+    newTitle: string;
+    newCategory?: string;
+    taskId?: string; // For action-point, the actual task id to update
+  } | null>(null);
+  
   // Dark mode state with wave transition
   const [darkMode, setDarkMode] = useState(false);
   const [themeTransition, setThemeTransition] = useState<'idle' | 'expanding' | 'collapsing'>('idle');
@@ -631,15 +642,22 @@ export default function AppDashboard() {
             break;
           }
           case 'action-point': {
-            // Update the specific child task
+            // Show preview instead of directly updating
             const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
               .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
             const taskToUpdate = childTasks[selectedItem.index || 0];
-            if (taskToUpdate) {
-              await supabase.from('tasks').update({
-                title: result.title,
-                category: result.category,
-              }).eq('id', taskToUpdate.id);
+            if (taskToUpdate && result.title) {
+              setPendingVoiceEdit({
+                type: 'action-point',
+                id: selectedItem.id,
+                index: selectedItem.index,
+                originalTitle: taskToUpdate.title,
+                newTitle: result.title,
+                newCategory: result.category,
+                taskId: taskToUpdate.id,
+              });
+              // Don't clear selection yet - keep it for visual context
+              return; // Exit early - don't refresh/clear until confirmed
             }
             break;
           }
@@ -1145,6 +1163,37 @@ export default function AppDashboard() {
   const clearSelection = () => {
     setSelectedItem(null);
     setSelectedExtractedIndex(null);
+    setPendingVoiceEdit(null);
+  };
+
+  // Confirm pending voice edit
+  const confirmVoiceEdit = async () => {
+    if (!pendingVoiceEdit) return;
+    
+    try {
+      if (pendingVoiceEdit.type === 'action-point' && pendingVoiceEdit.taskId) {
+        await supabase.from('tasks').update({
+          title: pendingVoiceEdit.newTitle,
+          ...(pendingVoiceEdit.newCategory && { category: pendingVoiceEdit.newCategory }),
+        }).eq('id', pendingVoiceEdit.taskId);
+        
+        playTaskCreatedSound();
+        await fetchTasks();
+      }
+    } catch (err) {
+      console.error('Error confirming voice edit:', err);
+      setError('Error al guardar. Inténtalo de nuevo.');
+    }
+    
+    setPendingVoiceEdit(null);
+    setSelectedItem(null);
+    setTranscript('');
+  };
+
+  // Cancel pending voice edit
+  const cancelVoiceEdit = () => {
+    setPendingVoiceEdit(null);
+    // Keep selection so user can try again
   };
 
   // Long-press handlers for extracted tasks (before saving)
@@ -1907,19 +1956,40 @@ export default function AppDashboard() {
                                   {/* Horizontal connector */}
                                   <div className="absolute left-5 w-4 h-0.5 bg-black dark:bg-white" style={{ top: '50%' }} />
                                   
-                                  {/* Step number circle */}
-                                  <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all overflow-hidden ${
+                                  {/* Step number circle - clickable mic when selected */}
+                                  <div 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isStepSelected && !recording && !processing) {
+                                        startRecording();
+                                      }
+                                    }}
+                                    className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all overflow-hidden ${
                                     isStepSelected
-                                      ? 'bg-black dark:bg-white text-white scale-110 ring-2 ring-black dark:ring-white/30'
+                                      ? recording
+                                        ? 'bg-black dark:bg-white text-white scale-110 ring-2 ring-black dark:ring-white/30 animate-pulse cursor-pointer'
+                                        : 'bg-black dark:bg-white text-white scale-110 ring-2 ring-black dark:ring-white/30 cursor-pointer hover:scale-115 active:scale-105'
                                       : task.completed 
                                         ? 'bg-black dark:bg-white text-white' 
                                         : 'bg-white dark:bg-[#2c2c2e] border-2 border-black dark:border-white text-black dark:text-white'
                                   }`}>
                                     {isStepSelected ? (
-                                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                                      </svg>
+                                      recording ? (
+                                        // Recording state - pulsing mic with waves
+                                        <div className="relative flex items-center justify-center">
+                                          <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
+                                          <svg className="w-5 h-5 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                          </svg>
+                                        </div>
+                                      ) : (
+                                        // Ready to record - mic icon
+                                        <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                        </svg>
+                                      )
                                     ) : task.completed ? (
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -1945,7 +2015,18 @@ export default function AppDashboard() {
                                           : `${colors.cardBg} ${colors.cardBgDark} border-gray-200 dark:border-[#38383a]/50`
                                     }`}
                                   >
-                                    {inlineEdit?.taskId === task.id && inlineEdit?.field === 'title' ? (
+                                    {/* Check if this step has a pending voice edit */}
+                                    {pendingVoiceEdit?.taskId === task.id ? (
+                                      // Preview mode - show new title with confirm/cancel
+                                      <div className="space-y-2 animate-fade-in">
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 line-through">
+                                          {pendingVoiceEdit.originalTitle}
+                                        </p>
+                                        <p className="font-medium text-sm text-gray-900 dark:text-white">
+                                          {pendingVoiceEdit.newTitle}
+                                        </p>
+                                      </div>
+                                    ) : inlineEdit?.taskId === task.id && inlineEdit?.field === 'title' ? (
                                       <input
                                         ref={inlineInputRef}
                                         type="text"
@@ -1969,8 +2050,28 @@ export default function AppDashboard() {
                                     )}
                                   </div>
                                   
-                                  {/* Complete button or delete when selected */}
-                                  {isStepSelected ? (
+                                  {/* Confirm/Cancel buttons when pending edit, otherwise complete/delete */}
+                                  {pendingVoiceEdit?.taskId === task.id ? (
+                                    // Confirm/Cancel buttons for voice edit preview
+                                    <div className="flex gap-1 ml-2">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); cancelVoiceEdit(); }}
+                                        className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-[#38383a] hover:bg-gray-300 dark:hover:bg-[#48484a] text-gray-600 dark:text-gray-300 transition-all"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); confirmVoiceEdit(); }}
+                                        className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-all"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : isStepSelected ? (
                                     <button
                                       onClick={async (e) => {
                                         e.stopPropagation();
