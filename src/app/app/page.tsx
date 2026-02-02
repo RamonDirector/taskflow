@@ -1988,10 +1988,10 @@ export default function AppDashboard() {
                                     onMouseLeave={handleLongPressEnd}
                                     className={`flex-1 ml-3 p-3 rounded-xl transition-all hover:shadow-md border-2 ${
                                       isStepSelected
-                                        ? 'border-black dark:border-white ring-2 ring-black dark:ring-white/30 bg-black dark:bg-white/10'
+                                        ? 'border-[#c8d9cb] ring-2 ring-[#c8d9cb]/50 bg-[#c8d9cb]'
                                         : task.completed 
-                                          ? 'bg-gray-100 dark:bg-[#2c2c2e]/50 border-transparent' 
-                                          : `${colors.cardBg} ${colors.cardBgDark} border-gray-200 dark:border-[#38383a]/50`
+                                          ? 'bg-white/50 dark:bg-[#2c2c2e]/50 border-transparent' 
+                                          : `${colors.cardBg} ${colors.cardBgDark} border-white dark:border-[#38383a]/50`
                                     }`}
                                   >
                                     {/* Check if this step has a pending voice edit */}
@@ -2022,7 +2022,13 @@ export default function AppDashboard() {
                                     ) : (
                                       <p 
                                         onClick={() => !isStepSelected && handleItemTap(task, 'action-point', index)}
-                                        className={`font-medium text-sm cursor-pointer hover:text-black dark:text-white transition-colors ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}
+                                        className={`font-medium text-sm cursor-pointer transition-colors ${
+                                          isStepSelected 
+                                            ? 'text-black' 
+                                            : task.completed 
+                                              ? 'text-black/40 dark:text-white/40 line-through' 
+                                              : 'text-black dark:text-white hover:text-black dark:hover:text-white'
+                                        }`}
                                       >
                                         {task.title}
                                       </p>
