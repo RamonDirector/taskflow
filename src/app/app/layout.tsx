@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Dashboard — Taskflow',
+  title: 'Dashboard — Hansei',
   description: 'Capture tasks with your voice',
 };
 

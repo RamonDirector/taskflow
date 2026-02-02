@@ -244,7 +244,7 @@ export default function AppDashboard() {
 
   // Load dark mode preference
   useEffect(() => {
-    const saved = localStorage.getItem('taskflow-darkmode');
+    const saved = localStorage.getItem('hansei-darkmode');
     if (saved === 'true') {
       setDarkMode(true);
     }
@@ -254,10 +254,10 @@ export default function AppDashboard() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('taskflow-darkmode', 'true');
+      localStorage.setItem('hansei-darkmode', 'true');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('taskflow-darkmode', 'false');
+      localStorage.setItem('hansei-darkmode', 'false');
     }
   }, [darkMode]);
 
@@ -1392,7 +1392,7 @@ export default function AppDashboard() {
       }`}>
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-lg font-semibold text-black dark:text-white tracking-tight">
-            taskflow
+            hansei
           </h1>
           <div className="flex items-center gap-1">
             <button

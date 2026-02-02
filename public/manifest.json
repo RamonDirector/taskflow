@@ -1,6 +1,6 @@
 {
-  "name": "Taskflow",
-  "short_name": "Taskflow",
+  "name": "Hansei",
+  "short_name": "Hansei",
   "description": "Capture ideas in 2 seconds. Never lose one.",
   "start_url": "/app",
   "display": "standalone",

@@ -3,12 +3,12 @@ import "./globals.css";
 import { ServiceWorkerRegistration } from "./sw-register";
 
 export const metadata: Metadata = {
-  title: "Taskflow — Voice to Task in 2 Seconds",
+  title: "Hansei — Voice to Task in 2 Seconds",
   description: "Stop losing ideas. One tap, speak, done. AI transforms your voice into organized tasks before you forget them. Built for founders, creators, and overthinkers.",
   keywords: ["voice to text", "task management", "productivity app", "voice notes", "AI tasks", "capture ideas", "ADHD productivity", "voice recorder", "task automation"],
   authors: [{ name: "Ramon Prieto", url: "https://x.com/RamonPrietoX" }],
   creator: "Ramon Prieto",
-  publisher: "Taskflow",
+  publisher: "Hansei",
   robots: {
     index: true,
     follow: true,
@@ -25,13 +25,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Taskflow",
+    title: "Hansei",
   },
   openGraph: {
-    title: "Taskflow — Voice to Task in 2 Seconds",
+    title: "Hansei — Voice to Task in 2 Seconds",
     description: "Stop losing ideas. One tap, speak, done. AI transforms your voice into organized tasks before you forget them.",
     url: "https://taskflow-lyart-beta.vercel.app",
-    siteName: "Taskflow",
+    siteName: "Hansei",
     locale: "en_US",
     type: "website",
     images: [
@@ -39,13 +39,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Taskflow — Voice to Task in 2 Seconds",
+        alt: "Hansei — Voice to Task in 2 Seconds",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Taskflow — Voice to Task in 2 Seconds",
+    title: "Hansei — Voice to Task in 2 Seconds",
     description: "Stop losing ideas. One tap, speak, done. AI transforms your voice into organized tasks.",
     creator: "@RamonPrietoX",
     site: "@RamonPrietoX",

@@ -36,7 +36,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="relative z-10 px-8 py-6 flex items-center justify-between max-w-5xl mx-auto w-full">
         <span className="text-lg font-medium tracking-wide text-[#c8c8c8]">
-          taskflow
+          hansei
         </span>
         <Link 
           href="/login"
@@ -94,7 +94,7 @@ export default function LandingPage() {
           {/* Testimonial */}
           <div className="mt-12 max-w-md mx-auto">
             <p className="text-[#666] text-sm italic leading-relaxed">
-              "Ayer capturé 12 ideas en mi paseo matutino. Antes de Taskflow, habría olvidado 11."
+              "Ayer capturé 12 ideas en mi paseo matutino. Antes de Hansei, habría olvidado 11."
             </p>
             <p className="text-[#555] text-xs mt-3">— Usuario beta</p>
           </div>
@@ -224,7 +224,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative z-10 px-8 py-8 border-t border-[#181818]">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#444]">
-          <span>© 2026 taskflow</span>
+          <span>© 2026 hansei</span>
           <div className="flex gap-6">
             <a href="#" className="hover:text-[#666] transition-colors duration-300">Privacy</a>
             <a href="#" className="hover:text-[#666] transition-colors duration-300">Terms</a>
