@@ -1843,7 +1843,7 @@ export default function AppDashboard() {
                       {!isIdeaSelected && (
                         <div className="absolute inset-0 flex">
                           <div className="flex-1" />
-                          <div className={`flex-1 bg-black/90 dark:bg-white/90 flex items-center justify-end pr-6 transition-opacity rounded-r-2xl ${showIdeaDelete ? 'opacity-100' : 'opacity-0'}`}>
+                          <div className={`flex-1 bg-red-500 flex items-center justify-end pr-6 transition-opacity rounded-r-2xl ${showIdeaDelete ? 'opacity-100' : 'opacity-0'}`}>
                             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -2182,12 +2182,12 @@ export default function AppDashboard() {
                       {/* Swipe backgrounds */}
                       {!isTaskSelected && (
                         <div className="absolute inset-0 flex">
-                          <div className={`flex-1 bg-black dark:bg-white flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className={`flex-1 bg-[#c8d9cb] flex items-center pl-6 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <div className={`flex-1 bg-black/90 dark:bg-white/90 flex items-center justify-end pr-6 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                          <div className={`flex-1 bg-red-500 flex items-center justify-end pr-6 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
                             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
