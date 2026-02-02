@@ -120,6 +120,12 @@ export default function AppDashboard() {
   const [showExtracted, setShowExtracted] = useState(false);
   const [error, setError] = useState('');
   
+  // Post-recording mode choice state
+  const [showModeChoice, setShowModeChoice] = useState(false);
+  const [pendingTranscript, setPendingTranscript] = useState('');
+  const [structuredText, setStructuredText] = useState('');
+  const [showStructured, setShowStructured] = useState(false);
+  
   // Action Plan modal state
   const [actionPlanIdea, setActionPlanIdea] = useState<Task | null>(null);
   const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]);
@@ -345,7 +351,7 @@ export default function AppDashboard() {
     setProcessing(true);
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
-    setProcessingStep('Transcribiendo audio...');
+    setProcessingStep('Transcribiendo...');
 
     try {
       const formData = new FormData();
@@ -372,12 +378,31 @@ export default function AppDashboard() {
         return;
       }
 
-      // Normal flow: extract new tasks/ideas
-      setProcessingStep('Procesando...');
+      // Show mode choice: Extract tasks OR Structure text
+      setPendingTranscript(text);
+      setShowModeChoice(true);
+      setProcessingStep('');
+      setProcessing(false);
+    } catch (err: any) {
+      console.error('Audio processing error:', err);
+      setError(err?.message || 'Error al procesar el audio. Inténtalo de nuevo.');
+      setProcessing(false);
+    }
+  };
+
+  // Process as tasks/ideas extraction
+  const processAsExtract = async () => {
+    if (!pendingTranscript) return;
+    
+    setShowModeChoice(false);
+    setProcessing(true);
+    setProcessingStep('Extrayendo tareas...');
+
+    try {
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: pendingTranscript }),
       });
 
       if (!extractRes.ok) {
@@ -391,18 +416,61 @@ export default function AppDashboard() {
         setError('No se encontraron tareas ni ideas. Intenta ser más específico.');
         setProcessing(false);
         setProcessingStep('');
+        setPendingTranscript('');
         return;
       }
 
       setExtractedTasks(extractedTasksResult || []);
       setExtractedIdeas(extractedIdeasResult || []);
       setShowExtracted(true);
-      setProcessingStep('');
+      setPendingTranscript('');
     } catch (err: any) {
-      console.error('Audio processing error:', err);
-      setError(err?.message || 'Error al procesar el audio. Inténtalo de nuevo.');
+      console.error('Extract error:', err);
+      setError(err?.message || 'Error al extraer tareas.');
     }
     setProcessing(false);
+    setProcessingStep('');
+  };
+
+  // Process as structured text
+  const processAsStructure = async () => {
+    if (!pendingTranscript) return;
+    
+    setShowModeChoice(false);
+    setProcessing(true);
+    setProcessingStep('Estructurando...');
+
+    try {
+      const structureRes = await fetch('/api/structure-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: pendingTranscript }),
+      });
+
+      if (!structureRes.ok) {
+        throw new Error('Failed to structure text');
+      }
+      const { structured } = await structureRes.json();
+
+      setStructuredText(structured);
+      setShowStructured(true);
+      setPendingTranscript('');
+    } catch (err: any) {
+      console.error('Structure error:', err);
+      setError('Error al estructurar el texto.');
+    }
+    setProcessing(false);
+    setProcessingStep('');
+  };
+
+  // Copy structured text to clipboard
+  const copyStructuredText = async () => {
+    try {
+      await navigator.clipboard.writeText(structuredText);
+      // Brief visual feedback could be added here
+    } catch {
+      setError('No se pudo copiar al portapapeles');
+    }
   };
 
   // Process voice edit for selected items
@@ -1261,6 +1329,58 @@ export default function AppDashboard() {
           <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center justify-between shadow-sm">
             <span>{error}</span>
             <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600 font-bold">×</button>
+          </div>
+        )}
+
+        {/* Mode choice after recording */}
+        {showModeChoice && (
+          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">
+              "{pendingTranscript}"
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={processAsExtract}
+                className="flex-1 py-3 px-4 rounded-xl font-medium text-white bg-black dark:bg-white dark:text-black hover:opacity-90 transition-all"
+              >
+                Extraer tareas
+              </button>
+              <button
+                onClick={processAsStructure}
+                className="flex-1 py-3 px-4 rounded-xl font-medium text-black dark:text-white bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-[#48484a] transition-all"
+              >
+                Estructurar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Structured text result */}
+        {showStructured && structuredText && (
+          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold text-black dark:text-white">Texto estructurado</h3>
+              <button
+                onClick={() => { setShowStructured(false); setStructuredText(''); }}
+                className="text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm leading-relaxed max-h-80 overflow-y-auto">
+              {structuredText}
+            </div>
+            <button
+              onClick={copyStructuredText}
+              className="w-full py-3 rounded-xl font-medium text-white bg-black dark:bg-white dark:text-black hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Copiar
+            </button>
           </div>
         )}
 
