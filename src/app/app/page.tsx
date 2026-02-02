@@ -2226,8 +2226,8 @@ export default function AppDashboard() {
                                       isStepSelected
                                         ? 'border-[#c8d9cb] ring-2 ring-[#c8d9cb]/50 bg-[#c8d9cb] dark:bg-[#c8d9cb]'
                                         : task.completed 
-                                          ? 'bg-white/50 dark:bg-transparent border-transparent active:bg-gray-100 dark:active:bg-[#2c2c2e] active:border-gray-300 dark:active:border-[#48484a]' 
-                                          : 'bg-white dark:bg-transparent border-gray-100 dark:border-[#38383a] active:bg-gray-100 dark:active:bg-[#2c2c2e] active:border-gray-300 dark:active:border-[#48484a]'
+                                          ? 'bg-white/50 dark:bg-transparent border-transparent dark:border-transparent active:bg-gray-100 dark:active:bg-[#2c2c2e] active:border-gray-300 dark:active:border-[#48484a]' 
+                                          : 'bg-white dark:bg-transparent border-gray-100 dark:border-transparent active:bg-gray-100 dark:active:bg-[#2c2c2e] active:border-gray-300 dark:active:border-[#48484a]'
                                     }`}
                                   >
                                     {/* Check if this step has a pending voice edit */}
