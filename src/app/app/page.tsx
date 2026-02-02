@@ -1472,19 +1472,28 @@ export default function AppDashboard() {
             <ul className="space-y-1 mb-5">
               {/* Tasks - minimal list style */}
               {extractedTasks.map((task, i) => (
-                <li key={`task-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-white dark:hover:bg-gray-800/50 rounded-lg transition-colors">
-                  <div className="w-1 h-8 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                <li key={`task-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
+                  <div className="w-1 h-8 bg-gray-400 dark:bg-gray-500 rounded-full" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
-                    <p className="text-sm text-gray-400">
+                    <input
+                      type="text"
+                      value={task.title}
+                      onChange={(e) => {
+                        const newTasks = [...extractedTasks];
+                        newTasks[i] = { ...newTasks[i], title: e.target.value };
+                        setExtractedTasks(newTasks);
+                      }}
+                      className="font-medium text-gray-900 dark:text-white bg-transparent w-full outline-none focus:border-b focus:border-black dark:focus:border-white"
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
                     </p>
                   </div>
                   <button
                     onClick={() => removeExtractedTask(i)}
-                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                    className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -1492,19 +1501,28 @@ export default function AppDashboard() {
               ))}
               {/* Ideas - minimal list style */}
               {extractedIdeas.map((idea, i) => (
-                <li key={`idea-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-white dark:hover:bg-gray-800/50 rounded-lg transition-colors">
-                  <div className="w-1 h-8 bg-gray-400 dark:bg-white0 rounded-full" />
+                <li key={`idea-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
+                  <div className="w-1 h-8 bg-gray-500 dark:bg-gray-400 rounded-full" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white">{idea.title}</p>
+                    <input
+                      type="text"
+                      value={idea.title}
+                      onChange={(e) => {
+                        const newIdeas = [...extractedIdeas];
+                        newIdeas[i] = { ...newIdeas[i], title: e.target.value };
+                        setExtractedIdeas(newIdeas);
+                      }}
+                      className="font-medium text-gray-900 dark:text-white bg-transparent w-full outline-none focus:border-b focus:border-black dark:focus:border-white"
+                    />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Idea
                     </p>
                   </div>
                   <button
                     onClick={() => setExtractedIdeas(prev => prev.filter((_, idx) => idx !== i))}
-                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors p-1"
+                    className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
