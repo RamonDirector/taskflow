@@ -1061,7 +1061,7 @@ export default function AppDashboard() {
 
   // Long-press handlers for voice-first editing
   const handleLongPressStart = (type: 'idea' | 'task' | 'action-point', id: string, index?: number) => {
-    longPressTimer.current = setTimeout(async () => {
+    longPressTimer.current = setTimeout(() => {
       // Cancel any swipe in progress
       setSwipingTaskId(null);
       setSwipeOffset(0);
@@ -1069,9 +1069,14 @@ export default function AppDashboard() {
       setSelectedItem({ type, id, index });
       // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(50);
-      // Auto-start recording for voice edit
-      await startRecording();
+      // Don't auto-start recording - user taps the mic icon to start
     }, 500); // 500ms for long press
+  };
+  
+  // Start voice edit recording (called when user taps the mic icon on selected item)
+  const startVoiceEditRecording = async () => {
+    if (!selectedItem) return;
+    await startRecording();
   };
 
   const handleLongPressEnd = () => {
@@ -1798,17 +1803,37 @@ export default function AppDashboard() {
                                 }
                               }
                             }}
+                            onClick={(e) => {
+                              if (isTaskSelected && !recording) {
+                                e.stopPropagation();
+                                startVoiceEditRecording();
+                              }
+                            }}
                             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden cursor-pointer ${
                               isTaskSelected 
-                                ? 'bg-black dark:bg-white scale-110 ring-2 ring-black dark:ring-white/30' 
+                                ? recording 
+                                  ? 'bg-black dark:bg-white scale-110 ring-2 ring-black dark:ring-white/30 animate-pulse'
+                                  : 'bg-black dark:bg-white scale-110 ring-2 ring-black dark:ring-white/30 hover:scale-115 active:scale-105' 
                                 : `bg-white/80 ring-2 ${colors.ring} hover:scale-105 active:scale-95`
                             }`}
                           >
                             {isTaskSelected ? (
-                              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                              </svg>
+                              recording ? (
+                                // Recording animation - pulsing waves
+                                <div className="relative flex items-center justify-center">
+                                  <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
+                                  <svg className="w-6 h-6 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                  </svg>
+                                </div>
+                              ) : (
+                                // Ready to record - mic icon
+                                <svg className="w-6 h-6 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                </svg>
+                              )
                             ) : (
                               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                 {(task.category || 'task').slice(0, 2)}
