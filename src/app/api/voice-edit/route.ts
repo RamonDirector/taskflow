@@ -93,7 +93,7 @@ Return ONLY valid JSON:
   "params": {
     // For "edit":
     "title": "new title or null",
-    "category": "work|personal|health|finance|home|social|learning|errands or null",
+    "category": "work|personal|health|finance|home|social|learning|errands|fitness|medical|shopping|travel|creative|email|calls|meetings|coding|writing|family|gifts|bills|maintenance or null",
     "due_date": "YYYY-MM-DD or null",
     "priority": "high|medium|low or null"
     

@@ -134,8 +134,14 @@ Map these phrases to actual dates:
    - medium: fechas esta semana, importancia implícita
    - low: "cuando pueda", "algún día", sin fecha
 
-## CATEGORIES
-work, personal, health, finance, home, social, learning, errands
+## CATEGORIES (pick the most specific one)
+- work, meetings, email, calls, coding, writing — professional tasks
+- personal, family, social, gifts — personal life
+- health, fitness, medical — wellbeing
+- finance, bills, shopping — money related
+- home, maintenance — household
+- learning, creative — growth & hobbies
+- travel, errands — logistics
 
 ## LANGUAGE
 Detect the language of the input and respond in THE SAME LANGUAGE (titles in input language).
