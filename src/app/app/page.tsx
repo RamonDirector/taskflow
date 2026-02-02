@@ -200,6 +200,13 @@ export default function AppDashboard() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash on cold start, not on refresh
+    if (typeof window !== 'undefined') {
+      return !sessionStorage.getItem('hansei-splash-shown');
+    }
+    return true;
+  });
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
@@ -332,11 +339,16 @@ export default function AppDashboard() {
       }
       setUser(user);
       await fetchTasks();
-      // Ensure splash animation completes (1.5s minimum)
-      const splashMinTime = 1500;
-      const elapsed = Date.now() - startTime;
-      if (elapsed < splashMinTime) {
-        await new Promise(resolve => setTimeout(resolve, splashMinTime - elapsed));
+      // Only show splash animation on cold start
+      const shouldShowSplash = !sessionStorage.getItem('hansei-splash-shown');
+      if (shouldShowSplash) {
+        sessionStorage.setItem('hansei-splash-shown', 'true');
+        // Ensure splash animation completes (1.5s minimum)
+        const splashMinTime = 1500;
+        const elapsed = Date.now() - startTime;
+        if (elapsed < splashMinTime) {
+          await new Promise(resolve => setTimeout(resolve, splashMinTime - elapsed));
+        }
       }
       setLoading(false);
     };
@@ -1439,6 +1451,15 @@ export default function AppDashboard() {
   };
 
   if (loading) {
+    // Only show animated splash on cold start (not refresh)
+    if (!showSplash) {
+      return (
+        <main className="min-h-screen bg-white dark:bg-[#1c1c1e] flex items-center justify-center transition-colors">
+          <div className="w-8 h-8 border-2 border-[#c8d9cb] border-t-transparent rounded-full animate-spin" />
+        </main>
+      );
+    }
+    
     return (
       <main className="min-h-screen bg-white dark:bg-[#1c1c1e] flex flex-col items-center justify-center transition-colors">
         {/* Animated Enso splash - brush stroke style */}
