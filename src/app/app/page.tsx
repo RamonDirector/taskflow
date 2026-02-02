@@ -392,7 +392,6 @@ export default function AppDashboard() {
 
       // Check if we have a selected item for voice editing
       if (selectedItem) {
-        console.log('[Voice Edit] selectedItem:', selectedItem);
         setProcessingStep('Editando...');
         await processVoiceEdit(text);
         setProcessing(false);
@@ -535,9 +534,7 @@ export default function AppDashboard() {
           const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
             .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
           const step = childTasks[selectedItem.index || 0];
-          console.log('[Voice Edit] action-point context:', { parentIdea: parentIdea?.title, childTasks: childTasks.length, step: step?.title, index: selectedItem.index });
           if (!parentIdea || !step) {
-            console.log('[Voice Edit] EARLY RETURN - parentIdea or step missing');
             return;
           }
           
@@ -573,7 +570,6 @@ export default function AppDashboard() {
 
       if (!res.ok) throw new Error('Voice edit failed');
       const { editType, intent, result } = await res.json();
-      console.log('[Voice Edit] API response:', { editType, intent, result });
 
       // Handle different intents for tasks
       if (editType === 'task' && intent) {
@@ -655,9 +651,7 @@ export default function AppDashboard() {
             const taskToUpdate = childTasks[selectedItem.index || 0];
             // Handle both 'title' and 'new_step' from Gemini response
             const newTitle = result.title || result.new_step;
-            console.log('[Voice Edit] action-point result handler:', { taskToUpdate: taskToUpdate?.title, newTitle, resultCategory: result.category });
             if (taskToUpdate && newTitle) {
-              console.log('[Voice Edit] Setting pendingVoiceEdit');
               setPendingVoiceEdit({
                 type: 'action-point',
                 id: selectedItem.id,
@@ -670,7 +664,6 @@ export default function AppDashboard() {
               // Don't clear selection yet - keep it for visual context
               return; // Exit early - don't refresh/clear until confirmed
             } else {
-              console.log('[Voice Edit] NOT setting pendingVoiceEdit - missing taskToUpdate or newTitle');
             }
             break;
           }
