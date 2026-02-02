@@ -1942,7 +1942,7 @@ export default function AppDashboard() {
                       {hasChildren && !isCollapsed && (
                         <div className="relative ml-6 mt-2 animate-fade-in">
                           {/* Vertical connecting line */}
-                          <div className="absolute left-5 top-0 bottom-4 w-0.5 bg-gradient-to-b from-[#c8d9cb] to-black dark:from-[#c8d9cb] dark:to-white animate-line-grow" />
+                          <div className="absolute left-5 top-0 bottom-4 w-0.5 bg-[#c8d9cb] animate-line-grow" />
                           
                           <div className="space-y-2">
                             {children.map((task, index) => {
@@ -1954,7 +1954,7 @@ export default function AppDashboard() {
                               return (
                                 <div key={task.id} className="relative flex items-center">
                                   {/* Horizontal connector */}
-                                  <div className="absolute left-5 w-4 h-0.5 bg-black dark:bg-white" style={{ top: '50%' }} />
+                                  <div className="absolute left-5 w-4 h-0.5 bg-[#c8d9cb]" style={{ top: '50%' }} />
                                   
                                   {/* Step number circle - clickable mic when selected */}
                                   <div 
@@ -2401,7 +2401,7 @@ export default function AppDashboard() {
                 <div key={planAnimationKey} className="relative ml-3 mb-4">
                   {/* Vertical line that grows */}
                   <div 
-                    className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-[#000000] to-[#000000]/30 animate-line-grow"
+                    className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-[#c8d9cb] animate-line-grow"
                     style={{ animationDelay: '100ms', animationDuration: `${actionPoints.length * 200}ms` }}
                   />
                   
