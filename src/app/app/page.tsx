@@ -194,40 +194,6 @@ const priorityColors: Record<string, { bg: string; ring: string; cardBg: string;
 };
 
 // Satisfying "ding" sound using Web Audio API
-const playTaskCreatedSound = () => {
-  try {
-    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    
-    // Create a richer, more elegant chime with harmonics
-    const playTone = (freq: number, startTime: number, duration: number, volume: number) => {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, startTime);
-      
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-      
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      osc.start(startTime);
-      osc.stop(startTime + duration);
-    };
-    
-    const now = audioContext.currentTime;
-    
-    // Elegant two-note chime (like a gentle notification)
-    playTone(523.25, now, 0.4, 0.15);        // C5
-    playTone(659.25, now + 0.08, 0.35, 0.12); // E5
-    playTone(783.99, now + 0.16, 0.3, 0.08);  // G5 - subtle high harmonic
-    
-  } catch {
-    // Silently fail if audio is not supported
-  }
-};
 
 // Confetti burst for completing tasks
 const fireConfetti = () => {
@@ -727,7 +693,7 @@ export default function AppDashboard() {
               setCalendarLink(result.calendarLink);
               setCalendarTaskTitle(task?.title || '');
               setSelectedItem(null);
-              playTaskCreatedSound();
+              
             }
             break;
             
@@ -789,7 +755,7 @@ export default function AppDashboard() {
               }));
               await supabase.from('tasks').insert(rows);
             }
-            playTaskCreatedSound();
+            
             break;
           }
           case 'action-point': {
@@ -866,7 +832,7 @@ export default function AppDashboard() {
       return;
     }
 
-    playTaskCreatedSound();
+    
     setShowExtracted(false);
     setExtractedTasks([]);
     setExtractedIdeas([]);
@@ -1042,7 +1008,7 @@ export default function AppDashboard() {
         }));
         
         await supabase.from('tasks').insert(rows);
-        playTaskCreatedSound();
+        
       }
       
       await fetchTasks();
@@ -1102,7 +1068,7 @@ export default function AppDashboard() {
     // Keep idea active (not completed) - it's the parent of the chain
     // await supabase.from('tasks').update({ completed: true }).eq('id', actionPlanIdea.id);
 
-    playTaskCreatedSound();
+    
     setActionPlanIdea(null);
     setActionPoints([]);
     setDebateMessages([]);
@@ -1331,7 +1297,7 @@ export default function AppDashboard() {
           ...(pendingVoiceEdit.newCategory && { category: pendingVoiceEdit.newCategory }),
         }).eq('id', pendingVoiceEdit.taskId);
         
-        playTaskCreatedSound();
+        
         await fetchTasks();
       } else if (pendingVoiceEdit.type === 'task' && pendingVoiceEdit.taskId) {
         await supabase.from('tasks').update({
@@ -1339,7 +1305,7 @@ export default function AppDashboard() {
           ...(pendingVoiceEdit.newCategory && { category: pendingVoiceEdit.newCategory }),
         }).eq('id', pendingVoiceEdit.taskId);
         
-        playTaskCreatedSound();
+        
         await fetchTasks();
       }
     } catch (err) {
