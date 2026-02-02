@@ -1418,20 +1418,6 @@ export default function AppDashboard() {
                   <div className="absolute inset-[-8px] rounded-full border-3 border-black dark:border-white animate-pulse" />
                 )}
                 
-                {/* Progress ring - normal state (hidden when selection active) */}
-                {showProgress && (
-                  <svg className="absolute inset-[-8px] w-[calc(100%+16px)] h-[calc(100%+16px)] -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200/50 dark:text-gray-700/50" />
-                    <circle cx="50" cy="50" r="47" fill="none" stroke={`url(#micProgressGradient)`} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${progress * 295} 295`} className="transition-all duration-700 ease-out" />
-                    <defs>
-                      <linearGradient id="micProgressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor={colors.start} />
-                        <stop offset="100%" stopColor={colors.end} />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                )}
-                
                 {/* Recording pulse rings */}
                 {recording && (
                   <>
@@ -1471,7 +1457,7 @@ export default function AppDashboard() {
                       : hasSelection
                         ? 'bg-black/30 dark:bg-white/30 cursor-not-allowed'
                         : 'bg-black dark:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.25)] hover:scale-105'
-                  } ${!recording && !processing && !hasSelection && showProgress ? 'animate-heartbeat' : ''}`}
+                  }`}
                 >
                   {recording && !hasSelection ? (
                     // Recording: show timer and stop icon
@@ -1494,29 +1480,12 @@ export default function AppDashboard() {
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
-                  ) : showProgress ? (
-                    // Normal with tasks: fade cycle between stats and mic
-                    <>
-                      {/* Stats overlay - fades in first */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-cycle-first">
-                        <span className="text-2xl font-bold text-white dark:text-black">{stats.weekCompleted}/{stats.weekTotal}</span>
-                        <span className="text-[10px] text-white/60 dark:text-black/60 uppercase tracking-wide">esta semana</span>
-                      </div>
-                      {/* Mic icon - fades in second */}
-                      <svg className="w-10 h-10 text-white dark:text-black relative z-10 animate-fade-cycle-second" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                      </svg>
-                    </>
                   ) : (
-                    // No tasks yet: just mic with subtle pulse
-                    <>
-                      <span className="absolute inset-[-4px] rounded-full border-2 border-white/30 dark:border-black/30 animate-ping opacity-30" />
-                      <svg className="w-10 h-10 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                      </svg>
-                    </>
+                    // Just mic icon - clean and simple
+                    <svg className="w-10 h-10 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
                   )}
                 </button>
               </div>
@@ -1921,7 +1890,7 @@ export default function AppDashboard() {
                         {!isIdeaSelected && !isGenerating && (
                           <button
                             onClick={(e) => { e.stopPropagation(); generateActionPlanInline(idea); }}
-                            className="relative z-10 px-3 py-1.5 rounded-full bg-black dark:bg-white/10 hover:bg-black dark:bg-white/20 text-black dark:text-white text-sm font-medium transition-all flex-shrink-0"
+                            className="relative z-10 px-4 py-1.5 rounded-full bg-[#c8d9cb] hover:bg-[#b8c9bb] text-black text-sm font-semibold transition-all flex-shrink-0 shadow-sm hover:shadow-md active:scale-95"
                           >
                             Plan
                           </button>
