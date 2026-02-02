@@ -1441,29 +1441,40 @@ export default function AppDashboard() {
   if (loading) {
     return (
       <main className="min-h-screen bg-white dark:bg-[#1c1c1e] flex flex-col items-center justify-center transition-colors">
-        {/* Animated Enso splash */}
+        {/* Animated Enso splash - brush stroke style */}
         <svg 
-          className="w-24 h-24" 
+          className="w-28 h-28" 
           viewBox="0 0 100 100" 
           fill="none"
         >
-          <circle
-            cx="50"
-            cy="50"
-            r="40"
+          {/* Enso brush stroke path - organic, imperfect circle */}
+          <path
+            d="M 85 50 
+               C 85 72 72 88 50 88 
+               C 28 88 12 72 12 50 
+               C 12 28 28 12 50 12 
+               C 65 12 78 20 83 35"
             stroke="#c8d9cb"
-            strokeWidth="8"
+            strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray="220"
-            strokeDashoffset="220"
-            className="animate-enso-draw"
+            strokeLinejoin="round"
+            fill="none"
+            className="animate-enso-brush"
             style={{
-              transformOrigin: 'center',
-              transform: 'rotate(-90deg)',
+              strokeDasharray: 260,
+              strokeDashoffset: 260,
+              filter: 'url(#brush-texture)',
             }}
           />
+          {/* Brush texture filter */}
+          <defs>
+            <filter id="brush-texture" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+          </defs>
         </svg>
-        <p className="mt-6 text-sm text-gray-400 dark:text-gray-500 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+        <p className="mt-6 text-sm text-gray-400 dark:text-gray-500 opacity-0 animate-fade-in" style={{ animationDelay: '1s', animationFillMode: 'forwards' }}>
           hansei
         </p>
       </main>

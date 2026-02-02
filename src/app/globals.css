@@ -393,16 +393,27 @@ header {
   animation: completion-pulse 0.3s ease-out;
 }
 
-/* Enso splash animation - draws the zen circle */
-@keyframes enso-draw {
+/* Enso splash animation - brush stroke style */
+@keyframes enso-brush {
   0% {
-    stroke-dashoffset: 220;
+    stroke-dashoffset: 260;
+    stroke-width: 4;
+  }
+  20% {
+    stroke-width: 7;
+  }
+  50% {
+    stroke-width: 8;
+  }
+  80% {
+    stroke-width: 5;
   }
   100% {
-    stroke-dashoffset: 25;
+    stroke-dashoffset: 0;
+    stroke-width: 4;
   }
 }
 
-.animate-enso-draw {
-  animation: enso-draw 1.2s ease-out forwards;
+.animate-enso-brush {
+  animation: enso-brush 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
