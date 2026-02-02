@@ -130,6 +130,12 @@ export default function AppDashboard() {
   const [calendarLink, setCalendarLink] = useState<string | null>(null);
   const [calendarTaskTitle, setCalendarTaskTitle] = useState('');
   
+  // Extracted task editing state
+  const [selectedExtractedIndex, setSelectedExtractedIndex] = useState<{type: 'task' | 'idea', index: number} | null>(null);
+  const [editingExtractedIndex, setEditingExtractedIndex] = useState<{type: 'task' | 'idea', index: number} | null>(null);
+  const extractedLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const extractedLastTapRef = useRef<{ type: string; index: number; time: number } | null>(null);
+  
   // Action Plan modal state
   const [actionPlanIdea, setActionPlanIdea] = useState<Task | null>(null);
   const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]);
@@ -377,6 +383,15 @@ export default function AppDashboard() {
       if (selectedItem) {
         setProcessingStep('Editando...');
         await processVoiceEdit(text);
+        setProcessing(false);
+        setProcessingStep('');
+        return;
+      }
+      
+      // Check if we have a selected extracted task for voice editing
+      if (selectedExtractedIndex) {
+        setProcessingStep('Editando...');
+        await processExtractedVoiceEdit(text);
         setProcessing(false);
         setProcessingStep('');
         return;
@@ -1116,7 +1131,7 @@ export default function AppDashboard() {
   
   // Start voice edit recording (called when user taps the mic icon on selected item)
   const startVoiceEditRecording = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem && !selectedExtractedIndex) return;
     await startRecording();
   };
 
@@ -1129,6 +1144,97 @@ export default function AppDashboard() {
 
   const clearSelection = () => {
     setSelectedItem(null);
+    setSelectedExtractedIndex(null);
+  };
+
+  // Long-press handlers for extracted tasks (before saving)
+  const handleExtractedLongPressStart = (type: 'task' | 'idea', index: number) => {
+    extractedLongPressTimer.current = setTimeout(() => {
+      setSelectedExtractedIndex({ type, index });
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 500);
+  };
+
+  const handleExtractedLongPressEnd = () => {
+    if (extractedLongPressTimer.current) {
+      clearTimeout(extractedLongPressTimer.current);
+      extractedLongPressTimer.current = null;
+    }
+  };
+
+  // Handle tap on extracted task: single = voice select, double = inline edit
+  const handleExtractedTap = (type: 'task' | 'idea', index: number) => {
+    const now = Date.now();
+    const lastTap = extractedLastTapRef.current;
+    
+    if (lastTap && lastTap.type === type && lastTap.index === index && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
+      // Double tap → inline edit
+      extractedLastTapRef.current = null;
+      setEditingExtractedIndex({ type, index });
+    } else {
+      // Single tap → select for voice
+      extractedLastTapRef.current = { type, index, time: now };
+      setTimeout(() => {
+        if (extractedLastTapRef.current?.type === type && 
+            extractedLastTapRef.current?.index === index && 
+            extractedLastTapRef.current?.time === now) {
+          setSelectedExtractedIndex({ type, index });
+          extractedLastTapRef.current = null;
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  };
+
+  // Voice edit for extracted tasks
+  const startExtractedVoiceEdit = async () => {
+    if (!selectedExtractedIndex) return;
+    await startRecording();
+  };
+
+  // Process voice edit for extracted tasks
+  const processExtractedVoiceEdit = async (voiceInput: string) => {
+    if (!selectedExtractedIndex) return;
+    
+    const { type, index } = selectedExtractedIndex;
+    const item = type === 'task' ? extractedTasks[index] : extractedIdeas[index];
+    
+    try {
+      const res = await fetch('/api/voice-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          editType: 'task',
+          voiceInput,
+          context: { taskTitle: item.title, category: item.category }
+        }),
+      });
+
+      if (!res.ok) throw new Error('Voice edit failed');
+      const { intent, result } = await res.json();
+      
+      if (intent === 'edit' && result.title) {
+        if (type === 'task') {
+          const newTasks = [...extractedTasks];
+          newTasks[index] = { ...newTasks[index], title: result.title, category: result.category || newTasks[index].category };
+          setExtractedTasks(newTasks);
+        } else {
+          const newIdeas = [...extractedIdeas];
+          newIdeas[index] = { ...newIdeas[index], title: result.title, category: result.category || newIdeas[index].category };
+          setExtractedIdeas(newIdeas);
+        }
+      } else if (intent === 'delete') {
+        if (type === 'task') {
+          setExtractedTasks(prev => prev.filter((_, i) => i !== index));
+        } else {
+          setExtractedIdeas(prev => prev.filter((_, i) => i !== index));
+        }
+      }
+      
+      setSelectedExtractedIndex(null);
+    } catch (err) {
+      console.error('Voice edit error:', err);
+      setError('Error al editar. Inténtalo de nuevo.');
+    }
   };
 
   const removeExtractedTask = (index: number) => {
@@ -1254,7 +1360,7 @@ export default function AppDashboard() {
             const colors = progressColors[stats.dominantPriority as keyof typeof progressColors] || progressColors.low;
             const progress = stats.weekTotal > 0 ? (stats.weekCompleted / stats.weekTotal) : 0;
             const showProgress = tasks.length > 0 && showStats && !recording && !processing && !selectedItem;
-            const hasSelection = !!selectedItem;
+            const hasSelection = !!selectedItem || !!selectedExtractedIndex;
             
             return (
               <div className="relative">
@@ -1308,7 +1414,7 @@ export default function AppDashboard() {
                 
                 {/* Main button - Apple style black */}
                 <button
-                  onClick={recording ? stopRecording : startRecording}
+                  onClick={recording ? stopRecording : (hasSelection ? startVoiceEditRecording : startRecording)}
                   disabled={processing}
                   className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 overflow-hidden ${
                     recording 
@@ -1469,65 +1575,141 @@ export default function AppDashboard() {
               {extractedTasks.length > 0 && extractedIdeas.length > 0 && ' + '}
               {extractedIdeas.length > 0 && `${extractedIdeas.length} idea${extractedIdeas.length > 1 ? 's' : ''}`}
             </h3>
-            <ul className="space-y-1 mb-5">
-              {/* Tasks - minimal list style */}
-              {extractedTasks.map((task, i) => (
-                <li key={`task-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
-                  <div className="w-1 h-8 bg-gray-400 dark:bg-gray-500 rounded-full" />
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={task.title}
-                      onChange={(e) => {
-                        const newTasks = [...extractedTasks];
-                        newTasks[i] = { ...newTasks[i], title: e.target.value };
-                        setExtractedTasks(newTasks);
-                      }}
-                      className="font-medium text-gray-900 dark:text-white bg-transparent w-full outline-none focus:border-b focus:border-black dark:focus:border-white"
-                    />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removeExtractedTask(i)}
-                    className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2"
+            <ul className="space-y-2 mb-5">
+              {/* Tasks - with long press and double tap */}
+              {extractedTasks.map((task, i) => {
+                const isSelected = selectedExtractedIndex?.type === 'task' && selectedExtractedIndex?.index === i;
+                const isEditing = editingExtractedIndex?.type === 'task' && editingExtractedIndex?.index === i;
+                
+                return (
+                  <li 
+                    key={`task-${i}`} 
+                    className={`py-3 px-4 flex items-center gap-3 rounded-xl transition-all ${
+                      isSelected 
+                        ? 'bg-gray-200 dark:bg-[#38383a] ring-2 ring-black dark:ring-white' 
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                    }`}
+                    onTouchStart={() => handleExtractedLongPressStart('task', i)}
+                    onTouchEnd={handleExtractedLongPressEnd}
+                    onTouchCancel={handleExtractedLongPressEnd}
+                    onMouseDown={() => handleExtractedLongPressStart('task', i)}
+                    onMouseUp={handleExtractedLongPressEnd}
+                    onMouseLeave={handleExtractedLongPressEnd}
+                    onClick={() => !isEditing && handleExtractedTap('task', i)}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-              {/* Ideas - minimal list style */}
-              {extractedIdeas.map((idea, i) => (
-                <li key={`idea-${i}`} className="py-3 px-4 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
-                  <div className="w-1 h-8 bg-gray-500 dark:bg-gray-400 rounded-full" />
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={idea.title}
-                      onChange={(e) => {
-                        const newIdeas = [...extractedIdeas];
-                        newIdeas[i] = { ...newIdeas[i], title: e.target.value };
-                        setExtractedIdeas(newIdeas);
-                      }}
-                      className="font-medium text-gray-900 dark:text-white bg-transparent w-full outline-none focus:border-b focus:border-black dark:focus:border-white"
-                    />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Idea
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setExtractedIdeas(prev => prev.filter((_, idx) => idx !== i))}
-                    className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2"
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      isSelected 
+                        ? 'bg-black dark:bg-white' 
+                        : 'bg-gray-200 dark:bg-[#38383a]'
+                    }`}>
+                      {isSelected ? (
+                        <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                      ) : (
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{(task.category || 'T').slice(0, 2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={task.title}
+                          autoFocus
+                          onChange={(e) => {
+                            const newTasks = [...extractedTasks];
+                            newTasks[i] = { ...newTasks[i], title: e.target.value };
+                            setExtractedTasks(newTasks);
+                          }}
+                          onBlur={() => setEditingExtractedIndex(null)}
+                          onKeyDown={(e) => e.key === 'Enter' && setEditingExtractedIndex(null)}
+                          className="font-medium text-gray-900 dark:text-white bg-transparent w-full outline-none border-b-2 border-black dark:border-white"
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
+                      )}
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {task.due_date ? formatDueDate(task.due_date) : 'Sin fecha'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeExtractedTask(i); }}
+                      className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </li>
+                );
+              })}
+              {/* Ideas - with long press and double tap */}
+              {extractedIdeas.map((idea, i) => {
+                const isSelected = selectedExtractedIndex?.type === 'idea' && selectedExtractedIndex?.index === i;
+                const isEditing = editingExtractedIndex?.type === 'idea' && editingExtractedIndex?.index === i;
+                
+                return (
+                  <li 
+                    key={`idea-${i}`} 
+                    className={`py-3 px-4 flex items-center gap-3 rounded-xl transition-all ${
+                      isSelected 
+                        ? 'bg-gray-200 dark:bg-[#38383a] ring-2 ring-black dark:ring-white' 
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                    }`}
+                    onTouchStart={() => handleExtractedLongPressStart('idea', i)}
+                    onTouchEnd={handleExtractedLongPressEnd}
+                    onTouchCancel={handleExtractedLongPressEnd}
+                    onMouseDown={() => handleExtractedLongPressStart('idea', i)}
+                    onMouseUp={handleExtractedLongPressEnd}
+                    onMouseLeave={handleExtractedLongPressEnd}
+                    onClick={() => !isEditing && handleExtractedTap('idea', i)}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      isSelected 
+                        ? 'bg-black dark:bg-white' 
+                        : 'bg-gray-300 dark:bg-[#48484a]'
+                    }`}>
+                      {isSelected ? (
+                        <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                      ) : (
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">💡</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={idea.title}
+                          autoFocus
+                          onChange={(e) => {
+                            const newIdeas = [...extractedIdeas];
+                            newIdeas[i] = { ...newIdeas[i], title: e.target.value };
+                            setExtractedIdeas(newIdeas);
+                          }}
+                          onBlur={() => setEditingExtractedIndex(null)}
+                          onKeyDown={(e) => e.key === 'Enter' && setEditingExtractedIndex(null)}
+                          className="font-medium text-gray-900 dark:text-white bg-transparent w-full outline-none border-b-2 border-black dark:border-white"
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900 dark:text-white">{idea.title}</p>
+                      )}
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Idea</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setExtractedIdeas(prev => prev.filter((_, idx) => idx !== i)); }}
+                      className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
             <div className="flex gap-3">
               <button
