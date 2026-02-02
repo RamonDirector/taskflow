@@ -1461,19 +1461,19 @@ export default function AppDashboard() {
                   </>
                 )}
                 
-                {/* Main button - Apple style black */}
+                {/* Main button - Apple style black - DISABLED when step is selected */}
                 <button
-                  onClick={recording ? stopRecording : (hasSelection ? startVoiceEditRecording : startRecording)}
-                  disabled={processing}
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 overflow-hidden ${
-                    recording 
+                  onClick={recording && !hasSelection ? stopRecording : (!hasSelection ? startRecording : undefined)}
+                  disabled={processing || hasSelection}
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 overflow-hidden ${
+                    recording && !hasSelection
                       ? 'bg-black dark:bg-white shadow-[0_8px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_8px_40px_rgba(255,255,255,0.3)] scale-110' 
                       : hasSelection
-                        ? 'bg-black dark:bg-white shadow-[0_8px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_8px_40px_rgba(255,255,255,0.3)] scale-105'
+                        ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
                         : 'bg-black dark:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.25)] hover:scale-105'
-                  } ${!recording && !processing && showProgress ? 'animate-heartbeat' : ''}`}
+                  } ${!recording && !processing && !hasSelection && showProgress ? 'animate-heartbeat' : ''}`}
                 >
-                  {recording ? (
+                  {recording && !hasSelection ? (
                     // Recording: show timer and stop icon
                     <div className="flex flex-col items-center">
                       <span className="text-white dark:text-black text-xl font-light tabular-nums">{formatTime(recordingTime)}</span>
@@ -1485,12 +1485,12 @@ export default function AppDashboard() {
                         </span>
                       )}
                     </div>
-                  ) : processing ? (
+                  ) : processing && !hasSelection ? (
                     // Processing: animated gradient button
                     <div className="absolute inset-0 rounded-full animate-gradient-flow animate-gradient-pulse" />
                   ) : hasSelection ? (
-                    // Selection mode: mic icon
-                    <svg className="w-10 h-10 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                    // Selection mode: dimmed mic icon - inactive
+                    <svg className="w-10 h-10 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
@@ -1960,28 +1960,38 @@ export default function AppDashboard() {
                                   <div 
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (isStepSelected && !recording && !processing) {
-                                        startRecording();
+                                      if (isStepSelected && !processing) {
+                                        // Toggle recording: start if not recording, stop if recording
+                                        if (recording) {
+                                          stopRecording();
+                                        } else {
+                                          startRecording();
+                                        }
                                       }
                                     }}
-                                    className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all overflow-hidden ${
+                                    className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all overflow-hidden ${
                                     isStepSelected
                                       ? recording
-                                        ? 'bg-black dark:bg-white text-white scale-110 ring-2 ring-black dark:ring-white/30 animate-pulse cursor-pointer'
+                                        ? 'bg-black dark:bg-white text-white scale-125 ring-4 ring-black/30 dark:ring-white/30 cursor-pointer'
                                         : 'bg-black dark:bg-white text-white scale-110 ring-2 ring-black dark:ring-white/30 cursor-pointer hover:scale-115 active:scale-105'
                                       : task.completed 
                                         ? 'bg-black dark:bg-white text-white' 
                                         : 'bg-white dark:bg-[#2c2c2e] border-2 border-black dark:border-white text-black dark:text-white'
                                   }`}>
+                                    {/* Recording pulse rings - like main mic */}
+                                    {isStepSelected && recording && (
+                                      <>
+                                        <div className="absolute inset-[-8px] rounded-full border-2 border-black dark:border-white/30 animate-ping" />
+                                        <div className="absolute inset-[-4px] rounded-full border-2 border-black dark:border-white/50 animate-pulse" />
+                                      </>
+                                    )}
+                                    
                                     {isStepSelected ? (
                                       recording ? (
-                                        // Recording state - pulsing mic with waves
-                                        <div className="relative flex items-center justify-center">
-                                          <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
-                                          <svg className="w-5 h-5 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                                          </svg>
+                                        // Recording state - timer and stop icon like main mic
+                                        <div className="relative flex flex-col items-center justify-center z-10">
+                                          <span className="text-white dark:text-black text-xs font-medium tabular-nums">{formatTime(recordingTime)}</span>
+                                          <div className="w-2.5 h-2.5 bg-white dark:bg-black rounded-sm mt-0.5" />
                                         </div>
                                       ) : (
                                         // Ready to record - mic icon
