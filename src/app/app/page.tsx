@@ -126,6 +126,10 @@ export default function AppDashboard() {
   const [structuredText, setStructuredText] = useState('');
   const [showStructured, setShowStructured] = useState(false);
   
+  // Calendar action state
+  const [calendarLink, setCalendarLink] = useState<string | null>(null);
+  const [calendarTaskTitle, setCalendarTaskTitle] = useState('');
+  
   // Action Plan modal state
   const [actionPlanIdea, setActionPlanIdea] = useState<Task | null>(null);
   const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]);
@@ -536,57 +540,94 @@ export default function AppDashboard() {
       });
 
       if (!res.ok) throw new Error('Voice edit failed');
-      const { editType, result } = await res.json();
+      const { editType, intent, result } = await res.json();
 
-      // Apply the edit based on type
-      switch (editType) {
-        case 'idea': {
-          // Delete old child tasks and create new ones
-          const oldChildren = tasks.filter(t => t.parent_idea_id === selectedItem.id);
-          for (const child of oldChildren) {
-            await supabase.from('tasks').delete().eq('id', child.id);
-          }
-          
-          // Insert new action points
-          if (result.action_points && user) {
-            const rows = result.action_points.map((point: ActionPoint, index: number) => ({
-              user_id: user.id,
-              title: point.title,
-              category: point.category,
-              due_date: null,
-              priority: 'medium' as const,
-              completed: false,
-              type: 'task',
-              parent_idea_id: selectedItem.id,
-              order_index: index,
-            }));
-            await supabase.from('tasks').insert(rows);
-          }
-          playTaskCreatedSound();
-          break;
+      // Handle different intents for tasks
+      if (editType === 'task' && intent) {
+        const task = tasks.find(t => t.id === selectedItem.id);
+        
+        switch (intent) {
+          case 'calendar':
+            // Show calendar link to user
+            if (result.calendarLink) {
+              setCalendarLink(result.calendarLink);
+              setCalendarTaskTitle(task?.title || '');
+              setSelectedItem(null);
+              playTaskCreatedSound();
+            }
+            break;
+            
+          case 'complete':
+            await supabase.from('tasks').update({ completed: true }).eq('id', selectedItem.id);
+            fireConfetti();
+            break;
+            
+          case 'delete':
+            await supabase.from('tasks').delete().eq('id', selectedItem.id);
+            break;
+            
+          case 'priority':
+            if (result.level) {
+              await supabase.from('tasks').update({ priority: result.level }).eq('id', selectedItem.id);
+            }
+            break;
+            
+          case 'edit':
+          default:
+            // Update task with provided fields
+            const updateData: Record<string, any> = {};
+            if (result.title) updateData.title = result.title;
+            if (result.category) updateData.category = result.category;
+            if (result.due_date !== undefined) updateData.due_date = result.due_date;
+            if (result.priority) updateData.priority = result.priority;
+            
+            if (Object.keys(updateData).length > 0) {
+              await supabase.from('tasks').update(updateData).eq('id', selectedItem.id);
+            }
+            break;
         }
-        case 'action-point': {
-          // Update the specific child task
-          const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
-            .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
-          const taskToUpdate = childTasks[selectedItem.index || 0];
-          if (taskToUpdate) {
-            await supabase.from('tasks').update({
-              title: result.title,
-              category: result.category,
-            }).eq('id', taskToUpdate.id);
+      } else {
+        // Handle idea and action-point edits (existing logic)
+        switch (editType) {
+          case 'idea': {
+            // Delete old child tasks and create new ones
+            const oldChildren = tasks.filter(t => t.parent_idea_id === selectedItem.id);
+            for (const child of oldChildren) {
+              await supabase.from('tasks').delete().eq('id', child.id);
+            }
+            
+            // Insert new action points
+            const actionPoints = result.action_points || result;
+            if (actionPoints && Array.isArray(actionPoints) && user) {
+              const rows = actionPoints.map((point: ActionPoint, index: number) => ({
+                user_id: user.id,
+                title: point.title,
+                category: point.category,
+                due_date: null,
+                priority: 'medium' as const,
+                completed: false,
+                type: 'task',
+                parent_idea_id: selectedItem.id,
+                order_index: index,
+              }));
+              await supabase.from('tasks').insert(rows);
+            }
+            playTaskCreatedSound();
+            break;
           }
-          break;
-        }
-        case 'task': {
-          // Update the standalone task
-          await supabase.from('tasks').update({
-            title: result.title,
-            category: result.category,
-            due_date: result.due_date,
-            priority: result.priority,
-          }).eq('id', selectedItem.id);
-          break;
+          case 'action-point': {
+            // Update the specific child task
+            const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
+              .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            const taskToUpdate = childTasks[selectedItem.index || 0];
+            if (taskToUpdate) {
+              await supabase.from('tasks').update({
+                title: result.title,
+                category: result.category,
+              }).eq('id', taskToUpdate.id);
+            }
+            break;
+          }
         }
       }
 
@@ -1334,6 +1375,37 @@ export default function AppDashboard() {
           <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center justify-between shadow-sm">
             <span>{error}</span>
             <button onClick={() => setError('')} className="ml-2 text-red-400 hover:text-red-600 font-bold">×</button>
+          </div>
+        )}
+
+        {/* Calendar action result */}
+        {calendarLink && (
+          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold text-black dark:text-white">Añadir al calendario</h3>
+              <button
+                onClick={() => { setCalendarLink(null); setCalendarTaskTitle(''); }}
+                className="text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              "{calendarTaskTitle}"
+            </p>
+            <a
+              href={calendarLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-xl font-medium text-white bg-black dark:bg-white dark:text-black hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Abrir Google Calendar
+            </a>
           </div>
         )}
 
