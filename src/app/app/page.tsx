@@ -1424,7 +1424,7 @@ export default function AppDashboard() {
               </button>
               <button
                 onClick={processAsStructure}
-                className="flex-1 py-3 px-4 rounded-xl font-medium text-black dark:text-white bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-[#48484a] transition-all"
+                className="flex-1 py-3 px-4 rounded-xl font-medium text-black dark:text-white bg-gray-200 dark:bg-[#48484a] hover:bg-gray-300 dark:hover:bg-[#58585a] transition-all border border-gray-300 dark:border-[#58585a]"
               >
                 Estructurar
               </button>
@@ -1463,7 +1463,7 @@ export default function AppDashboard() {
 
         {/* Extracted tasks and ideas confirmation */}
         {showExtracted && (extractedTasks.length > 0 || extractedIdeas.length > 0) && (
-          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a]/50 border border-gray-200 dark:border-[#38383a] dark: animate-fade-in">
+          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in relative z-40">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
               {extractedTasks.length > 0 && `${extractedTasks.length} tarea${extractedTasks.length > 1 ? 's' : ''}`}
               {extractedTasks.length > 0 && extractedIdeas.length > 0 && ' + '}
@@ -1514,13 +1514,13 @@ export default function AppDashboard() {
             <div className="flex gap-3">
               <button
                 onClick={saveAllItems}
-                className="flex-1 py-3 rounded-xl font-semibold text-white bg-black dark:bg-white hover:bg-[#333333] active:bg-[#1c1c1e] transition-all shadow-md"
+                className="flex-1 py-3 rounded-xl font-semibold text-white dark:text-black bg-black dark:bg-white hover:opacity-90 active:opacity-80 transition-all"
               >
                 Guardar Todo
               </button>
               <button
                 onClick={() => { setShowExtracted(false); setExtractedTasks([]); setExtractedIdeas([]); }}
-                className="px-6 py-3 rounded-xl font-medium text-black dark:text-white bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                className="px-6 py-3 rounded-xl font-medium text-black dark:text-white bg-gray-200 dark:bg-[#48484a] hover:bg-gray-300 dark:hover:bg-[#58585a] transition-all border border-gray-300 dark:border-[#58585a]"
               >
                 Descartar
               </button>
