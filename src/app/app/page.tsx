@@ -160,15 +160,15 @@ export default function AppDashboard() {
     const newDarkMode = !darkMode;
     setThemeTransition('expanding');
     
-    // Change theme at midpoint of animation
+    // Change theme at midpoint of animation (1s total)
     setTimeout(() => {
       setDarkMode(newDarkMode);
-    }, 300);
+    }, 500);
     
     // Reset transition state after animation
     setTimeout(() => {
       setThemeTransition('idle');
-    }, 600);
+    }, 1000);
   };
   
   // Stats visibility
