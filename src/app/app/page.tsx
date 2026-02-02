@@ -1204,6 +1204,12 @@ export default function AppDashboard() {
                     <div className="flex flex-col items-center">
                       <span className="text-white text-xl font-light tabular-nums">{formatTime(recordingTime)}</span>
                       <div className="w-4 h-4 bg-white rounded-sm mt-1" />
+                      {/* Brain Dump indicator appears after 30s */}
+                      {recordingTime >= 30 && (
+                        <span className="absolute -bottom-8 text-xs text-[#6b8f71] font-medium animate-fade-in whitespace-nowrap">
+                          Brain Dump Mode
+                        </span>
+                      )}
                     </div>
                   ) : processing ? (
                     // Processing: animated gradient button
