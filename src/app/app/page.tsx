@@ -1514,7 +1514,7 @@ export default function AppDashboard() {
             <div className="flex gap-3">
               <button
                 onClick={saveAllItems}
-                className="flex-1 py-3 rounded-xl font-semibold text-white dark:text-black bg-black dark:bg-white hover:opacity-90 active:opacity-80 transition-all"
+                className="flex-1 py-3 rounded-xl font-semibold bg-black hover:bg-gray-800 active:bg-gray-900 transition-all text-white"
               >
                 Guardar Todo
               </button>
