@@ -1398,8 +1398,9 @@ export default function AppDashboard() {
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
-        {/* Hero Record Button with Progress Ring - STICKY */}
-        <div className="sticky top-16 z-30 flex flex-col items-center py-4 mb-2 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-lg -mx-5 px-5 rounded-b-3xl">
+        {/* Hero Record Button with Progress Ring - FIXED */}
+        <div className="fixed top-14 left-0 right-0 z-30 flex flex-col items-center py-4 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl shadow-sm">
+          <div className="max-w-lg mx-auto">
           {(() => {
             const progressColors = {
               high: { start: '#ef4444', end: '#f87171' },
@@ -1522,8 +1523,11 @@ export default function AppDashboard() {
               </div>
             );
           })()}
-          
+          </div>
         </div>
+        
+        {/* Spacer for fixed mic button */}
+        <div className="h-36 mb-4"></div>
 
         {/* Error */}
         {error && (
