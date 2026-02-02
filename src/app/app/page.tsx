@@ -1941,17 +1941,17 @@ export default function AppDashboard() {
                                     className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all overflow-hidden ${
                                     isStepSelected
                                       ? recording
-                                        ? 'bg-black dark:bg-white text-white scale-125 ring-4 ring-black/30 dark:ring-white/30 cursor-pointer'
-                                        : 'bg-black dark:bg-white text-white scale-110 ring-2 ring-black dark:ring-white/30 cursor-pointer hover:scale-115 active:scale-105'
+                                        ? 'bg-[#c8d9cb] dark:bg-white text-black dark:text-black scale-125 ring-4 ring-[#c8d9cb]/50 dark:ring-white/30 cursor-pointer'
+                                        : 'bg-[#c8d9cb] dark:bg-white text-black dark:text-black scale-110 ring-2 ring-[#c8d9cb]/50 dark:ring-white/30 cursor-pointer hover:scale-115 active:scale-105'
                                       : task.completed 
-                                        ? 'bg-black dark:bg-white text-white' 
-                                        : 'bg-white dark:bg-[#2c2c2e] border-2 border-black dark:border-white text-black dark:text-white'
+                                        ? 'bg-[#c8d9cb] dark:bg-white text-black dark:text-black' 
+                                        : 'bg-white dark:bg-[#2c2c2e] border-2 border-[#c8d9cb] dark:border-white text-black dark:text-white'
                                   }`}>
                                     {/* Recording pulse rings - like main mic */}
                                     {isStepSelected && recording && (
                                       <>
-                                        <div className="absolute inset-[-8px] rounded-full border-2 border-black dark:border-white/30 animate-ping" />
-                                        <div className="absolute inset-[-4px] rounded-full border-2 border-black dark:border-white/50 animate-pulse" />
+                                        <div className="absolute inset-[-8px] rounded-full border-2 border-[#c8d9cb] dark:border-white/30 animate-ping" />
+                                        <div className="absolute inset-[-4px] rounded-full border-2 border-[#c8d9cb] dark:border-white/50 animate-pulse" />
                                       </>
                                     )}
                                     
@@ -1959,12 +1959,12 @@ export default function AppDashboard() {
                                       recording ? (
                                         // Recording state - timer and stop icon like main mic
                                         <div className="relative flex flex-col items-center justify-center z-10">
-                                          <span className="text-white dark:text-black text-xs font-medium tabular-nums">{formatTime(recordingTime)}</span>
-                                          <div className="w-2.5 h-2.5 bg-white dark:bg-black rounded-sm mt-0.5" />
+                                          <span className="text-black text-xs font-medium tabular-nums">{formatTime(recordingTime)}</span>
+                                          <div className="w-2.5 h-2.5 bg-black rounded-sm mt-0.5" />
                                         </div>
                                       ) : (
                                         // Ready to record - mic icon
-                                        <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24">
                                           <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                                           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                                         </svg>
