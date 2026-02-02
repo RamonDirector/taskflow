@@ -392,3 +392,17 @@ header {
 .completion-pulse {
   animation: completion-pulse 0.3s ease-out;
 }
+
+/* Enso splash animation - draws the zen circle */
+@keyframes enso-draw {
+  0% {
+    stroke-dashoffset: 220;
+  }
+  100% {
+    stroke-dashoffset: 25;
+  }
+}
+
+.animate-enso-draw {
+  animation: enso-draw 1.2s ease-out forwards;
+}

@@ -1433,8 +1433,32 @@ export default function AppDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white dark:bg-[#1c1c1e] flex items-center justify-center transition-colors">
-        <div className="w-10 h-10 border-3 border-black dark:border-white border-t-transparent rounded-full animate-spin" />
+      <main className="min-h-screen bg-white dark:bg-[#1c1c1e] flex flex-col items-center justify-center transition-colors">
+        {/* Animated Enso splash */}
+        <svg 
+          className="w-24 h-24" 
+          viewBox="0 0 100 100" 
+          fill="none"
+        >
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            stroke="#c8d9cb"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray="220"
+            strokeDashoffset="220"
+            className="animate-enso-draw"
+            style={{
+              transformOrigin: 'center',
+              transform: 'rotate(-90deg)',
+            }}
+          />
+        </svg>
+        <p className="mt-6 text-sm text-gray-400 dark:text-gray-500 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+          hansei
+        </p>
       </main>
     );
   }
