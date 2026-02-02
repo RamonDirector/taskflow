@@ -181,10 +181,12 @@ export default function AppDashboard() {
   // Dark mode state with wave transition
   const [darkMode, setDarkMode] = useState(false);
   const [themeTransition, setThemeTransition] = useState<'idle' | 'expanding' | 'collapsing'>('idle');
+  const [transitionTargetDark, setTransitionTargetDark] = useState(false);
   
   // Animated theme toggle
   const toggleThemeWithAnimation = () => {
     const newDarkMode = !darkMode;
+    setTransitionTargetDark(newDarkMode);
     setThemeTransition('expanding');
     
     // Change theme at midpoint of animation (1s total)
@@ -1380,7 +1382,7 @@ export default function AppDashboard() {
         <div 
           className={`theme-transition-overlay ${
             themeTransition === 'expanding' ? 'theme-transition-expand' : 'theme-transition-collapse'
-          } ${darkMode ? 'bg-gray-900' : 'bg-white'}`}
+          } ${transitionTargetDark ? 'bg-[#1c1c1e]' : 'bg-white'}`}
         />
       )}
       
