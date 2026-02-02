@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import VideoShowcase from './components/VideoShowcase';
 
@@ -8,6 +8,21 @@ export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+
+  // Fetch real waitlist count on mount
+  useEffect(() => {
+    fetch('/api/waitlist')
+      .then(res => res.json())
+      .then(data => {
+        if (data.count && data.count > 0) {
+          setWaitlistCount(data.count);
+        }
+      })
+      .catch(() => {
+        // Fallback silently
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,11 +30,15 @@ export default function LandingPage() {
     
     setLoading(true);
     try {
-      await fetch('/api/waitlist', {
+      const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      const data = await res.json();
+      if (data.count) {
+        setWaitlistCount(data.count);
+      }
       setSubmitted(true);
     } catch {
       // Handle error silently
@@ -78,7 +97,7 @@ export default function LandingPage() {
                 disabled={loading}
                 className="px-6 py-3.5 rounded-lg bg-[#3d5a45] hover:bg-[#4a6b52] text-[#e8e8e8] text-sm font-medium transition-all duration-300 disabled:opacity-50 whitespace-nowrap"
               >
-                {loading ? '...' : 'Join 56 others'}
+                {loading ? '...' : waitlistCount ? `Join ${waitlistCount} others` : 'Get early access'}
               </button>
             </form>
           ) : (
@@ -226,8 +245,8 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#444]">
           <span>© 2026 hansei</span>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-[#666] transition-colors duration-300">Privacy</a>
-            <a href="#" className="hover:text-[#666] transition-colors duration-300">Terms</a>
+            <Link href="/privacy" className="hover:text-[#666] transition-colors duration-300">Privacy</Link>
+            <Link href="/terms" className="hover:text-[#666] transition-colors duration-300">Terms</Link>
             <a href="https://x.com/RamonPrietoX" target="_blank" rel="noopener noreferrer" className="hover:text-[#666] transition-colors duration-300">Twitter</a>
           </div>
         </div>
