@@ -1243,8 +1243,8 @@ export default function AppDashboard() {
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
-        {/* Hero Record Button with Progress Ring - INLINE RECORDING */}
-        <div className="flex flex-col items-center py-8 mb-4">
+        {/* Hero Record Button with Progress Ring - STICKY */}
+        <div className="sticky top-20 z-30 flex flex-col items-center py-6 mb-4 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-lg -mx-5 px-5">
           {(() => {
             const progressColors = {
               high: { start: '#ef4444', end: '#f87171' },
