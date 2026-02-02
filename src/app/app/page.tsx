@@ -1244,7 +1244,7 @@ export default function AppDashboard() {
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
         {/* Hero Record Button with Progress Ring - STICKY */}
-        <div className="sticky top-20 z-30 flex flex-col items-center py-6 mb-4 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-lg -mx-5 px-5">
+        <div className="sticky top-16 z-30 flex flex-col items-center py-4 mb-2 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-lg -mx-5 px-5 rounded-b-3xl">
           {(() => {
             const progressColors = {
               high: { start: '#ef4444', end: '#f87171' },
@@ -1411,7 +1411,7 @@ export default function AppDashboard() {
 
         {/* Mode choice after recording */}
         {showModeChoice && (
-          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in">
+          <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in relative z-40">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">
               "{pendingTranscript}"
             </p>
