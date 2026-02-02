@@ -603,15 +603,18 @@ export default function AppDashboard() {
             
           case 'edit':
           default:
-            // Update task with provided fields
-            const updateData: Record<string, any> = {};
-            if (result.title) updateData.title = result.title;
-            if (result.category) updateData.category = result.category;
-            if (result.due_date !== undefined) updateData.due_date = result.due_date;
-            if (result.priority) updateData.priority = result.priority;
-            
-            if (Object.keys(updateData).length > 0) {
-              await supabase.from('tasks').update(updateData).eq('id', selectedItem.id);
+            // Show preview instead of directly updating (like action-points)
+            if (task && result.title) {
+              setPendingVoiceEdit({
+                type: 'task',
+                id: selectedItem.id,
+                originalTitle: task.title,
+                newTitle: result.title,
+                newCategory: result.category,
+                taskId: task.id,
+              });
+              // Don't clear selection yet - keep it for visual context
+              return; // Exit early - don't refresh/clear until confirmed
             }
             break;
         }
@@ -1178,6 +1181,14 @@ export default function AppDashboard() {
     
     try {
       if (pendingVoiceEdit.type === 'action-point' && pendingVoiceEdit.taskId) {
+        await supabase.from('tasks').update({
+          title: pendingVoiceEdit.newTitle,
+          ...(pendingVoiceEdit.newCategory && { category: pendingVoiceEdit.newCategory }),
+        }).eq('id', pendingVoiceEdit.taskId);
+        
+        playTaskCreatedSound();
+        await fetchTasks();
+      } else if (pendingVoiceEdit.type === 'task' && pendingVoiceEdit.taskId) {
         await supabase.from('tasks').update({
           title: pendingVoiceEdit.newTitle,
           ...(pendingVoiceEdit.newCategory && { category: pendingVoiceEdit.newCategory }),
@@ -1867,14 +1878,45 @@ export default function AppDashboard() {
                           <div className="absolute inset-0 animate-gradient-flow opacity-80" />
                         )}
                         
-                        {/* Minimal indicator line */}
-                        <div className={`w-1 h-12 rounded-full flex-shrink-0 transition-all ${
-                          isGenerating 
-                            ? 'bg-black dark:bg-white animate-pulse' 
-                            : isIdeaSelected
-                              ? 'bg-black dark:bg-white'
-                              : 'bg-gray-400 dark:bg-white0'
-                        }`} />
+                        {/* Indicator: line when normal, mic circle when selected */}
+                        {isIdeaSelected ? (
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!recording && !processing) {
+                                startRecording();
+                              } else if (recording) {
+                                stopRecording();
+                              }
+                            }}
+                            className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer transition-all ${
+                              recording 
+                                ? 'bg-black dark:bg-white scale-110 ring-2 ring-black/30 dark:ring-white/30' 
+                                : 'bg-black dark:bg-white hover:scale-105 active:scale-95'
+                            }`}
+                          >
+                            {recording ? (
+                              <div className="relative flex items-center justify-center">
+                                <div className="absolute w-8 h-8 rounded-full bg-white/30 dark:bg-black/30 animate-ping" />
+                                <svg className="w-5 h-5 text-white dark:text-black relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                </svg>
+                              </div>
+                            ) : (
+                              <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                              </svg>
+                            )}
+                          </div>
+                        ) : (
+                          <div className={`w-1 h-12 rounded-full flex-shrink-0 transition-all ${
+                            isGenerating 
+                              ? 'bg-black dark:bg-white animate-pulse' 
+                              : 'bg-gray-400 dark:bg-gray-500'
+                          }`} />
+                        )}
                         <div className="relative z-10 flex-1 min-w-0">
                           <p className={`font-medium truncate ${isGenerating ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{idea.title}</p>
                           <div className="flex items-center gap-2">
@@ -1901,7 +1943,14 @@ export default function AppDashboard() {
                             Plan
                           </button>
                         )}
-                        {isIdeaSelected && (
+                        {isIdeaSelected && recording ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); stopRecording(); }}
+                            className="relative z-10 w-10 h-10 rounded-full bg-black dark:bg-white flex items-center justify-center transition-all"
+                          >
+                            <div className="w-3.5 h-3.5 bg-white dark:bg-black rounded-sm" />
+                          </button>
+                        ) : isIdeaSelected ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
                             className="relative z-10 w-10 h-10 rounded-full bg-gray-200 dark:bg-[#38383a] flex items-center justify-center transition-all"
@@ -1910,7 +1959,7 @@ export default function AppDashboard() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        )}
+                        ) : null}
                       </div>
                       
                       {/* Child tasks with connecting line - collapsible */}
@@ -2236,8 +2285,18 @@ export default function AppDashboard() {
                         </div>
                         {/* Title and date - tap each to edit inline */}
                         <div className="flex-1 min-w-0">
-                          {/* Title - inline editable */}
-                          {inlineEdit?.taskId === task.id && inlineEdit?.field === 'title' ? (
+                          {/* Title - with voice edit preview support */}
+                          {pendingVoiceEdit?.taskId === task.id ? (
+                            // Voice edit preview mode
+                            <div className="space-y-1 animate-fade-in">
+                              <p className="text-xs text-gray-400 dark:text-gray-500 line-through">
+                                {pendingVoiceEdit.originalTitle}
+                              </p>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {pendingVoiceEdit.newTitle}
+                              </p>
+                            </div>
+                          ) : inlineEdit?.taskId === task.id && inlineEdit?.field === 'title' ? (
                             <input
                               ref={inlineInputRef}
                               type="text"
@@ -2288,7 +2347,34 @@ export default function AppDashboard() {
                             </p>
                           )}
                         </div>
-                        {isTaskSelected ? (
+                        {/* Right button: Confirm/Cancel for voice edit, Stop when recording, X when selected, checkbox otherwise */}
+                        {pendingVoiceEdit?.taskId === task.id ? (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); cancelVoiceEdit(); }}
+                              className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-gray-600 dark:text-gray-300 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); confirmVoiceEdit(); }}
+                              className="w-8 h-8 rounded-full flex items-center justify-center bg-black dark:bg-white text-white dark:text-black transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                          </div>
+                        ) : isTaskSelected && recording ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); stopRecording(); }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black dark:bg-white transition-all"
+                          >
+                            <div className="w-3 h-3 bg-white dark:bg-black rounded-sm" />
+                          </button>
+                        ) : isTaskSelected ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-black dark:text-white transition-all"
