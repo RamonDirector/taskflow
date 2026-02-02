@@ -336,11 +336,11 @@ header {
 }
 
 .theme-transition-expand {
-  animation: wave-expand 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: wave-expand 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .theme-transition-collapse {
-  animation: wave-collapse 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: wave-collapse 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Apple-style subtle shadows */
