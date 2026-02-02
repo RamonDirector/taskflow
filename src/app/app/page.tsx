@@ -1095,13 +1095,13 @@ export default function AppDashboard() {
           : 'bg-gradient-to-b from-gray-50 via-gray-50 to-transparent dark:from-[#1c1c1e] dark:via-[#1c1c1e] dark:to-[#1c1c1e]/0'
       }`}>
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200 tracking-tight">
+          <h1 className="text-lg font-semibold text-black dark:text-white tracking-tight">
             taskflow
           </h1>
           <div className="flex items-center gap-1">
             <button
               onClick={toggleThemeWithAnimation}
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-gray-500 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               title={darkMode ? 'Light mode' : 'Dark mode'}
             >
               {darkMode ? (
@@ -1117,7 +1117,7 @@ export default function AppDashboard() {
             </button>
             <button
               onClick={handleLogout}
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all text-gray-500 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               title="Sign out"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1285,7 +1285,7 @@ export default function AppDashboard() {
                   </div>
                   <button
                     onClick={() => removeExtractedTask(i)}
-                    className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1305,7 +1305,7 @@ export default function AppDashboard() {
                   </div>
                   <button
                     onClick={() => setExtractedIdeas(prev => prev.filter((_, idx) => idx !== i))}
-                    className="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1"
+                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors p-1"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1323,7 +1323,7 @@ export default function AppDashboard() {
               </button>
               <button
                 onClick={() => { setShowExtracted(false); setExtractedTasks([]); setExtractedIdeas([]); }}
-                className="px-6 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                className="px-6 py-3 rounded-xl font-medium text-black dark:text-white bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Descartar
               </button>
@@ -1457,7 +1457,7 @@ export default function AppDashboard() {
                         <div className="relative z-10 flex-1 min-w-0">
                           <p className={`font-medium truncate ${isGenerating ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{idea.title}</p>
                           <div className="flex items-center gap-2">
-                            <p className={`text-sm ${isGenerating ? 'text-white/80' : 'text-amber-600 dark:text-gray-400'}`}>
+                            <p className={`text-sm ${isGenerating ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
                               {isGenerating ? 'Generando plan...' : hasChildren ? `${completedChildren}/${children.length} pasos` : 'Idea'}
                             </p>
                             {hasChildren && !isGenerating && (
@@ -1485,7 +1485,7 @@ export default function AppDashboard() {
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
                             className="relative z-10 w-10 h-10 rounded-full bg-gray-200 dark:bg-[#38383a] flex items-center justify-center transition-all"
                           >
-                            <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-black dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
@@ -1576,7 +1576,7 @@ export default function AppDashboard() {
                                   {isStepSelected ? (
                                     <button
                                       onClick={clearSelection}
-                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-gray-600 dark:text-gray-300 transition-all"
+                                      className="ml-2 w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-black dark:text-white transition-all"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1705,7 +1705,7 @@ export default function AppDashboard() {
                                     e.stopPropagation();
                                     saveInlineEdit(task.id, 'category', cat);
                                   }}
-                                  className={`w-full px-3 py-2 text-left text-sm hover:bg-white dark:hover:bg-gray-700 transition-colors ${task.category === cat ? 'bg-black dark:bg-white/10 text-black dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}
+                                  className={`w-full px-3 py-2 text-left text-sm hover:bg-white dark:hover:bg-gray-700 transition-colors ${task.category === cat ? 'bg-black dark:bg-white/10 text-black dark:text-white' : 'text-black dark:text-white'}`}
                                 >
                                   {categoryLabels[cat] || cat}
                                 </button>
@@ -1753,7 +1753,7 @@ export default function AppDashboard() {
                               onBlur={() => cancelInlineEdit()}
                               onClick={(e) => e.stopPropagation()}
                               autoFocus
-                              className="text-sm text-gray-600 dark:text-gray-300 bg-transparent border-b-2 border-black dark:border-white outline-none py-1 animate-fade-in"
+                              className="text-sm text-black dark:text-white bg-transparent border-b-2 border-black dark:border-white outline-none py-1 animate-fade-in"
                             />
                           ) : (
                             <p 
@@ -1770,7 +1770,7 @@ export default function AppDashboard() {
                         {isTaskSelected ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
-                            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-gray-600 dark:text-gray-300 transition-all"
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-[#38383a] text-black dark:text-white transition-all"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1807,7 +1807,7 @@ export default function AppDashboard() {
                   </div>
                   <button
                     onClick={() => deleteTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-2"
+                    className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-black dark:hover:text-white transition-all p-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1910,8 +1910,8 @@ export default function AppDashboard() {
                           key={i}
                           className={`p-2 rounded-lg text-sm ${
                             msg.role === 'user' 
-                              ? 'bg-black dark:bg-white/10 text-gray-800 dark:text-gray-200 ml-4' 
-                              : 'bg-gray-100 dark:bg-[#38383a] text-gray-700 dark:text-gray-300 mr-4'
+                              ? 'bg-black dark:bg-white/10 text-black dark:text-white ml-4' 
+                              : 'bg-gray-100 dark:bg-[#38383a] text-black dark:text-white mr-4'
                           }`}
                         >
                           {msg.content}
@@ -1973,7 +1973,7 @@ export default function AppDashboard() {
                           setTimeout(() => sendDebateMessage(), 50);
                         }}
                         disabled={debating}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-[#38383a] text-gray-600 dark:text-gray-300 hover:bg-black dark:bg-white/20 hover:text-black dark:text-white dark:hover:text-[#636366] transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-[#38383a] text-black dark:text-white hover:bg-black dark:bg-white/20 hover:text-black dark:text-white dark:hover:text-[#636366] transition-all disabled:opacity-50"
                       >
                         {chip.label}
                       </button>
@@ -2013,7 +2013,7 @@ Crear Tareas
                   </button>
                   <button
                     onClick={closeActionPlanModal}
-                    className="px-4 py-3 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                    className="px-4 py-3 rounded-xl font-medium text-black dark:text-white bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                   >
                     ✕
                   </button>
@@ -2027,7 +2027,7 @@ Crear Tareas
                 <p className="text-gray-500 dark:text-gray-400">No se pudieron generar pasos de acción.</p>
                 <button
                   onClick={closeActionPlanModal}
-                  className="mt-4 px-6 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                  className="mt-4 px-6 py-2 rounded-xl font-medium text-black dark:text-white bg-gray-100 dark:bg-[#38383a] hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 >
                   Cerrar
                 </button>
