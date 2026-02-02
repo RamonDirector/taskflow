@@ -121,19 +121,16 @@ Return ONLY valid JSON:
   }
 }`;
     } else if (editType === 'action-point') {
-      prompt = `Edit this step based on voice input.
-STEP: "${context.stepTitle}" (${context.stepIndex + 1}/${context.totalSteps})
-USER SAYS: "${voiceInput}"
+      prompt = `Edit this action step based on user's voice input. Return the updated step title.
 
-Return ONLY valid JSON:
-{
-  "intent": "edit",
-  "params": {
-    "title": "updated step",
-    "time_estimate": "30min",
-    "category": "work"
-  }
-}`;
+CURRENT STEP: "${context.stepTitle}" (step ${context.stepIndex + 1} of ${context.totalSteps})
+IDEA: "${context.ideaTitle}"
+USER VOICE INPUT: "${voiceInput}"
+
+Interpret what the user wants to change about this step and return the new title.
+
+Return ONLY this exact JSON format (no markdown, no extra text):
+{"intent":"edit","params":{"title":"the new step title here"}}`;
     } else {
       return NextResponse.json({ error: 'Invalid editType' }, { status: 400 });
     }

@@ -653,22 +653,24 @@ export default function AppDashboard() {
             const childTasks = tasks.filter(t => t.parent_idea_id === selectedItem.id)
               .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
             const taskToUpdate = childTasks[selectedItem.index || 0];
-            console.log('[Voice Edit] action-point result handler:', { taskToUpdate: taskToUpdate?.title, resultTitle: result.title, resultCategory: result.category });
-            if (taskToUpdate && result.title) {
+            // Handle both 'title' and 'new_step' from Gemini response
+            const newTitle = result.title || result.new_step;
+            console.log('[Voice Edit] action-point result handler:', { taskToUpdate: taskToUpdate?.title, newTitle, resultCategory: result.category });
+            if (taskToUpdate && newTitle) {
               console.log('[Voice Edit] Setting pendingVoiceEdit');
               setPendingVoiceEdit({
                 type: 'action-point',
                 id: selectedItem.id,
                 index: selectedItem.index,
                 originalTitle: taskToUpdate.title,
-                newTitle: result.title,
+                newTitle: newTitle,
                 newCategory: result.category,
                 taskId: taskToUpdate.id,
               });
               // Don't clear selection yet - keep it for visual context
               return; // Exit early - don't refresh/clear until confirmed
             } else {
-              console.log('[Voice Edit] NOT setting pendingVoiceEdit - missing taskToUpdate or result.title');
+              console.log('[Voice Edit] NOT setting pendingVoiceEdit - missing taskToUpdate or newTitle');
             }
             break;
           }
