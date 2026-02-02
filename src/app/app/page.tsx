@@ -1831,15 +1831,17 @@ export default function AppDashboard() {
                       {/* Idea card - swipeable, long-press for voice, click to toggle */}
                       <div 
                         onTouchStart={(e) => {
+                          // Block interaction while recording another item
+                          if (recording && !isIdeaSelected) return;
                           if (!isIdeaSelected && !isGenerating) {
                             handleTouchStart(e, idea.id);
                             handleLongPressStart('idea', idea.id);
                           }
                         }}
-                        onTouchMove={(e) => !isIdeaSelected && !isGenerating && handleTouchMove(e)}
+                        onTouchMove={(e) => !isIdeaSelected && !isGenerating && !recording && handleTouchMove(e)}
                         onTouchEnd={() => {
                           handleLongPressEnd();
-                          if (!isIdeaSelected && !isGenerating) {
+                          if (!isIdeaSelected && !isGenerating && !recording) {
                             // Handle swipe end for ideas
                             if (swipeOffset < -100) {
                               deleteIdea(idea.id);
@@ -1849,7 +1851,11 @@ export default function AppDashboard() {
                           }
                         }}
                         onTouchCancel={handleLongPressEnd}
-                        onMouseDown={() => !isGenerating && handleLongPressStart('idea', idea.id)}
+                        onMouseDown={() => {
+                          // Block interaction while recording another item
+                          if (recording && !isIdeaSelected) return;
+                          if (!isGenerating) handleLongPressStart('idea', idea.id);
+                        }}
                         onMouseUp={handleLongPressEnd}
                         onMouseLeave={handleLongPressEnd}
                         onClick={() => {
@@ -2035,10 +2041,18 @@ export default function AppDashboard() {
                                   
                                   {/* Task card - long press to select, tap to edit inline */}
                                   <div 
-                                    onTouchStart={() => !inlineEdit && handleLongPressStart('action-point', idea.id, index)}
+                                    onTouchStart={() => {
+                                      // Block interaction while recording another item
+                                      if (recording && !isStepSelected) return;
+                                      if (!inlineEdit) handleLongPressStart('action-point', idea.id, index);
+                                    }}
                                     onTouchEnd={handleLongPressEnd}
                                     onTouchCancel={handleLongPressEnd}
-                                    onMouseDown={() => !inlineEdit && handleLongPressStart('action-point', idea.id, index)}
+                                    onMouseDown={() => {
+                                      // Block interaction while recording another item
+                                      if (recording && !isStepSelected) return;
+                                      if (!inlineEdit) handleLongPressStart('action-point', idea.id, index);
+                                    }}
                                     onMouseUp={handleLongPressEnd}
                                     onMouseLeave={handleLongPressEnd}
                                     className={`flex-1 ml-3 p-3 rounded-xl transition-all hover:shadow-md border-2 ${
@@ -2187,18 +2201,24 @@ export default function AppDashboard() {
                       
                       <div
                         onTouchStart={(e) => {
+                          // Block interaction with other tasks while recording
+                          if (recording && !isTaskSelected) return;
                           if (!isTaskSelected && !inlineEdit) {
                             handleTouchStart(e, task.id);
                             handleLongPressStart('task', task.id);
                           }
                         }}
-                        onTouchMove={(e) => !isTaskSelected && !inlineEdit && handleTouchMove(e)}
+                        onTouchMove={(e) => !isTaskSelected && !inlineEdit && !recording && handleTouchMove(e)}
                         onTouchEnd={() => {
                           handleLongPressEnd();
-                          if (!isTaskSelected && !inlineEdit) handleTouchEnd(task);
+                          if (!isTaskSelected && !inlineEdit && !recording) handleTouchEnd(task);
                         }}
                         onTouchCancel={handleLongPressEnd}
-                        onMouseDown={() => !inlineEdit && handleLongPressStart('task', task.id)}
+                        onMouseDown={() => {
+                          // Block interaction with other tasks while recording
+                          if (recording && !isTaskSelected) return;
+                          if (!inlineEdit) handleLongPressStart('task', task.id);
+                        }}
                         onMouseUp={handleLongPressEnd}
                         onMouseLeave={handleLongPressEnd}
                         style={{
@@ -2219,19 +2239,21 @@ export default function AppDashboard() {
                         <div className="relative">
                           <div
                             onClick={(e) => { 
-                              e.stopPropagation(); 
-                              if (!isTaskSelected) {
+                              e.stopPropagation();
+                              if (isTaskSelected) {
+                                // Toggle recording when selected
+                                if (recording) {
+                                  stopRecording();
+                                } else if (!processing) {
+                                  startRecording();
+                                }
+                              } else {
+                                // Edit category when not selected
                                 if (inlineEdit?.taskId === task.id && inlineEdit?.field === 'category') {
                                   cancelInlineEdit();
                                 } else {
                                   startInlineEdit(task, 'category');
                                 }
-                              }
-                            }}
-                            onClick={(e) => {
-                              if (isTaskSelected && !recording) {
-                                e.stopPropagation();
-                                startVoiceEditRecording();
                               }
                             }}
                             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden cursor-pointer ${
