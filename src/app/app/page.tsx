@@ -1469,18 +1469,18 @@ export default function AppDashboard() {
                   </>
                 )}
                 
-                {/* Main button - Apple style black - COMPLETELY INACTIVE when item is selected */}
+                {/* Main button - Matcha green - COMPLETELY INACTIVE when item is selected */}
                 <button
                   onClick={hasSelection ? undefined : (recording ? stopRecording : startRecording)}
                   disabled={processing || hasSelection}
                   className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all overflow-hidden ${
                     hasSelection
-                      ? 'bg-black/20 dark:bg-white/20 pointer-events-none opacity-40'
+                      ? 'bg-[#c8d9cb]/30 pointer-events-none opacity-40'
                       : recording
-                        ? 'bg-black dark:bg-white shadow-[0_8px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_8px_40px_rgba(255,255,255,0.3)] scale-110 active:scale-105' 
+                        ? 'bg-[#c8d9cb] shadow-[0_8px_40px_rgba(200,217,203,0.5)] scale-110 active:scale-105' 
                         : processing
-                          ? 'bg-black dark:bg-white'
-                          : 'bg-black dark:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.25)] hover:scale-105 active:scale-95'
+                          ? 'bg-[#c8d9cb]'
+                          : 'bg-[#c8d9cb] shadow-[0_4px_20px_rgba(200,217,203,0.3)] hover:shadow-[0_8px_30px_rgba(200,217,203,0.5)] hover:scale-105 active:scale-95'
                   }`}
                 >
                   {hasSelection ? (
@@ -1492,8 +1492,8 @@ export default function AppDashboard() {
                   ) : recording ? (
                     // Recording: show timer and stop icon
                     <div className="flex flex-col items-center">
-                      <span className="text-white dark:text-black text-xl font-light tabular-nums">{formatTime(recordingTime)}</span>
-                      <div className="w-4 h-4 bg-white dark:bg-black rounded-sm mt-1" />
+                      <span className="text-black text-xl font-light tabular-nums">{formatTime(recordingTime)}</span>
+                      <div className="w-4 h-4 bg-black rounded-sm mt-1" />
                       {/* Brain Dump indicator appears after 30s */}
                       {recordingTime >= 30 && (
                         <span className="absolute -bottom-8 text-xs text-black dark:text-white font-medium animate-fade-in whitespace-nowrap">
@@ -1506,7 +1506,7 @@ export default function AppDashboard() {
                     <div className="absolute inset-0 rounded-full animate-gradient-flow animate-gradient-pulse" />
                   ) : (
                     // Just mic icon - clean and simple
-                    <svg className="w-10 h-10 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
