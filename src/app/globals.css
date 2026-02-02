@@ -359,3 +359,36 @@ header {
 .dark .shadow-apple-hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* Animated checkmark - draws stroke on completion */
+@keyframes checkmark-draw {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.checkmark-animated {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: checkmark-draw 0.3s ease-out forwards;
+}
+
+/* Pulse effect on completion */
+@keyframes completion-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.completion-pulse {
+  animation: completion-pulse 0.3s ease-out;
+}

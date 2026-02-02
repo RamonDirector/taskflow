@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import confetti from 'canvas-confetti';
 import { InstallPrompt } from '../components/InstallPrompt';
 
 interface Task {
@@ -196,14 +195,6 @@ const priorityColors: Record<string, { bg: string; ring: string; cardBg: string;
 // Satisfying "ding" sound using Web Audio API
 
 // Confetti burst for completing tasks
-const fireConfetti = () => {
-  confetti({
-    particleCount: 80,
-    spread: 60,
-    origin: { y: 0.7 },
-    colors: ['#000000', '#636366', '#8e8e93', '#c8d9cb'],
-  });
-};
 
 export default function AppDashboard() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -306,6 +297,9 @@ export default function AppDashboard() {
   const [swipingTaskId, setSwipingTaskId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
+  
+  // Animated checkmark state
+  const [justCompletedId, setJustCompletedId] = useState<string | null>(null);
   
   // Double tap detection
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
@@ -699,7 +693,7 @@ export default function AppDashboard() {
             
           case 'complete':
             await supabase.from('tasks').update({ completed: true }).eq('id', selectedItem.id);
-            fireConfetti();
+            
             break;
             
           case 'delete':
@@ -849,7 +843,9 @@ export default function AppDashboard() {
 
     if (!error) {
       if (!completed) {
-        fireConfetti();
+        // Trigger checkmark animation
+        setJustCompletedId(id);
+        setTimeout(() => setJustCompletedId(null), 400);
       }
       setTasks((prev) =>
         prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t))
@@ -2248,11 +2244,11 @@ export default function AppDashboard() {
                                         task.completed 
                                           ? 'bg-[#c8d9cb] text-black' 
                                           : 'border-2 border-gray-200 dark:border-gray-600 hover:border-black dark:border-white'
-                                      }`}
+                                      } ${justCompletedId === task.id ? 'completion-pulse' : ''}`}
                                     >
                                       {task.completed && (
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          <path className={justCompletedId === task.id ? 'checkmark-animated' : ''} strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                         </svg>
                                       )}
                                     </button>
