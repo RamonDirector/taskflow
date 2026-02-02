@@ -2222,12 +2222,12 @@ export default function AppDashboard() {
                                     }}
                                     onMouseUp={handleLongPressEnd}
                                     onMouseLeave={handleLongPressEnd}
-                                    className={`flex-1 ml-3 p-3 rounded-xl transition-all hover:shadow-md border-2 ${
+                                    className={`flex-1 ml-3 p-3 rounded-xl transition-all hover:shadow-md active:scale-[0.98] border-2 ${
                                       isStepSelected
-                                        ? 'border-[#c8d9cb] ring-2 ring-[#c8d9cb]/50 bg-[#c8d9cb]'
+                                        ? 'border-[#c8d9cb] ring-2 ring-[#c8d9cb]/50 bg-[#c8d9cb] dark:bg-[#c8d9cb]'
                                         : task.completed 
-                                          ? 'bg-white/50 dark:bg-[#2c2c2e]/50 border-transparent' 
-                                          : `${colors.cardBg} ${colors.cardBgDark} border-white dark:border-[#38383a]/50`
+                                          ? 'bg-white/50 dark:bg-[#2c2c2e]/50 border-transparent active:bg-gray-100 dark:active:bg-[#3c3c3e]' 
+                                          : `${colors.cardBg} ${colors.cardBgDark} border-white dark:border-[#38383a]/50 active:bg-gray-100 dark:active:bg-[#3c3c3e]`
                                     }`}
                                   >
                                     {/* Check if this step has a pending voice edit */}
@@ -2381,10 +2381,10 @@ export default function AppDashboard() {
                           transform: isBeingSwiped && !isTaskSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                           transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
                         }}
-                        className={`relative rounded-2xl p-4 border border-gray-200 dark:border-[#38383a] dark: border-2 flex items-center gap-4 group transition-all overflow-hidden ${
+                        className={`relative rounded-2xl p-4 border border-gray-200 dark:border-[#38383a] border-2 flex items-center gap-4 group transition-all overflow-hidden active:scale-[0.98] ${
                           isTaskSelected
                             ? 'border-black dark:border-white ring-2 ring-black dark:ring-white/30 scale-[1.02]'
-                            : `${colors.cardBg} ${colors.cardBgDark} border-gray-200 dark:border-[#38383a]/50 hover:`
+                            : `${colors.cardBg} ${colors.cardBgDark} border-gray-200 dark:border-[#38383a]/50 active:bg-gray-100 dark:active:bg-[#3c3c3e]`
                         }`}
                       >
                         {/* Animated gradient when recording/thinking */}
