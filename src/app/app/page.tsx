@@ -1430,13 +1430,8 @@ export default function AppDashboard() {
             
             return (
               <div className="relative">
-                {/* Selection indicator ring */}
-                {hasSelection && !recording && !processing && (
-                  <div className="absolute inset-[-8px] rounded-full border-3 border-black dark:border-white animate-pulse" />
-                )}
-                
-                {/* Recording pulse rings */}
-                {recording && (
+                {/* Recording pulse rings - only when recording from main mic (not when item selected) */}
+                {recording && !hasSelection && (
                   <>
                     <div className="absolute inset-[-12px] rounded-full border-2 border-black dark:border-white/30 animate-ping" />
                     <div className="absolute inset-[-6px] rounded-full border-2 border-black dark:border-white/50 animate-pulse" />
@@ -1464,19 +1459,27 @@ export default function AppDashboard() {
                   </>
                 )}
                 
-                {/* Main button - Apple style black - DISABLED when step is selected */}
+                {/* Main button - Apple style black - COMPLETELY INACTIVE when item is selected */}
                 <button
-                  onClick={recording && !hasSelection ? stopRecording : (!hasSelection ? startRecording : undefined)}
+                  onClick={hasSelection ? undefined : (recording ? stopRecording : startRecording)}
                   disabled={processing || hasSelection}
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 overflow-hidden ${
-                    recording && !hasSelection
-                      ? 'bg-black dark:bg-white shadow-[0_8px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_8px_40px_rgba(255,255,255,0.3)] scale-110' 
-                      : hasSelection
-                        ? 'bg-black/30 dark:bg-white/30 cursor-not-allowed'
-                        : 'bg-black dark:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.25)] hover:scale-105'
+                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all overflow-hidden ${
+                    hasSelection
+                      ? 'bg-black/20 dark:bg-white/20 pointer-events-none opacity-40'
+                      : recording
+                        ? 'bg-black dark:bg-white shadow-[0_8px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_8px_40px_rgba(255,255,255,0.3)] scale-110 active:scale-105' 
+                        : processing
+                          ? 'bg-black dark:bg-white'
+                          : 'bg-black dark:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.25)] hover:scale-105 active:scale-95'
                   }`}
                 >
-                  {recording && !hasSelection ? (
+                  {hasSelection ? (
+                    // Selection mode: completely dimmed mic icon - no interaction
+                    <svg className="w-10 h-10 text-black/30 dark:text-white/30" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                  ) : recording ? (
                     // Recording: show timer and stop icon
                     <div className="flex flex-col items-center">
                       <span className="text-white dark:text-black text-xl font-light tabular-nums">{formatTime(recordingTime)}</span>
@@ -1488,15 +1491,9 @@ export default function AppDashboard() {
                         </span>
                       )}
                     </div>
-                  ) : processing && !hasSelection ? (
+                  ) : processing ? (
                     // Processing: animated gradient button
                     <div className="absolute inset-0 rounded-full animate-gradient-flow animate-gradient-pulse" />
-                  ) : hasSelection ? (
-                    // Selection mode: dimmed mic icon - inactive
-                    <svg className="w-10 h-10 text-black/50 dark:text-white/50" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                    </svg>
                   ) : (
                     // Just mic icon - clean and simple
                     <svg className="w-10 h-10 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
