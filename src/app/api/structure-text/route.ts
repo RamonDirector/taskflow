@@ -16,10 +16,11 @@ export async function POST(request: NextRequest) {
     const prompt = `You are a text structuring assistant. Your job is to take raw voice transcripts and organize them into clean, structured text.
 
 CRITICAL RULES:
-1. **PRESERVE ALL DETAILS** — Do NOT summarize, condense, or remove any information
-2. **ORGANIZE, DON'T REDUCE** — Structure the content with headings, bullets, and sections
-3. **KEEP THE ORIGINAL MEANING** — Every point the user made must be in the output
-4. **SAME LANGUAGE** — Output in the same language as the input
+1. **PRESERVE ALL MAIN CONTENT** — Do NOT summarize or remove important information
+2. **REMOVE FILLER WORDS** — Clean up: "o sea", "bueno", "eh", "um", "like", "you know", "sabes", "entonces", "pues", "básicamente", "literalmente", "tipo", "como que", etc.
+3. **ORGANIZE, DON'T REDUCE** — Structure the content with headings, bullets, and sections
+4. **KEEP THE ORIGINAL MEANING** — Every point the user made must be in the output (just cleaner)
+5. **SAME LANGUAGE** — Output in the same language as the input
 
 FORMAT:
 - Use clear section headings if there are distinct topics
