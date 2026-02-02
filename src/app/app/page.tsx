@@ -969,6 +969,13 @@ export default function AppDashboard() {
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!swipingTaskId) return;
     const diff = e.touches[0].clientX - touchStartX.current;
+    
+    // If significant horizontal movement, cancel long press (it's a swipe)
+    if (Math.abs(diff) > 15 && longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
     setSwipeOffset(diff);
   };
 
@@ -987,6 +994,10 @@ export default function AppDashboard() {
   // Long-press handlers for voice-first editing
   const handleLongPressStart = (type: 'idea' | 'task' | 'action-point', id: string, index?: number) => {
     longPressTimer.current = setTimeout(async () => {
+      // Cancel any swipe in progress
+      setSwipingTaskId(null);
+      setSwipeOffset(0);
+      
       setSelectedItem({ type, id, index });
       // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(50);
@@ -1391,15 +1402,17 @@ export default function AppDashboard() {
                         </div>
                       )}
                       
-                      {/* Idea card - swipeable, click to toggle, tap for voice */}
+                      {/* Idea card - swipeable, long-press for voice, click to toggle */}
                       <div 
                         onTouchStart={(e) => {
                           if (!isIdeaSelected && !isGenerating) {
                             handleTouchStart(e, idea.id);
+                            handleLongPressStart('idea', idea.id);
                           }
                         }}
                         onTouchMove={(e) => !isIdeaSelected && !isGenerating && handleTouchMove(e)}
                         onTouchEnd={() => {
+                          handleLongPressEnd();
                           if (!isIdeaSelected && !isGenerating) {
                             // Handle swipe end for ideas
                             if (swipeOffset < -100) {
@@ -1409,6 +1422,10 @@ export default function AppDashboard() {
                             setSwipingTaskId(null);
                           }
                         }}
+                        onTouchCancel={handleLongPressEnd}
+                        onMouseDown={() => !isGenerating && handleLongPressStart('idea', idea.id)}
+                        onMouseUp={handleLongPressEnd}
+                        onMouseLeave={handleLongPressEnd}
                         onClick={() => {
                           if (!isIdeaSwiping && !isIdeaSelected && !isGenerating) {
                             if (hasChildren) {
