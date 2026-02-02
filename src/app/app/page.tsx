@@ -332,8 +332,15 @@ export default function AppDashboard() {
       }
       setUser(user);
       await fetchTasks();
+      // Ensure splash animation completes (1.5s minimum)
+      const splashMinTime = 1500;
+      const elapsed = Date.now() - startTime;
+      if (elapsed < splashMinTime) {
+        await new Promise(resolve => setTimeout(resolve, splashMinTime - elapsed));
+      }
       setLoading(false);
     };
+    const startTime = Date.now();
     init();
   }, [supabase, router, fetchTasks]);
 
