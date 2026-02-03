@@ -511,7 +511,7 @@ function OnboardingContent() {
                   />
                 ) : (
                   <>
-                    <span className="text-sm font-medium bg-gradient-to-r from-white via-[#6b8f71] to-white bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+                    <span className="listening-text text-sm font-medium text-white">
                       Escuchando...
                     </span>
                     <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
@@ -592,12 +592,28 @@ function OnboardingContent() {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; }
           50% { transform: translateX(-50%) scale(0.85); opacity: 0.25; }
         }
-        @keyframes shimmer {
-          0% { background-position: 100% 50%; }
-          100% { background-position: -100% 50%; }
+        @keyframes textWave {
+          0%, 100% { 
+            background-position: 0% 50%;
+          }
+          50% { 
+            background-position: 100% 50%;
+          }
         }
-        .animate-shimmer {
-          animation: shimmer 2s ease-in-out infinite;
+        .listening-text {
+          background: linear-gradient(
+            90deg, 
+            rgba(255,255,255,0.7) 0%, 
+            rgba(255,255,255,1) 25%,
+            rgba(107,143,113,1) 50%, 
+            rgba(255,255,255,1) 75%,
+            rgba(255,255,255,0.7) 100%
+          );
+          background-size: 200% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: textWave 2s ease-in-out infinite;
         }
       `}</style>
     </div>
