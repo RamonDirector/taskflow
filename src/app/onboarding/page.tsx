@@ -5,10 +5,117 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
-// App's theme color (sage green from layout.tsx viewport)
+// App's theme color
 const THEME_COLOR = '#6b8f71';
-const THEME_COLOR_DARK = '#5a7d60';
-const THEME_COLOR_LIGHT = '#6b8f7120';
+
+// SVG Icons - Apple Style
+const Icons = {
+  lightbulb: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+    </svg>
+  ),
+  check: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  note: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    </svg>
+  ),
+  list: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+    </svg>
+  ),
+  thought: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+    </svg>
+  ),
+  moon: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+    </svg>
+  ),
+  walk: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+  ),
+  shower: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+    </svg>
+  ),
+  bed: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
+    </svg>
+  ),
+  coffee: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513c0 1.135.845 2.098 1.976 2.192 1.327.11 2.669.166 4.024.166 1.355 0 2.697-.056 4.024-.166 1.131-.094 1.976-1.057 1.976-2.192v-2.513c0-1.135-.845-2.098-1.976-2.192A48.424 48.424 0 0012 8.25zm0 0V6.75" />
+    </svg>
+  ),
+  run: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+    </svg>
+  ),
+  sparkle: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+    </svg>
+  ),
+  mic: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+    </svg>
+  ),
+  bell: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+    </svg>
+  ),
+  arrow: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+    </svg>
+  ),
+  back: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+    </svg>
+  ),
+  x: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  checkSmall: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+  ),
+};
+
+const iconMap: Record<string, JSX.Element> = {
+  ideas: Icons.lightbulb,
+  tasks: Icons.check,
+  notes: Icons.note,
+  lists: Icons.list,
+  thoughts: Icons.thought,
+  dreams: Icons.moon,
+  walking: Icons.walk,
+  shower: Icons.shower,
+  bed: Icons.bed,
+  morning: Icons.coffee,
+  exercise: Icons.run,
+  random: Icons.sparkle,
+};
 
 interface ExtractedItem {
   title: string;
@@ -25,7 +132,7 @@ interface OnboardingStep {
   title: string;
   subtitle?: string;
   type: StepType;
-  options?: { id: string; icon: string; label: string; description?: string }[];
+  options?: { id: string; label: string }[];
   permissionType?: 'microphone' | 'notifications';
 }
 
@@ -33,7 +140,7 @@ const STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
     panda: '/panda/panda-wave.png',
-    title: '¡Hola! 👋',
+    title: '¡Hola!',
     subtitle: 'Soy tu compañero para capturar ideas. Nunca más perderás una.',
     type: 'welcome',
   },
@@ -48,30 +155,28 @@ const STEPS: OnboardingStep[] = [
     id: 'what-capture',
     panda: '/panda/panda-thinking.png',
     title: '¿Qué sueles capturar?',
-    subtitle: 'Selecciona todas las que apliquen',
     type: 'multi-choice',
     options: [
-      { id: 'ideas', icon: '💡', label: 'Ideas', description: 'Proyectos y conceptos' },
-      { id: 'tasks', icon: '✅', label: 'Tareas', description: 'Cosas por hacer' },
-      { id: 'notes', icon: '📝', label: 'Notas', description: 'Apuntes rápidos' },
-      { id: 'lists', icon: '📋', label: 'Listas', description: 'Compras, packing...' },
-      { id: 'thoughts', icon: '💭', label: 'Pensamientos', description: 'Reflexiones' },
-      { id: 'dreams', icon: '🌙', label: 'Sueños', description: 'Lo que soñaste' },
+      { id: 'ideas', label: 'Ideas' },
+      { id: 'tasks', label: 'Tareas' },
+      { id: 'notes', label: 'Notas' },
+      { id: 'lists', label: 'Listas' },
+      { id: 'thoughts', label: 'Pensamientos' },
+      { id: 'dreams', label: 'Sueños' },
     ],
   },
   {
     id: 'when-ideas',
     panda: '/panda/panda-thinking.png',
     title: '¿Cuándo te vienen ideas?',
-    subtitle: 'Te ayudaremos a capturarlas',
     type: 'multi-choice',
     options: [
-      { id: 'walking', icon: '🚶', label: 'Caminando' },
-      { id: 'shower', icon: '🚿', label: 'En la ducha' },
-      { id: 'bed', icon: '🛏️', label: 'Antes de dormir' },
-      { id: 'morning', icon: '☕', label: 'Por la mañana' },
-      { id: 'exercise', icon: '🏃', label: 'Ejercicio' },
-      { id: 'random', icon: '✨', label: 'Random' },
+      { id: 'walking', label: 'Caminando' },
+      { id: 'shower', label: 'Ducha' },
+      { id: 'bed', label: 'Cama' },
+      { id: 'morning', label: 'Mañana' },
+      { id: 'exercise', label: 'Ejercicio' },
+      { id: 'random', label: 'Random' },
     ],
   },
   {
@@ -100,7 +205,6 @@ const STEPS: OnboardingStep[] = [
     id: 'preview',
     panda: '/panda/panda-celebrate.png',
     title: '¡Mira lo que capturé!',
-    subtitle: 'Esto entendí de tu mensaje',
     type: 'preview',
   },
   {
@@ -115,7 +219,6 @@ const STEPS: OnboardingStep[] = [
     id: 'complete',
     panda: '/panda/panda-celebrate.png',
     title: '¡Listo!',
-    subtitle: 'Tu inbox te espera',
     type: 'complete',
   },
 ];
@@ -133,14 +236,12 @@ function OnboardingContent() {
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [permissionGranted, setPermissionGranted] = useState<Record<string, boolean>>({});
   
   // Extracted items
   const [extractedItems, setExtractedItems] = useState<ExtractedItem[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -155,13 +256,12 @@ function OnboardingContent() {
   const step = STEPS[currentStep];
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
-  // Check if already completed onboarding (allow ?reset=true to force restart)
+  // Check if already completed onboarding
   useEffect(() => {
     if (searchParams.get('reset') === 'true') {
       localStorage.removeItem('taskflow-onboarding-complete');
       localStorage.removeItem('taskflow-user-name');
       localStorage.removeItem('taskflow-onboarding-answers');
-      // Clean URL
       router.replace('/onboarding');
       return;
     }
@@ -178,7 +278,7 @@ function OnboardingContent() {
       setTimeout(() => {
         setCurrentStep(currentStep + 1);
         setIsAnimating(false);
-      }, 250);
+      }, 200);
     }
   };
 
@@ -189,7 +289,7 @@ function OnboardingContent() {
       setTimeout(() => {
         setCurrentStep(currentStep - 1);
         setIsAnimating(false);
-      }, 250);
+      }, 200);
     }
   };
 
@@ -204,8 +304,7 @@ function OnboardingContent() {
     if (!isSwiping || step.type === 'processing' || step.type === 'voice-capture') return;
     touchEndX.current = e.touches[0].clientX;
     const diff = touchEndX.current - touchStartX.current;
-    // Limit swipe offset with resistance at edges
-    const maxOffset = 100;
+    const maxOffset = 80;
     const resistance = 0.3;
     let offset = diff;
     if ((diff > 0 && currentStep === 0) || (diff < 0 && currentStep === STEPS.length - 1)) {
@@ -276,9 +375,7 @@ function OnboardingContent() {
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
+        if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
       mediaRecorder.onstop = async () => {
@@ -292,7 +389,6 @@ function OnboardingContent() {
 
       mediaRecorder.start(250);
       setIsRecording(true);
-      setIsExpanded(true);
       setRecordingTime(0);
       setTranscript('');
       
@@ -311,21 +407,6 @@ function OnboardingContent() {
     setIsRecording(false);
   };
 
-  const cancelRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setIsRecording(false);
-    setIsExpanded(false);
-    setTranscript('');
-    setRecordingTime(0);
-    chunksRef.current = [];
-  };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -334,21 +415,13 @@ function OnboardingContent() {
 
   const processAudio = async () => {
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+    setCurrentStep(prev => prev + 1);
     
-    // Move to processing step immediately
-    setIsExpanded(false);
-    setCurrentStep(prev => prev + 1); // Direct step change, no animation delay
-    setIsProcessing(true);
-    
-    // Timeout safety - auto-advance after 30 seconds if stuck
     const timeoutId = setTimeout(() => {
-      console.log('Processing timeout - auto advancing');
-      setIsProcessing(false);
       setCurrentStep(prev => prev + 1);
     }, 30000);
     
     try {
-      // Transcribe
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
 
@@ -357,24 +430,19 @@ function OnboardingContent() {
         body: formData,
       });
 
-      if (!transcribeRes.ok) {
-        console.error('Transcription failed:', transcribeRes.status);
-        throw new Error('Transcription failed');
-      }
+      if (!transcribeRes.ok) throw new Error('Transcription failed');
       
       const transcribeData = await transcribeRes.json();
       const text = transcribeData?.text || '';
       setTranscript(text);
 
-      if (!text || !text.trim()) {
+      if (!text?.trim()) {
         clearTimeout(timeoutId);
         setExtractedItems([]);
-        setIsProcessing(false);
         setCurrentStep(prev => prev + 1);
         return;
       }
 
-      // Extract tasks and ideas
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -384,29 +452,22 @@ function OnboardingContent() {
       clearTimeout(timeoutId);
 
       if (!extractRes.ok) {
-        console.error('Extraction failed:', extractRes.status);
         setExtractedItems([]);
-        setIsProcessing(false);
         setCurrentStep(prev => prev + 1);
         return;
       }
       
       const extractData = await extractRes.json();
-      const tasks = extractData?.tasks || [];
-      const ideas = extractData?.ideas || [];
-
       const items: ExtractedItem[] = [
-        ...tasks.map((t: any) => ({ ...t, type: 'task' as const })),
-        ...ideas.map((i: any) => ({ ...i, type: 'idea' as const })),
+        ...(extractData?.tasks || []).map((t: any) => ({ ...t, type: 'task' as const })),
+        ...(extractData?.ideas || []).map((i: any) => ({ ...i, type: 'idea' as const })),
       ];
 
       setExtractedItems(items);
-      setIsProcessing(false);
       setCurrentStep(prev => prev + 1);
     } catch (e) {
       console.error('Processing error:', e);
       clearTimeout(timeoutId);
-      setIsProcessing(false);
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -424,14 +485,12 @@ function OnboardingContent() {
         type: item.type,
         voice_context: transcript,
       }));
-
       await supabase.from('tasks').insert(rows);
     }
 
     localStorage.setItem('taskflow-onboarding-complete', 'true');
     localStorage.setItem('taskflow-user-name', userName);
     localStorage.setItem('taskflow-onboarding-answers', JSON.stringify(answers));
-    
     router.push('/app');
   };
 
@@ -444,245 +503,258 @@ function OnboardingContent() {
       case 'welcome':
       case 'complete':
       case 'permission':
+      case 'preview':
         return true;
       case 'name-input':
         return userName.trim().length > 0;
       case 'multi-choice':
         return (answers[step.id]?.length || 0) > 0;
       case 'voice-capture':
-        return false;
       case 'processing':
         return false;
-      case 'preview':
-        return true;
       default:
         return true;
     }
   };
 
-  const renderStepContent = () => {
+  // Render bottom input area based on step type
+  const renderBottomInput = () => {
     switch (step.type) {
+      case 'welcome':
+        return (
+          <button
+            onClick={goNext}
+            className="w-full h-14 rounded-2xl font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:opacity-90"
+            style={{ backgroundColor: THEME_COLOR }}
+          >
+            Empezar
+            {Icons.arrow}
+          </button>
+        );
+
       case 'name-input':
         return (
-          <div className="w-full max-w-sm">
+          <div className="flex gap-3">
             <input
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               placeholder="Tu nombre"
-              className="w-full px-6 py-4 text-xl text-center bg-[var(--gray-1)] dark:bg-[var(--gray-1)] border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#6b8f71] transition-all"
+              className="flex-1 px-5 h-14 text-lg bg-[var(--gray-1)] border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#6b8f71] transition-all"
               autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && canProceed() && goNext()}
             />
+            <button
+              onClick={goNext}
+              disabled={!canProceed()}
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white transition-all active:scale-95 ${
+                canProceed() ? 'hover:opacity-90' : 'opacity-40'
+              }`}
+              style={{ backgroundColor: THEME_COLOR }}
+            >
+              {Icons.arrow}
+            </button>
           </div>
         );
 
       case 'multi-choice':
         return (
-          <div className="w-full grid grid-cols-2 gap-2">
-            {step.options?.map((option, i) => {
+          <button
+            onClick={goNext}
+            disabled={!canProceed()}
+            className={`w-full h-14 rounded-2xl font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+              canProceed() ? 'hover:opacity-90' : 'opacity-40'
+            }`}
+            style={{ backgroundColor: THEME_COLOR }}
+          >
+            Siguiente
+            {Icons.arrow}
+          </button>
+        );
+
+      case 'permission':
+        return (
+          <div className="space-y-3">
+            <button
+              onClick={() => handlePermission(step.permissionType!)}
+              className={`w-full h-14 rounded-2xl flex items-center justify-between px-5 transition-all ${
+                permissionGranted[step.permissionType!]
+                  ? 'bg-[#6b8f7115] border-2 border-[#6b8f71]'
+                  : 'bg-[var(--gray-1)] border-2 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-3 text-[var(--foreground)]">
+                {step.permissionType === 'microphone' ? Icons.mic : Icons.bell}
+                <span className="font-medium">
+                  {step.permissionType === 'microphone' ? 'Permitir micrófono' : 'Activar notificaciones'}
+                </span>
+              </span>
+              <div 
+                className={`w-12 h-7 rounded-full transition-all duration-200 flex items-center ${
+                  permissionGranted[step.permissionType!] ? 'justify-end' : 'justify-start'
+                }`}
+                style={{ backgroundColor: permissionGranted[step.permissionType!] ? THEME_COLOR : 'var(--gray-3)' }}
+              >
+                <div className="w-5 h-5 bg-white rounded-full shadow-md m-1" />
+              </div>
+            </button>
+            <button
+              onClick={goNext}
+              className="w-full h-14 rounded-2xl font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:opacity-90"
+              style={{ backgroundColor: THEME_COLOR }}
+            >
+              {permissionGranted[step.permissionType!] ? 'Continuar' : 'Omitir'}
+              {Icons.arrow}
+            </button>
+          </div>
+        );
+
+      case 'voice-capture':
+        return (
+          <div className="relative">
+            {!isRecording ? (
+              <button
+                onClick={startRecording}
+                className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 bg-[var(--gray-1)] border-2 border-dashed border-[var(--gray-3)] text-[var(--gray-5)] transition-all hover:border-[#6b8f71] hover:text-[#6b8f71]"
+              >
+                {Icons.mic}
+                <span>Toca para hablar</span>
+              </button>
+            ) : (
+              <div className="w-full h-14 rounded-2xl flex items-center gap-3 px-4 bg-[#1c1c1e]">
+                <button
+                  onClick={() => {
+                    if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
+                    setIsRecording(false);
+                  }}
+                  className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                >
+                  {Icons.x}
+                </button>
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-0.5 rounded-full bg-[#6b8f71]"
+                        style={{ animation: `waveform 0.5s ease-in-out infinite`, animationDelay: `${i * 80}ms` }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-white/90 text-sm font-medium">Escuchando...</span>
+                  <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
+                </div>
+                <button
+                  onClick={stopRecording}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95"
+                  style={{ backgroundColor: THEME_COLOR }}
+                >
+                  {Icons.checkSmall}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'processing':
+        return (
+          <div className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 bg-[var(--gray-1)]">
+            <div className="w-5 h-5 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[var(--gray-5)]">Procesando...</span>
+          </div>
+        );
+
+      case 'preview':
+        return (
+          <button
+            onClick={goNext}
+            className="w-full h-14 rounded-2xl font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:opacity-90"
+            style={{ backgroundColor: THEME_COLOR }}
+          >
+            Continuar
+            {Icons.arrow}
+          </button>
+        );
+
+      case 'complete':
+        return (
+          <button
+            onClick={saveItemsAndFinish}
+            className="w-full h-14 rounded-2xl font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:opacity-90"
+            style={{ backgroundColor: THEME_COLOR }}
+          >
+            Ir a mi inbox
+            {Icons.arrow}
+          </button>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Render middle content based on step type
+  const renderMiddleContent = () => {
+    switch (step.type) {
+      case 'multi-choice':
+        return (
+          <div className="flex flex-wrap justify-center gap-2 px-4">
+            {step.options?.map((option) => {
               const isSelected = answers[step.id]?.includes(option.id);
               return (
                 <button
                   key={option.id}
                   onClick={() => handleMultiChoice(step.id, option.id)}
-                  className={`p-3 rounded-2xl border transition-all duration-200 text-left no-select ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all duration-200 hover:scale-105 active:scale-95 ${
                     isSelected
-                      ? 'border-[#6b8f71] bg-[#6b8f7115] shadow-apple-hover'
-                      : 'border-[var(--gray-2)] dark:border-[var(--gray-2)] hover:border-[var(--gray-3)] bg-[var(--background)]'
+                      ? 'border-[#6b8f71] bg-[#6b8f7115] text-[#6b8f71]'
+                      : 'border-[var(--gray-2)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--gray-3)]'
                   }`}
-                  style={{ animationDelay: `${i * 30}ms` }}
                 >
-                  <span className="text-xl block mb-0.5">{option.icon}</span>
-                  <span className="font-medium text-[var(--foreground)] text-sm block">{option.label}</span>
-                  {option.description && (
-                    <span className="text-xs text-[var(--gray-4)]">{option.description}</span>
-                  )}
+                  <span className={isSelected ? 'text-[#6b8f71]' : 'text-[var(--gray-4)]'}>
+                    {iconMap[option.id]}
+                  </span>
+                  <span className="font-medium text-sm">{option.label}</span>
                 </button>
               );
             })}
           </div>
         );
 
-      case 'permission':
-        return (
-          <button
-            onClick={() => handlePermission(step.permissionType!)}
-            className={`w-full max-w-sm p-4 rounded-2xl border transition-all duration-200 flex items-center justify-between no-select ${
-              permissionGranted[step.permissionType!]
-                ? 'border-[#6b8f71] bg-[#6b8f7115]'
-                : 'border-[var(--gray-2)] bg-[var(--background)]'
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <span className="text-2xl">
-                {step.permissionType === 'microphone' ? '🎤' : '🔔'}
-              </span>
-              <span className="font-medium text-[var(--foreground)]">
-                {step.permissionType === 'microphone' ? 'Permitir micrófono' : 'Notificaciones'}
-              </span>
-            </span>
-            <div 
-              className={`w-12 h-7 rounded-full transition-all duration-200 flex items-center ${
-                permissionGranted[step.permissionType!] ? 'justify-end' : 'justify-start'
-              }`}
-              style={{ 
-                backgroundColor: permissionGranted[step.permissionType!] ? THEME_COLOR : 'var(--gray-2)'
-              }}
-            >
-              <div className="w-5 h-5 bg-white rounded-full shadow-apple m-1" />
-            </div>
-          </button>
-        );
-
-      case 'voice-capture':
-        return (
-          <div className="w-full max-w-sm">
-            <div className="relative h-14">
-              {/* Normal state */}
-              <div 
-                className={`absolute inset-0 flex items-center gap-3 px-4 rounded-full border border-[var(--gray-2)] bg-[var(--background)] transition-all duration-300 ${
-                  isExpanded ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'
-                }`}
-              >
-                <span className="text-[var(--gray-4)] flex-1 text-sm">Toca para grabar...</span>
-                <button
-                  onClick={startRecording}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-                  style={{ backgroundColor: THEME_COLOR }}
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Expanded recording state */}
-              <div 
-                className={`absolute inset-0 flex items-center transition-all duration-300 ${
-                  isExpanded 
-                    ? 'opacity-100 scale-100' 
-                    : 'opacity-0 scale-95 pointer-events-none'
-                }`}
-              >
-                <div className="flex-1 flex items-center gap-2 px-3 h-full rounded-full bg-[#1c1c1e] dark:bg-[#000000]">
-                  {/* Cancel */}
-                  <button
-                    onClick={cancelRecording}
-                    className="w-9 h-9 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-
-                  {/* Waveform */}
-                  <div className="flex-1 flex items-center gap-2 px-2">
-                    {isRecording && (
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(4)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-0.5 rounded-full bg-[#6b8f71]"
-                            style={{
-                              animation: `waveform 0.5s ease-in-out infinite`,
-                              animationDelay: `${i * 80}ms`,
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    <span className="text-white/90 text-sm font-medium">
-                      {isRecording ? 'Escuchando...' : 'Procesando...'}
-                    </span>
-                    <span className="text-white/50 text-xs ml-auto tabular-nums">
-                      {formatTime(recordingTime)}
-                    </span>
-                  </div>
-
-                  {/* Confirm */}
-                  <button
-                    onClick={stopRecording}
-                    disabled={!isRecording}
-                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                    style={{ backgroundColor: THEME_COLOR }}
-                  >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-center text-[var(--gray-4)] text-xs mt-4">
-              Habla naturalmente, como si le contaras a un amigo
-            </p>
-          </div>
-        );
-
-      case 'processing':
-        return (
-          <div className="w-full max-w-sm flex flex-col items-center">
-            {/* Minimal spinner */}
-            <div className="relative w-16 h-16 mb-6">
-              <div 
-                className="absolute inset-0 rounded-full animate-ping opacity-20"
-                style={{ backgroundColor: THEME_COLOR }}
-              />
-              <div 
-                className="absolute inset-0 rounded-full border-2 border-[var(--gray-2)] border-t-[#6b8f71] animate-spin"
-              />
-            </div>
-            
-            {transcript && (
-              <div className="w-full p-4 rounded-2xl bg-[var(--gray-1)] border border-[var(--gray-2)]">
-                <p className="text-xs text-[var(--gray-4)] mb-1">Escuché:</p>
-                <p className="text-[var(--foreground)] text-sm">{transcript}</p>
-              </div>
-            )}
-          </div>
-        );
-
       case 'preview':
         return (
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm space-y-2 px-4">
             {extractedItems.length === 0 ? (
               <div className="text-center py-6">
                 <p className="text-[var(--gray-5)]">No detecté tareas o ideas.</p>
                 <p className="text-[var(--gray-4)] text-sm mt-1">Podrás agregar más en la app.</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {extractedItems.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--background)] border border-[var(--gray-2)] shadow-apple animate-fade-in"
-                    style={{ animationDelay: `${i * 80}ms` }}
-                  >
-                    <span className="text-lg">
-                      {item.type === 'idea' ? '💡' : '✅'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-[var(--foreground)] text-sm truncate">{item.title}</p>
-                      <p className="text-xs text-[var(--gray-4)]">{item.category}</p>
-                    </div>
-                    <button
-                      onClick={() => removeExtractedItem(i)}
-                      className="w-7 h-7 flex items-center justify-center text-[var(--gray-4)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+              extractedItems.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--background)] border border-[var(--gray-2)] shadow-sm"
+                >
+                  <span className="text-[var(--gray-4)]">
+                    {item.type === 'idea' ? Icons.lightbulb : Icons.check}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[var(--foreground)] text-sm truncate">{item.title}</p>
+                    <p className="text-xs text-[var(--gray-4)]">{item.category}</p>
                   </div>
-                ))}
-              </div>
+                  <button
+                    onClick={() => removeExtractedItem(i)}
+                    className="w-7 h-7 flex items-center justify-center text-[var(--gray-4)] hover:text-red-500 rounded-full transition-colors"
+                  >
+                    {Icons.x}
+                  </button>
+                </div>
+              ))
             )}
           </div>
         );
 
       case 'complete':
-        const itemCount = extractedItems.length;
         return (
           <div className="text-center">
             {userName && (
@@ -690,9 +762,9 @@ function OnboardingContent() {
                 Bienvenido, <span className="font-semibold text-[#6b8f71]">{userName}</span>
               </p>
             )}
-            {itemCount > 0 && (
+            {extractedItems.length > 0 && (
               <p className="text-[var(--gray-4)] text-sm mt-1">
-                {itemCount} {itemCount === 1 ? 'item' : 'items'} esperándote
+                {extractedItems.length} {extractedItems.length === 1 ? 'item' : 'items'} esperándote
               </p>
             )}
           </div>
@@ -704,8 +776,13 @@ function OnboardingContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col">
-      {/* Progress bar - minimal */}
+    <div 
+      className="min-h-screen bg-[var(--background)] flex flex-col"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Progress bar */}
       <div className="h-0.5 bg-[var(--gray-2)]">
         <div 
           className="h-full transition-all duration-300 ease-out"
@@ -713,7 +790,7 @@ function OnboardingContent() {
         />
       </div>
 
-      {/* Progress dots - Apple style */}
+      {/* Progress dots */}
       <div className="flex justify-center gap-1.5 pt-4 pb-2">
         {STEPS.map((_, i) => (
           <div
@@ -727,138 +804,78 @@ function OnboardingContent() {
         ))}
       </div>
 
-      {/* Main content */}
-      <div 
-        className="flex-1 flex flex-col items-center px-5 overflow-hidden touch-pan-y"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div
-          className={`w-full max-w-md flex flex-col items-center transition-all ease-out ${
-            isSwiping ? 'duration-0' : 'duration-300'
-          } ${
-            isAnimating
-              ? direction === 'forward'
-                ? '-translate-x-full opacity-0'
-                : 'translate-x-full opacity-0'
-              : ''
-          }`}
-          style={{
-            transform: isAnimating 
-              ? undefined 
-              : `translateX(${swipeOffset}px)`,
-          }}
+      {/* Back button */}
+      {currentStep > 0 && canSwipeBack() && (
+        <button
+          onClick={goBack}
+          className="absolute top-14 left-4 w-10 h-10 rounded-full flex items-center justify-center text-[var(--gray-4)] hover:text-[var(--foreground)] hover:bg-[var(--gray-1)] transition-all z-10"
         >
-          {/* Panda with premium shadow effect */}
-          <div className="relative w-32 h-32 mb-4">
-            {/* Animated shadow underneath */}
-            <div 
-              className="absolute bottom-0 left-1/2 w-16 h-3 rounded-full bg-black/10 dark:bg-black/20 blur-sm"
-              style={{ 
-                animation: 'shadowPulse 3s ease-in-out infinite',
-                transform: 'translateX(-50%)',
-              }}
-            />
-            <Image
-              src={step.panda}
-              alt="Panda"
-              fill
-              className="object-contain drop-shadow-lg"
-              style={{ 
-                animation: 'float 3s ease-in-out infinite',
-                filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.15))',
-              }}
-              priority
-            />
-          </div>
+          {Icons.back}
+        </button>
+      )}
 
-          {/* Title - Apple typography */}
-          <h1 className="text-xl font-semibold text-[var(--foreground)] text-center tracking-tight">
-            {step.type === 'complete' && userName 
-              ? `¡Listo, ${userName}!`
-              : step.title
-            }
-          </h1>
+      {/* Main content area - Panda at top, content in middle */}
+      <div 
+        className={`flex-1 flex flex-col items-center pt-4 overflow-hidden transition-all ease-out ${
+          isSwiping ? 'duration-0' : 'duration-300'
+        } ${
+          isAnimating
+            ? direction === 'forward'
+              ? '-translate-x-full opacity-0'
+              : 'translate-x-full opacity-0'
+            : ''
+        }`}
+        style={{ transform: isAnimating ? undefined : `translateX(${swipeOffset}px)` }}
+      >
+        {/* Panda - positioned at top */}
+        <div className="relative w-28 h-28 mb-4">
+          <div 
+            className="absolute bottom-0 left-1/2 w-14 h-2.5 rounded-full bg-black/10 dark:bg-black/20 blur-sm"
+            style={{ animation: 'shadowPulse 3s ease-in-out infinite', transform: 'translateX(-50%)' }}
+          />
+          <Image
+            src={step.panda}
+            alt="Panda"
+            fill
+            className="object-contain"
+            style={{ animation: 'float 3s ease-in-out infinite', filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))' }}
+            priority
+          />
+        </div>
 
-          {/* Subtitle */}
-          {step.subtitle && step.type !== 'complete' && (
-            <p className="text-[var(--gray-4)] text-sm text-center mt-1 mb-5">
-              {step.subtitle}
-            </p>
-          )}
+        {/* Title */}
+        <h1 className="text-2xl font-semibold text-[var(--foreground)] text-center tracking-tight px-4">
+          {step.type === 'complete' && userName ? `¡Listo, ${userName}!` : step.title}
+        </h1>
 
-          {step.type === 'complete' && (
-            <div className="mb-5" />
-          )}
+        {/* Subtitle */}
+        {step.subtitle && (
+          <p className="text-[var(--gray-4)] text-sm text-center mt-1.5 px-4 max-w-xs">
+            {step.subtitle}
+          </p>
+        )}
 
-          {/* Content */}
-          <div className="w-full flex justify-center">
-            {renderStepContent()}
-          </div>
+        {/* Middle content area (chips, preview, etc) */}
+        <div className="flex-1 flex items-center justify-center w-full py-6">
+          {renderMiddleContent()}
         </div>
       </div>
 
-      {/* Bottom nav - Apple style */}
-      {step.type !== 'processing' && (
-        <div className="p-5 pb-8 flex gap-3 max-w-md mx-auto w-full">
-          {currentStep > 0 && step.type !== 'complete' && step.type !== 'preview' && (
-            <button
-              onClick={goBack}
-              className="w-11 h-11 rounded-full border border-[var(--gray-2)] flex items-center justify-center text-[var(--gray-4)] hover:border-[var(--gray-3)] hover:text-[var(--gray-5)] transition-all active:scale-95"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-          
-          {step.type !== 'voice-capture' && (
-            <button
-              onClick={step.type === 'complete' ? saveItemsAndFinish : goNext}
-              disabled={!canProceed()}
-              className={`flex-1 h-11 rounded-full font-medium text-white text-sm transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.98] ${
-                canProceed() ? 'hover:opacity-90' : 'opacity-40 cursor-not-allowed'
-              }`}
-              style={{ backgroundColor: THEME_COLOR }}
-            >
-              {step.type === 'complete' ? (
-                'Ir a mi inbox →'
-              ) : step.type === 'welcome' ? (
-                'Empezar'
-              ) : step.type === 'preview' ? (
-                'Continuar'
-              ) : (
-                <>
-                  Siguiente
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      )}
+      {/* Bottom input area - fixed at bottom */}
+      <div className="p-5 pb-8 max-w-md mx-auto w-full">
+        {renderBottomInput()}
+      </div>
 
       {/* Animations */}
       <style jsx global>{`
         @keyframes float {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
+          50% { transform: translateY(-6px); }
         }
-        
         @keyframes shadowPulse {
-          0%, 100% { 
-            transform: translateX(-50%) scale(1);
-            opacity: 0.4;
-          }
-          50% { 
-            transform: translateX(-50%) scale(0.85);
-            opacity: 0.25;
-          }
+          0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; }
+          50% { transform: translateX(-50%) scale(0.85); opacity: 0.25; }
         }
-        
         @keyframes waveform {
           0%, 100% { height: 6px; }
           50% { height: 18px; }
