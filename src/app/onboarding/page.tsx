@@ -275,10 +275,17 @@ export default function OnboardingPage() {
   const processAudio = async () => {
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
     
-    // Move to processing step
-    goNext();
-    setIsProcessing(true);
+    // Move to processing step immediately
     setIsExpanded(false);
+    setCurrentStep(prev => prev + 1); // Direct step change, no animation delay
+    setIsProcessing(true);
+    
+    // Timeout safety - auto-advance after 30 seconds if stuck
+    const timeoutId = setTimeout(() => {
+      console.log('Processing timeout - auto advancing');
+      setIsProcessing(false);
+      setCurrentStep(prev => prev + 1);
+    }, 30000);
     
     try {
       // Transcribe
@@ -290,14 +297,20 @@ export default function OnboardingPage() {
         body: formData,
       });
 
-      if (!transcribeRes.ok) throw new Error('Transcription failed');
-      const { text } = await transcribeRes.json();
+      if (!transcribeRes.ok) {
+        console.error('Transcription failed:', transcribeRes.status);
+        throw new Error('Transcription failed');
+      }
+      
+      const transcribeData = await transcribeRes.json();
+      const text = transcribeData?.text || '';
       setTranscript(text);
 
       if (!text || !text.trim()) {
+        clearTimeout(timeoutId);
         setExtractedItems([]);
         setIsProcessing(false);
-        goNext();
+        setCurrentStep(prev => prev + 1);
         return;
       }
 
@@ -308,21 +321,33 @@ export default function OnboardingPage() {
         body: JSON.stringify({ text }),
       });
 
-      if (!extractRes.ok) throw new Error('Extraction failed');
-      const { tasks, ideas } = await extractRes.json();
+      clearTimeout(timeoutId);
+
+      if (!extractRes.ok) {
+        console.error('Extraction failed:', extractRes.status);
+        setExtractedItems([]);
+        setIsProcessing(false);
+        setCurrentStep(prev => prev + 1);
+        return;
+      }
+      
+      const extractData = await extractRes.json();
+      const tasks = extractData?.tasks || [];
+      const ideas = extractData?.ideas || [];
 
       const items: ExtractedItem[] = [
-        ...(tasks || []).map((t: any) => ({ ...t, type: 'task' as const })),
-        ...(ideas || []).map((i: any) => ({ ...i, type: 'idea' as const })),
+        ...tasks.map((t: any) => ({ ...t, type: 'task' as const })),
+        ...ideas.map((i: any) => ({ ...i, type: 'idea' as const })),
       ];
 
       setExtractedItems(items);
       setIsProcessing(false);
-      goNext();
+      setCurrentStep(prev => prev + 1);
     } catch (e) {
       console.error('Processing error:', e);
+      clearTimeout(timeoutId);
       setIsProcessing(false);
-      goNext();
+      setCurrentStep(prev => prev + 1);
     }
   };
 
