@@ -491,12 +491,13 @@ function OnboardingContent() {
             >
               {/* Black overlay that expands from the mic button */}
               <div 
-                className={`absolute inset-0 bg-[#1c1c1e] rounded-full transition-all ease-out ${
-                  isRecording ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-                }`}
+                className="absolute inset-0 bg-[#1c1c1e] rounded-full transition-all"
                 style={{ 
-                  transformOrigin: 'calc(100% - 24px) center',
-                  transitionDuration: '900ms'
+                  clipPath: isRecording 
+                    ? 'circle(150% at calc(100% - 24px) 50%)' 
+                    : 'circle(0% at calc(100% - 24px) 50%)',
+                  transitionDuration: '700ms',
+                  transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               />
               {/* Cancel button - only when recording */}
