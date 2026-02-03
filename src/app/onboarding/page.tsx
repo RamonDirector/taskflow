@@ -425,7 +425,7 @@ function OnboardingContent() {
         <div className="relative w-32 h-32 mb-6">
           {/* Matcha aura glow */}
           <div 
-            className="absolute inset-0 rounded-full bg-[#6b8f71]/60 blur-2xl scale-150"
+            className="absolute inset-0 rounded-full bg-[#6b8f71]/50 blur-2xl scale-150"
             style={{ animation: 'auraPulse 3s ease-in-out infinite' }}
           />
           {/* Shadow */}
@@ -638,8 +638,8 @@ function OnboardingContent() {
           50% { transform: translateX(-50%) scale(0.85); opacity: 0.25; }
         }
         @keyframes auraPulse {
-          0%, 100% { opacity: 0.6; transform: scale(1.4); }
-          50% { opacity: 1; transform: scale(1.6); }
+          0%, 100% { opacity: 0.4; transform: scale(1.4); }
+          50% { opacity: 0.6; transform: scale(1.6); }
         }
         @keyframes dotFade {
           0%, 20% { opacity: 0; }
