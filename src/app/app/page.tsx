@@ -1629,13 +1629,24 @@ export default function AppDashboard() {
                   </>
                 )}
                 
-                {/* Main button - Matcha green - COMPLETELY INACTIVE when item is selected */}
+                {/* Main button - Matcha green - Tapping when selected clears selection and starts recording */}
                 <button
-                  onClick={hasSelection ? undefined : (recording ? stopRecording : startRecording)}
-                  disabled={processing || hasSelection}
+                  onClick={() => {
+                    if (processing) return;
+                    if (hasSelection) {
+                      // Clear selection and start recording in one tap
+                      clearSelection();
+                      startRecording();
+                    } else if (recording) {
+                      stopRecording();
+                    } else {
+                      startRecording();
+                    }
+                  }}
+                  disabled={processing}
                   className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all overflow-hidden ${
                     hasSelection
-                      ? 'bg-[#c8d9cb]/30 pointer-events-none opacity-40'
+                      ? 'bg-[#c8d9cb]/50 opacity-60'
                       : recording
                         ? 'bg-[#c8d9cb] shadow-[0_8px_40px_rgba(200,217,203,0.5)] scale-110 active:scale-105' 
                         : processing
@@ -1644,8 +1655,8 @@ export default function AppDashboard() {
                   }`}
                 >
                   {hasSelection ? (
-                    // Selection mode: completely dimmed mic icon - no interaction
-                    <svg className="w-10 h-10 text-black/30 dark:text-white/30" fill="currentColor" viewBox="0 0 24 24">
+                    // Selection mode: slightly dimmed but still tappable - shows it will start fresh recording
+                    <svg className="w-10 h-10 text-black/50 dark:text-white/50" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
