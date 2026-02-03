@@ -29,17 +29,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /app routes - redirect to login if not authenticated
-  if (!user && request.nextUrl.pathname.startsWith('/app')) {
+  // Protect /app and /onboarding routes - redirect to login if not authenticated
+  if (!user && (request.nextUrl.pathname.startsWith('/app') || request.nextUrl.pathname.startsWith('/onboarding'))) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from login page to app
+  // Redirect logged-in users away from login page to onboarding (they'll be redirected to app if completed)
   if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone();
-    url.pathname = '/app';
+    url.pathname = '/onboarding';
     return NextResponse.redirect(url);
   }
 
