@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, TouchEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, TouchEvent, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
@@ -120,8 +120,9 @@ const STEPS: OnboardingStep[] = [
   },
 ];
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   
   const [currentStep, setCurrentStep] = useState(0);
@@ -156,20 +157,19 @@ export default function OnboardingPage() {
 
   // Check if already completed onboarding (allow ?reset=true to force restart)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('reset') === 'true') {
+    if (searchParams.get('reset') === 'true') {
       localStorage.removeItem('taskflow-onboarding-complete');
       localStorage.removeItem('taskflow-user-name');
       localStorage.removeItem('taskflow-onboarding-answers');
       // Clean URL
-      window.history.replaceState({}, '', '/onboarding');
+      router.replace('/onboarding');
       return;
     }
     const completed = localStorage.getItem('taskflow-onboarding-complete');
     if (completed) {
       router.push('/app');
     }
-  }, [router]);
+  }, [router, searchParams]);
 
   const goNext = () => {
     if (currentStep < STEPS.length - 1) {
@@ -865,5 +865,17 @@ export default function OnboardingPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
