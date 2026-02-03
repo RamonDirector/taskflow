@@ -154,8 +154,17 @@ export default function OnboardingPage() {
   const step = STEPS[currentStep];
   const progress = ((currentStep + 1) / STEPS.length) * 100;
 
-  // Check if already completed onboarding
+  // Check if already completed onboarding (allow ?reset=true to force restart)
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === 'true') {
+      localStorage.removeItem('taskflow-onboarding-complete');
+      localStorage.removeItem('taskflow-user-name');
+      localStorage.removeItem('taskflow-onboarding-answers');
+      // Clean URL
+      window.history.replaceState({}, '', '/onboarding');
+      return;
+    }
     const completed = localStorage.getItem('taskflow-onboarding-complete');
     if (completed) {
       router.push('/app');
