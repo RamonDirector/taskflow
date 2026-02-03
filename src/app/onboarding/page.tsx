@@ -517,10 +517,15 @@ function OnboardingContent() {
                   />
                 ) : (
                   <>
-                    <span className="text-sm font-medium text-white">
-                      Escuchando<span className="dots"><span>.</span><span>.</span><span>.</span></span>
-                    </span>
-                    <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
+                    <div className="flex-1 flex items-center">
+                      <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500 }}>
+                        Escuchando
+                      </span>
+                      <span className="dots" style={{ color: '#ffffff' }}>
+                        <span>.</span><span>.</span><span>.</span>
+                      </span>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }} className="tabular-nums">{formatTime(recordingTime)}</span>
                   </>
                 )}
               </div>
