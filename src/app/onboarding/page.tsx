@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, TouchEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -144,6 +144,12 @@ export default function OnboardingPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  // Swipe handling
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   const step = STEPS[currentStep];
   const progress = ((currentStep + 1) / STEPS.length) * 100;
@@ -176,6 +182,51 @@ export default function OnboardingPage() {
         setIsAnimating(false);
       }, 250);
     }
+  };
+
+  // Swipe handlers
+  const handleTouchStart = (e: TouchEvent) => {
+    if (step.type === 'processing' || step.type === 'voice-capture') return;
+    touchStartX.current = e.touches[0].clientX;
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isSwiping || step.type === 'processing' || step.type === 'voice-capture') return;
+    touchEndX.current = e.touches[0].clientX;
+    const diff = touchEndX.current - touchStartX.current;
+    // Limit swipe offset with resistance at edges
+    const maxOffset = 100;
+    const resistance = 0.3;
+    let offset = diff;
+    if ((diff > 0 && currentStep === 0) || (diff < 0 && currentStep === STEPS.length - 1)) {
+      offset = diff * resistance;
+    }
+    setSwipeOffset(Math.max(-maxOffset, Math.min(maxOffset, offset)));
+  };
+
+  const handleTouchEnd = () => {
+    if (!isSwiping) return;
+    setIsSwiping(false);
+    const threshold = 50;
+    const diff = touchEndX.current - touchStartX.current;
+    
+    if (diff > threshold && currentStep > 0 && canSwipeBack()) {
+      goBack();
+    } else if (diff < -threshold && canProceed() && currentStep < STEPS.length - 1) {
+      if (step.type === 'complete') {
+        saveItemsAndFinish();
+      } else {
+        goNext();
+      }
+    }
+    setSwipeOffset(0);
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
+  const canSwipeBack = () => {
+    return step.type !== 'complete' && step.type !== 'preview' && step.type !== 'processing';
   };
 
   const handleMultiChoice = (stepId: string, optionId: string) => {
@@ -668,24 +719,47 @@ export default function OnboardingPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center px-5 overflow-hidden">
+      <div 
+        className="flex-1 flex flex-col items-center px-5 overflow-hidden touch-pan-y"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div
-          className={`w-full max-w-md flex flex-col items-center transition-all duration-250 ease-out ${
+          className={`w-full max-w-md flex flex-col items-center transition-all ease-out ${
+            isSwiping ? 'duration-0' : 'duration-300'
+          } ${
             isAnimating
               ? direction === 'forward'
-                ? '-translate-x-8 opacity-0'
-                : 'translate-x-8 opacity-0'
-              : 'translate-x-0 opacity-100'
+                ? '-translate-x-full opacity-0'
+                : 'translate-x-full opacity-0'
+              : ''
           }`}
+          style={{
+            transform: isAnimating 
+              ? undefined 
+              : `translateX(${swipeOffset}px)`,
+          }}
         >
-          {/* Panda - smaller, subtle animation */}
+          {/* Panda with premium shadow effect */}
           <div className="relative w-32 h-32 mb-4">
+            {/* Animated shadow underneath */}
+            <div 
+              className="absolute bottom-0 left-1/2 w-16 h-3 rounded-full bg-black/10 dark:bg-black/20 blur-sm"
+              style={{ 
+                animation: 'shadowPulse 3s ease-in-out infinite',
+                transform: 'translateX(-50%)',
+              }}
+            />
             <Image
               src={step.panda}
               alt="Panda"
               fill
-              className="object-contain"
-              style={{ animation: 'float 3s ease-in-out infinite' }}
+              className="object-contain drop-shadow-lg"
+              style={{ 
+                animation: 'float 3s ease-in-out infinite',
+                filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.15))',
+              }}
               priority
             />
           </div>
@@ -762,7 +836,18 @@ export default function OnboardingPage() {
       <style jsx global>{`
         @keyframes float {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
+          50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes shadowPulse {
+          0%, 100% { 
+            transform: translateX(-50%) scale(1);
+            opacity: 0.4;
+          }
+          50% { 
+            transform: translateX(-50%) scale(0.85);
+            opacity: 0.25;
+          }
         }
         
         @keyframes waveform {
