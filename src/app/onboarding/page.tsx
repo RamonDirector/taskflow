@@ -487,14 +487,20 @@ function OnboardingContent() {
         {step.id !== 'processing' && step.id !== 'preview' && step.id !== 'complete' && step.id !== 'welcome' && (
           <div className="relative">
             <div 
-              className={`flex items-center gap-2 h-14 px-4 rounded-full border transition-all duration-700 ease-out ${
-                isRecording 
-                  ? 'bg-[#1c1c1e] border-[#1c1c1e]' 
-                  : 'bg-[var(--gray-1)] border-[var(--gray-2)]'
-              }`}
+              className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden"
             >
+              {/* Black overlay that expands from the mic button */}
+              <div 
+                className={`absolute inset-0 bg-[#1c1c1e] rounded-full transition-all ease-out ${
+                  isRecording ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                }`}
+                style={{ 
+                  transformOrigin: 'calc(100% - 24px) center',
+                  transitionDuration: '900ms'
+                }}
+              />
               {/* Cancel button - only when recording */}
-              <div className={`transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
+              <div className={`relative z-10 transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
                 <button 
                   onClick={cancelRecording} 
                   className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10"
@@ -504,7 +510,7 @@ function OnboardingContent() {
               </div>
 
               {/* Input / Recording content */}
-              <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 relative z-10">
                 {!isRecording ? (
                   <input
                     ref={inputRef}
@@ -534,7 +540,7 @@ function OnboardingContent() {
               {showVoiceButton && (
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10"
                   style={{ backgroundColor: THEME_COLOR }}
                 >
                   {/* Mic icon - fades out */}
