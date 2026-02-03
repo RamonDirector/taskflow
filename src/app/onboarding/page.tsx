@@ -540,14 +540,14 @@ function OnboardingContent() {
                   {/* Mic icon - fades out */}
                   <div 
                     className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`}
-                    style={{ transitionDuration: '600ms' }}
+                    style={{ transitionDuration: '850ms' }}
                   >
                     {Icons.mic}
                   </div>
                   {/* Check icon - fades in with subtle rotation */}
                   <div 
                     className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`}
-                    style={{ transitionDuration: '600ms' }}
+                    style={{ transitionDuration: '850ms' }}
                   >
                     {Icons.check}
                   </div>
