@@ -337,6 +337,14 @@ export default function AppDashboard() {
         router.push('/login');
         return;
       }
+      
+      // Check if onboarding is complete
+      const onboardingComplete = localStorage.getItem('taskflow-onboarding-complete');
+      if (!onboardingComplete) {
+        router.push('/onboarding');
+        return;
+      }
+      
       setUser(user);
       await fetchTasks();
       // Only show splash animation on cold start
