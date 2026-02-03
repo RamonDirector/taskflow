@@ -405,8 +405,14 @@ function OnboardingContent() {
           isAnimating ? (direction === 'forward' ? '-translate-x-8 opacity-0' : 'translate-x-8 opacity-0') : ''
         }`}
       >
-        {/* Panda */}
+        {/* Panda with matcha aura */}
         <div className="relative w-32 h-32 mb-6">
+          {/* Matcha aura glow */}
+          <div 
+            className="absolute inset-0 rounded-full bg-[#6b8f71]/20 blur-xl scale-110"
+            style={{ animation: 'auraPulse 3s ease-in-out infinite' }}
+          />
+          {/* Shadow */}
           <div 
             className="absolute bottom-0 left-1/2 w-16 h-3 rounded-full bg-black/10 blur-sm -translate-x-1/2"
             style={{ animation: 'shadowPulse 3s ease-in-out infinite' }}
@@ -415,7 +421,7 @@ function OnboardingContent() {
             src={step.panda}
             alt="Panda"
             fill
-            className="object-contain"
+            className="object-contain relative z-10"
             style={{ animation: 'float 3s ease-in-out infinite', filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))' }}
             priority
           />
@@ -591,6 +597,10 @@ function OnboardingContent() {
         @keyframes shadowPulse {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; }
           50% { transform: translateX(-50%) scale(0.85); opacity: 0.25; }
+        }
+        @keyframes auraPulse {
+          0%, 100% { opacity: 0.3; transform: scale(1.1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
         }
         @keyframes dotFade {
           0%, 20% { opacity: 0; }
