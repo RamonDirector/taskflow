@@ -146,18 +146,10 @@ function OnboardingContent() {
     if (completed) router.push('/app');
   }, [router, searchParams]);
 
-  // Request mic permission once on mount (so browser remembers it)
+  // Keep mic stream reference to avoid asking permission multiple times
   const streamRef = useRef<MediaStream | null>(null);
   
   useEffect(() => {
-    // Pre-request microphone permission on mount
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        streamRef.current = stream;
-        setMicPermission(true);
-      })
-      .catch(() => setMicPermission(false));
-    
     return () => {
       // Cleanup on unmount
       streamRef.current?.getTracks().forEach(t => t.stop());
