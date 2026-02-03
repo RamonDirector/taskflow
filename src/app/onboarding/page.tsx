@@ -478,52 +478,67 @@ function OnboardingContent() {
           </div>
         )}
 
-        {/* Input bar - voice first */}
+        {/* Input bar - voice first with smooth transition */}
         {step.id !== 'processing' && step.id !== 'preview' && step.id !== 'complete' && step.id !== 'welcome' && (
           <div className="relative">
-            {!isRecording ? (
-              <div className="flex items-center gap-2 h-14 px-4 rounded-full bg-[var(--gray-1)] border border-[var(--gray-2)]">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={step.id === 'name' ? (inputText || userName) : inputText}
-                  onChange={(e) => step.id === 'name' ? (setInputText(e.target.value), setUserName(e.target.value)) : setInputText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-                  placeholder={getPlaceholder()}
-                  className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none"
-                />
-                {showVoiceButton && (
-                  <button
-                    onClick={startRecording}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95"
-                    style={{ backgroundColor: THEME_COLOR }}
-                  >
-                    {Icons.mic}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 h-14 px-3 rounded-full bg-[#1c1c1e]">
-                <button onClick={cancelRecording} className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10">
+            <div 
+              className={`flex items-center gap-2 h-14 px-4 rounded-full border transition-all duration-500 ease-out ${
+                isRecording 
+                  ? 'bg-[#1c1c1e] border-[#1c1c1e]' 
+                  : 'bg-[var(--gray-1)] border-[var(--gray-2)]'
+              }`}
+            >
+              {/* Cancel button - only when recording */}
+              <div className={`transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
+                <button 
+                  onClick={cancelRecording} 
+                  className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10"
+                >
                   {Icons.x}
                 </button>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex items-center gap-0.5">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="w-0.5 rounded-full bg-[#6b8f71]" style={{ animation: `waveform 0.5s ease-in-out infinite`, animationDelay: `${i * 80}ms` }} />
-                    ))}
-                  </div>
-                  <span className="text-white/90 text-sm">Escuchando...</span>
-                  <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
-                </div>
-                <button onClick={stopRecording} className="w-10 h-10 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: THEME_COLOR }}>
-                  {Icons.check}
-                </button>
               </div>
-            )}
+
+              {/* Input / Recording content */}
+              <div className="flex-1 flex items-center gap-2">
+                {!isRecording ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={step.id === 'name' ? (inputText || userName) : inputText}
+                    onChange={(e) => step.id === 'name' ? (setInputText(e.target.value), setUserName(e.target.value)) : setInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                    placeholder="Toca para grabar..."
+                    className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none"
+                  />
+                ) : (
+                  <>
+                    <div className="flex items-center gap-0.5">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="w-0.5 rounded-full bg-[#6b8f71]" style={{ animation: `waveform 0.5s ease-in-out infinite`, animationDelay: `${i * 80}ms` }} />
+                      ))}
+                    </div>
+                    <span className="text-white/90 text-sm">Escuchando...</span>
+                    <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Mic/Check button with rotation animation */}
+              {showVoiceButton && (
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95"
+                  style={{ backgroundColor: THEME_COLOR }}
+                >
+                  <div className={`transition-all duration-500 ${isRecording ? 'rotate-[360deg]' : 'rotate-0'}`}>
+                    {isRecording ? Icons.check : Icons.mic}
+                  </div>
+                </button>
+              )}
+            </div>
             
             {/* Helper text */}
-            <p className="text-center text-[var(--gray-4)] text-xs mt-3">
+            <p className={`text-center text-xs mt-3 transition-all duration-300 ${isRecording ? 'text-white/50' : 'text-[var(--gray-4)]'}`}>
               Habla naturalmente, como si le contaras a un amigo
             </p>
           </div>
