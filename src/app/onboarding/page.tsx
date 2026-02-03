@@ -68,7 +68,6 @@ const STEPS: OnboardingStep[] = [
     id: 'name',
     panda: '/panda/panda-neutral.png',
     title: '¿Cómo te llamas?',
-    skipVoice: true,
   },
   {
     id: 'what-capture',
@@ -482,7 +481,7 @@ function OnboardingContent() {
         {step.id !== 'processing' && step.id !== 'preview' && step.id !== 'complete' && step.id !== 'welcome' && (
           <div className="relative">
             <div 
-              className={`flex items-center gap-2 h-14 px-4 rounded-full border transition-all duration-500 ease-out ${
+              className={`flex items-center gap-2 h-14 px-4 rounded-full border transition-all duration-700 ease-out ${
                 isRecording 
                   ? 'bg-[#1c1c1e] border-[#1c1c1e]' 
                   : 'bg-[var(--gray-1)] border-[var(--gray-2)]'
@@ -512,12 +511,9 @@ function OnboardingContent() {
                   />
                 ) : (
                   <>
-                    <div className="flex items-center gap-0.5">
-                      {[...Array(4)].map((_, i) => (
-                        <div key={i} className="w-0.5 rounded-full bg-[#6b8f71]" style={{ animation: `waveform 0.5s ease-in-out infinite`, animationDelay: `${i * 80}ms` }} />
-                      ))}
-                    </div>
-                    <span className="text-white/90 text-sm">Escuchando...</span>
+                    <span className="text-sm font-medium bg-gradient-to-r from-white via-[#6b8f71] to-white bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+                      Escuchando...
+                    </span>
                     <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
                   </>
                 )}
@@ -596,9 +592,12 @@ function OnboardingContent() {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; }
           50% { transform: translateX(-50%) scale(0.85); opacity: 0.25; }
         }
-        @keyframes waveform {
-          0%, 100% { height: 6px; }
-          50% { height: 18px; }
+        @keyframes shimmer {
+          0% { background-position: 100% 50%; }
+          100% { background-position: -100% 50%; }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s ease-in-out infinite;
         }
       `}</style>
     </div>
