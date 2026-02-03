@@ -511,8 +511,8 @@ function OnboardingContent() {
                   />
                 ) : (
                   <>
-                    <span className="listening-text text-sm font-medium text-white">
-                      Escuchando...
+                    <span className="text-sm font-medium text-white">
+                      Escuchando<span className="dots"><span>.</span><span>.</span><span>.</span></span>
                     </span>
                     <span className="text-white/50 text-xs ml-auto tabular-nums">{formatTime(recordingTime)}</span>
                   </>
@@ -592,29 +592,17 @@ function OnboardingContent() {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.4; }
           50% { transform: translateX(-50%) scale(0.85); opacity: 0.25; }
         }
-        @keyframes textWave {
-          0%, 100% { 
-            background-position: 0% 50%;
-          }
-          50% { 
-            background-position: 100% 50%;
-          }
+        @keyframes dotFade {
+          0%, 20% { opacity: 0; }
+          40%, 100% { opacity: 1; }
         }
-        .listening-text {
-          background: linear-gradient(
-            90deg, 
-            rgba(255,255,255,0.7) 0%, 
-            rgba(255,255,255,1) 25%,
-            rgba(107,143,113,1) 50%, 
-            rgba(255,255,255,1) 75%,
-            rgba(255,255,255,0.7) 100%
-          );
-          background-size: 200% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: textWave 2s ease-in-out infinite;
+        .dots span {
+          opacity: 0;
+          animation: dotFade 1.4s infinite;
         }
+        .dots span:nth-child(1) { animation-delay: 0s; }
+        .dots span:nth-child(2) { animation-delay: 0.2s; }
+        .dots span:nth-child(3) { animation-delay: 0.4s; }
       `}</style>
     </div>
   );
