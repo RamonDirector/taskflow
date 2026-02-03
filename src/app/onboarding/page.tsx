@@ -146,11 +146,22 @@ function OnboardingContent() {
     if (completed) router.push('/app');
   }, [router, searchParams]);
 
-  // Check mic permission on mount
+  // Request mic permission once on mount (so browser remembers it)
+  const streamRef = useRef<MediaStream | null>(null);
+  
   useEffect(() => {
-    navigator.permissions?.query({ name: 'microphone' as PermissionName })
-      .then(result => setMicPermission(result.state === 'granted'))
-      .catch(() => setMicPermission(null));
+    // Pre-request microphone permission on mount
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        streamRef.current = stream;
+        setMicPermission(true);
+      })
+      .catch(() => setMicPermission(false));
+    
+    return () => {
+      // Cleanup on unmount
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
   }, []);
 
   const goNext = () => {
@@ -193,7 +204,12 @@ function OnboardingContent() {
   // Voice recording
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Reuse existing stream or create new one
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+      }
       setMicPermission(true);
       
       const mediaRecorder = new MediaRecorder(stream, {
@@ -208,7 +224,7 @@ function OnboardingContent() {
       };
 
       mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
+        // Don't stop the stream tracks - keep permission alive
         if (timerRef.current) clearInterval(timerRef.current);
         await processVoiceInput();
       };
@@ -233,7 +249,7 @@ function OnboardingContent() {
 
   const cancelRecording = () => {
     if (mediaRecorderRef.current?.state !== 'inactive') {
-      mediaRecorderRef.current?.stream.getTracks().forEach(t => t.stop());
+      mediaRecorderRef.current?.stop();
       mediaRecorderRef.current = null;
     }
     if (timerRef.current) clearInterval(timerRef.current);
