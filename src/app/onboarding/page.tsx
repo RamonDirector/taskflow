@@ -530,15 +530,20 @@ function OnboardingContent() {
                 )}
               </div>
 
-              {/* Mic/Check button with rotation animation */}
+              {/* Mic/Check button with fade + subtle rotation */}
               {showVoiceButton && (
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative"
                   style={{ backgroundColor: THEME_COLOR }}
                 >
-                  <div className={`transition-all duration-500 ${isRecording ? 'rotate-[360deg]' : 'rotate-0'}`}>
-                    {isRecording ? Icons.check : Icons.mic}
+                  {/* Mic icon - fades out */}
+                  <div className={`absolute transition-all duration-400 ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`}>
+                    {Icons.mic}
+                  </div>
+                  {/* Check icon - fades in with subtle rotation */}
+                  <div className={`absolute transition-all duration-400 ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`}>
+                    {Icons.check}
                   </div>
                 </button>
               )}
