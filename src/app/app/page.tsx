@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { InstallPrompt } from '../components/InstallPrompt';
+import Image from 'next/image';
 
 interface Task {
   id: string;
@@ -1593,8 +1594,55 @@ export default function AppDashboard() {
       </header>
 
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-4">
-        {/* Hero Record Button with Progress Ring - scrolls with content */}
-        <div className="flex flex-col items-center py-4 mb-4">
+        {/* Panda Portal - Voice Hub */}
+        <div className="flex flex-col items-center pt-2 pb-6">
+          {/* Panda with matcha aura */}
+          <div className="relative w-28 h-28 mb-4">
+            {/* Matcha aura glow */}
+            <div 
+              className={`absolute inset-0 rounded-full bg-[#6b8f71]/50 blur-2xl scale-150 transition-opacity duration-500 ${
+                recording ? 'opacity-80' : processing ? 'opacity-60 animate-pulse' : 'opacity-40'
+              }`}
+              style={{ animation: recording ? 'none' : 'auraPulse 3s ease-in-out infinite' }}
+            />
+            {/* Shadow */}
+            <div 
+              className="absolute bottom-0 left-1/2 w-14 h-2.5 rounded-full bg-black/10 dark:bg-white/10 blur-sm -translate-x-1/2"
+              style={{ animation: 'shadowPulse 3s ease-in-out infinite' }}
+            />
+            <Image
+              src={
+                processing ? '/panda/panda-thinking.png' :
+                recording ? '/panda/panda-excited.png' :
+                '/panda/panda-neutral.png'
+              }
+              alt="Hansei Panda"
+              fill
+              className="object-contain relative z-10"
+              style={{ 
+                animation: recording ? 'none' : 'float 3s ease-in-out infinite', 
+                filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))',
+                transform: recording ? 'scale(1.05)' : undefined
+              }}
+              priority
+            />
+          </div>
+          
+          {/* Dynamic prompt text */}
+          <h2 className="text-lg font-medium text-black dark:text-white text-center mb-1 tracking-tight">
+            {processing ? 'Procesando...' :
+             recording ? 'Te escucho...' :
+             '¿Qué tienes en mente?'}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+            {processing ? 'Analizando tu mensaje' :
+             recording ? 'Habla naturalmente' :
+             'Toca el micrófono para hablar'}
+          </p>
+        </div>
+
+        {/* Record Button - scrolls with content */}
+        <div className="flex flex-col items-center pb-4 mb-4">
           {(() => {
             const progressColors = {
               high: { start: '#ef4444', end: '#f87171' },
