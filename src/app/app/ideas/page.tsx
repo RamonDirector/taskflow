@@ -820,9 +820,9 @@ export default function IdeasBoard() {
                       </button>
                     </div>
                   )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {isRecording && isEditingIdeaTitle ? `Grabando... ${formatTime(recordingTime)}` : 'Toca para editar o usa el micrófono'}
-                  </p>
+                  {isRecording && isEditingIdeaTitle && (
+                    <p className="text-xs text-[#6b8f71] mt-1">Grabando... {formatTime(recordingTime)}</p>
+                  )}
                 </div>
 
                 {/* Voice Context */}
@@ -855,12 +855,9 @@ export default function IdeasBoard() {
                 {/* Action Points with swipe */}
                 {childTasks.length > 0 && (
                   <div className="space-y-3" onClick={() => { if (selectedStepId) clearSelection(); }}>
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Plan de Acción ({childTasks.length} pasos)
-                      </h3>
-                      <p className="text-xs text-gray-400">Long press = voz · 2x tap = texto</p>
-                    </div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Plan de Acción ({childTasks.length} pasos)
+                    </h3>
                     
                     {childTasks.map((task, index) => {
                       const isBeingSwiped = swipingStepId === task.id;
@@ -1005,12 +1002,7 @@ export default function IdeasBoard() {
                               </div>
                             )}
 
-                            {/* Selection hint */}
-                            {isSelected && !isRecording && (
-                              <p className="mt-2 text-xs text-gray-400">
-                                Toca 🎤 para editar por voz · Toca 2x para editar texto
-                              </p>
-                            )}
+{/* Hint removed - UI should be self-explanatory */}
                           </div>
                         </div>
                       );

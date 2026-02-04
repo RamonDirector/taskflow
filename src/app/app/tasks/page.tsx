@@ -280,10 +280,7 @@ export default function TasksPage() {
           ))}
         </div>
         
-        {/* Hint */}
-        <p className="text-[10px] text-gray-400 mt-2 max-w-2xl mx-auto">
-          Long press = editar por voz · Doble tap = editar texto
-        </p>
+{/* Hint removed - UI should be self-explanatory */}
       </header>
 
       {/* Task list */}
@@ -390,12 +387,7 @@ export default function TasksPage() {
                     )}
                   </div>
 
-                  {/* Selection hint */}
-                  {isSelected && !isProcessingVoice && (
-                    <p className="mt-2 text-xs text-gray-400">
-                      Toca 🎤 para editar por voz · Doble tap para editar texto
-                    </p>
-                  )}
+{/* Hint removed - UI should be self-explanatory */}
                   
                   {isProcessingVoice && (
                     <p className="mt-2 text-xs text-[#6b8f71] flex items-center gap-2">
