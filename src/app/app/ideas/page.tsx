@@ -735,89 +735,96 @@ export default function IdeasBoard() {
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Plan de Acción ({childTasks.length} pasos)
                     </h3>
-                    <p className="text-xs text-gray-400">← Desliza para eliminar · Desliza para completar →</p>
                     
-                    {childTasks.map((task, index) => (
-                      <motion.div
-                        key={task.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ 
-                          opacity: 1, 
-                          y: 0,
-                          x: swipingStepId === task.id ? swipeOffset : 0,
-                        }}
-                        transition={{ delay: index * 0.05 }}
-                        onTouchStart={(e) => handleStepTouchStart(e, task.id)}
-                        onTouchMove={handleStepTouchMove}
-                        onTouchEnd={() => handleStepTouchEnd(task)}
-                        className={`group p-3 rounded-xl border transition-all relative overflow-hidden ${
-                          task.completed 
-                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
-                            : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700 hover:border-[#6b8f71]'
-                        } ${swipingStepId === task.id && swipeOffset > 50 ? '!bg-emerald-100 dark:!bg-emerald-900/40' : ''}
-                        ${swipingStepId === task.id && swipeOffset < -50 ? '!bg-red-100 dark:!bg-red-900/40' : ''}`}
-                      >
-                        {/* Swipe indicators */}
-                        {swipingStepId === task.id && swipeOffset > 50 && (
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        )}
-                        {swipingStepId === task.id && swipeOffset < -50 && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="flex items-start gap-3">
-                          {/* Step number / checkbox */}
-                          <button
-                            onClick={() => toggleTask(task.id)}
-                            className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs font-medium transition-all ${
-                              task.completed
-                                ? 'bg-emerald-500 border-emerald-500 text-white'
-                                : 'border-gray-300 dark:border-gray-600 text-gray-400 hover:border-emerald-400'
-                            }`}
-                          >
-                            {task.completed ? (
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    {childTasks.map((task, index) => {
+                      const isBeingSwiped = swipingStepId === task.id;
+                      const showComplete = isBeingSwiped && swipeOffset > 50;
+                      const showDelete = isBeingSwiped && swipeOffset < -50;
+                      
+                      return (
+                        <div key={task.id} className="relative overflow-hidden rounded-xl">
+                          {/* Swipe backgrounds - revealed as you swipe */}
+                          <div className="absolute inset-0 flex">
+                            {/* Complete background (right swipe) */}
+                            <div className={`flex-1 bg-emerald-500 flex items-center pl-4 transition-opacity duration-150 ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
-                            ) : (
-                              index + 1
-                            )}
-                          </button>
-
-                          {/* Title */}
-                          <p className={`flex-1 text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                            {task.title}
-                          </p>
-
-                          {/* Voice edit button */}
-                          <button
-                            onClick={() => isRecording && editingStepIndex === index ? stopRecording() : startRecording(index)}
-                            className={`p-2 rounded-full transition-all ${
-                              isRecording && editingStepIndex === index
-                                ? 'bg-red-500 text-white'
-                                : 'opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400'
+                            </div>
+                            {/* Delete background (left swipe) */}
+                            <div className={`flex-1 bg-red-500 flex items-center justify-end pr-4 transition-opacity duration-150 ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </div>
+                          </div>
+                          
+                          {/* Card that moves */}
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            style={{ 
+                              transform: isBeingSwiped ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                              transition: isBeingSwiped ? 'none' : 'transform 0.2s ease-out'
+                            }}
+                            onTouchStart={(e) => handleStepTouchStart(e, task.id)}
+                            onTouchMove={handleStepTouchMove}
+                            onTouchEnd={() => handleStepTouchEnd(task)}
+                            className={`group p-3 border relative ${
+                              task.completed 
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
+                                : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700'
                             }`}
                           >
-                            {isRecording && editingStepIndex === index ? Icons.check : Icons.mic}
-                          </button>
-                        </div>
+                            <div className="flex items-start gap-3">
+                              {/* Step number / checkbox */}
+                              <button
+                                onClick={() => toggleTask(task.id)}
+                                className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs font-medium transition-all ${
+                                  task.completed
+                                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                                    : 'border-gray-300 dark:border-gray-600 text-gray-400 hover:border-emerald-400'
+                                }`}
+                              >
+                                {task.completed ? (
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  index + 1
+                                )}
+                              </button>
 
-                        {/* Recording indicator */}
-                        {isRecording && editingStepIndex === index && (
-                          <div className="mt-2 flex items-center gap-2 text-xs text-red-500">
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            Grabando... {formatTime(recordingTime)}
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
+                              {/* Title */}
+                              <p className={`flex-1 text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                                {task.title}
+                              </p>
+
+                              {/* Voice edit button */}
+                              <button
+                                onClick={() => isRecording && editingStepIndex === index ? stopRecording() : startRecording(index)}
+                                className={`p-2 rounded-full transition-all ${
+                                  isRecording && editingStepIndex === index
+                                    ? 'bg-red-500 text-white'
+                                    : 'opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400'
+                                }`}
+                              >
+                                {isRecording && editingStepIndex === index ? Icons.check : Icons.mic}
+                              </button>
+                            </div>
+
+                            {/* Recording indicator */}
+                            {isRecording && editingStepIndex === index && (
+                              <div className="mt-2 flex items-center gap-2 text-xs text-red-500">
+                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                Grabando... {formatTime(recordingTime)}
+                              </div>
+                            )}
+                          </motion.div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
