@@ -186,6 +186,53 @@ const CategoryIcon = ({ category, className = "w-4 h-4" }: { category: string; c
   return icons[category] || icons['personal'];
 };
 
+// Type icons for visual classification (task, idea, dream)
+const TypeIcon = ({ type, className = "w-5 h-5" }: { type: 'task' | 'idea' | 'dream'; className?: string }) => {
+  const icons = {
+    task: (
+      // Checkmark circle - Heroicons style
+      <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    idea: (
+      // Lightbulb - Heroicons style
+      <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+      </svg>
+    ),
+    dream: (
+      // Moon - Heroicons style (crescent moon)
+      <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+      </svg>
+    ),
+  };
+  return icons[type];
+};
+
+// Type colors for visual distinction
+const typeStyles = {
+  task: {
+    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    border: 'border-emerald-200 dark:border-emerald-800',
+    icon: 'text-emerald-600 dark:text-emerald-400',
+  },
+  idea: {
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    text: 'text-amber-700 dark:text-amber-300',
+    border: 'border-amber-200 dark:border-amber-800',
+    icon: 'text-amber-600 dark:text-amber-400',
+  },
+  dream: {
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-700 dark:text-indigo-300',
+    border: 'border-indigo-200 dark:border-indigo-800',
+    icon: 'text-indigo-600 dark:text-indigo-400',
+  },
+};
+
 // Neutral colors for all tasks (no priority coloring)
 const priorityColors: Record<string, { bg: string; ring: string; cardBg: string; cardBgDark: string }> = {
   high: { bg: 'bg-white dark:bg-[#2c2c2e]', ring: 'ring-gray-200 dark:ring-gray-700', cardBg: 'bg-white', cardBgDark: 'dark:bg-[#2c2c2e]' },
@@ -1853,11 +1900,26 @@ export default function AppDashboard() {
         {/* Extracted tasks and ideas confirmation */}
         {showExtracted && (extractedTasks.length > 0 || extractedIdeas.length > 0) && (
           <div className="mb-6 p-5 rounded-2xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-[#38383a] animate-fade-in relative z-40">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
-              {extractedTasks.length > 0 && `${extractedTasks.length} tarea${extractedTasks.length > 1 ? 's' : ''}`}
-              {extractedTasks.length > 0 && extractedIdeas.length > 0 && ' + '}
-              {extractedIdeas.length > 0 && `${extractedIdeas.length} idea${extractedIdeas.length > 1 ? 's' : ''}`}
-            </h3>
+            {/* Visual type summary header */}
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                Capturado
+              </h3>
+              <div className="flex items-center gap-2">
+                {extractedTasks.length > 0 && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${typeStyles.task.bg} ${typeStyles.task.text}`}>
+                    <TypeIcon type="task" className="w-3.5 h-3.5" />
+                    {extractedTasks.length}
+                  </span>
+                )}
+                {extractedIdeas.length > 0 && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${typeStyles.idea.bg} ${typeStyles.idea.text}`}>
+                    <TypeIcon type="idea" className="w-3.5 h-3.5" />
+                    {extractedIdeas.length}
+                  </span>
+                )}
+              </div>
+            </div>
             <ul className="space-y-2 mb-5">
               {/* Tasks - with long press and double tap */}
               {extractedTasks.map((task, i) => {
@@ -1867,10 +1929,10 @@ export default function AppDashboard() {
                 return (
                   <li 
                     key={`task-${i}`} 
-                    className={`py-3 px-4 flex items-center gap-3 rounded-xl transition-all ${
+                    className={`py-3 px-4 flex items-center gap-3 rounded-xl transition-all border ${
                       isSelected 
-                        ? 'bg-gray-200 dark:bg-[#38383a] ring-2 ring-black dark:ring-white' 
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                        ? 'bg-gray-200 dark:bg-[#38383a] ring-2 ring-black dark:ring-white border-transparent' 
+                        : `${typeStyles.task.bg} ${typeStyles.task.border} hover:opacity-80`
                     }`}
                     onTouchStart={() => handleExtractedLongPressStart('task', i)}
                     onTouchEnd={handleExtractedLongPressEnd}
@@ -1883,7 +1945,7 @@ export default function AppDashboard() {
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                       isSelected 
                         ? 'bg-black dark:bg-white' 
-                        : 'bg-gray-200 dark:bg-[#38383a]'
+                        : `${typeStyles.task.bg} border ${typeStyles.task.border}`
                     }`}>
                       {isSelected ? (
                         <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
@@ -1891,7 +1953,7 @@ export default function AppDashboard() {
                           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                         </svg>
                       ) : (
-                        <span className="text-gray-600 dark:text-gray-300"><CategoryIcon category={task.category || 'personal'} /></span>
+                        <span className={typeStyles.task.icon}><TypeIcon type="task" /></span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1935,10 +1997,10 @@ export default function AppDashboard() {
                 return (
                   <li 
                     key={`idea-${i}`} 
-                    className={`py-3 px-4 flex items-center gap-3 rounded-xl transition-all ${
+                    className={`py-3 px-4 flex items-center gap-3 rounded-xl transition-all border ${
                       isSelected 
-                        ? 'bg-gray-200 dark:bg-[#38383a] ring-2 ring-black dark:ring-white' 
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                        ? 'bg-gray-200 dark:bg-[#38383a] ring-2 ring-black dark:ring-white border-transparent' 
+                        : `${typeStyles.idea.bg} ${typeStyles.idea.border} hover:opacity-80`
                     }`}
                     onTouchStart={() => handleExtractedLongPressStart('idea', i)}
                     onTouchEnd={handleExtractedLongPressEnd}
@@ -1951,7 +2013,7 @@ export default function AppDashboard() {
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                       isSelected 
                         ? 'bg-black dark:bg-white' 
-                        : 'bg-gray-300 dark:bg-[#48484a]'
+                        : `${typeStyles.idea.bg} border ${typeStyles.idea.border}`
                     }`}>
                       {isSelected ? (
                         <svg className="w-5 h-5 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
@@ -1959,9 +2021,7 @@ export default function AppDashboard() {
                           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                         </svg>
                       ) : (
-                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-                        </svg>
+                        <span className={typeStyles.idea.icon}><TypeIcon type="idea" /></span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
