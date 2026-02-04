@@ -75,134 +75,69 @@ const Icons = {
 };
 
 // Custom Idea Node Component
-const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; hasChildren: boolean }; selected: boolean }) => {
-  const { idea, onDelete, hasChildren } = data;
+const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; hasChildren: boolean; childCount: number }; selected: boolean }) => {
+  const { idea, onDelete, hasChildren, childCount } = data;
   
   return (
-    <>
-      <Handle type="target" position={Position.Top} className="!bg-[#6b8f71] !w-3 !h-3 !border-2 !border-white dark:!border-[#1c1c1e]" />
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className={`
-          relative p-4 rounded-2xl min-w-[180px] max-w-[280px] cursor-pointer
-          bg-white dark:bg-[#2c2c2e]
-          border-2 transition-all duration-200
-          ${selected 
-            ? 'border-[#6b8f71] shadow-lg shadow-[#6b8f71]/30' 
-            : 'border-gray-200 dark:border-gray-700 shadow-apple hover:border-amber-300'
-          }
-        `}
-      >
-        {/* Type badge */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-            </svg>
-            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-              Idea
-            </span>
-            {hasChildren && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                Plan ✓
-              </span>
-            )}
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(idea.id);
-            }}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors opacity-50 hover:opacity-100"
-          >
-            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={`
+        relative p-4 rounded-2xl min-w-[200px] max-w-[280px] cursor-pointer
+        bg-white dark:bg-[#2c2c2e]
+        border-2 transition-all duration-200
+        ${selected 
+          ? 'border-[#6b8f71] shadow-lg shadow-[#6b8f71]/30' 
+          : 'border-gray-200 dark:border-gray-700 shadow-apple hover:border-amber-300 hover:shadow-md'
+        }
+      `}
+    >
+      {/* Type badge */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+          </svg>
+          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+            Idea
+          </span>
         </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(idea.id);
+          }}
+          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors opacity-50 hover:opacity-100"
+        >
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-        {/* Title */}
-        <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug line-clamp-3">
-          {idea.title}
-        </p>
+      {/* Title */}
+      <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug line-clamp-3">
+        {idea.title}
+      </p>
 
-        {/* Category tag */}
+      {/* Footer: Category + Plan indicator */}
+      <div className="mt-3 flex items-center justify-between">
         {idea.category && (
-          <div className="mt-3 flex items-center gap-1">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-              {idea.category}
-            </span>
-          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+            {idea.category}
+          </span>
         )}
-      </motion.div>
-      <Handle type="source" position={Position.Bottom} className="!bg-[#6b8f71] !w-3 !h-3 !border-2 !border-white dark:!border-[#1c1c1e]" />
-    </>
+        {hasChildren && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-medium">
+            {childCount} pasos
+          </span>
+        )}
+      </div>
+    </motion.div>
   );
 };
 
-// Custom Task Node Component
-const TaskNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; onToggle: (id: string) => void }; selected: boolean }) => {
-  const { idea, onDelete, onToggle } = data;
-  
-  return (
-    <>
-      <Handle type="target" position={Position.Top} className="!bg-emerald-500 !w-2.5 !h-2.5 !border-2 !border-white dark:!border-[#1c1c1e]" />
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className={`
-          relative p-3 rounded-xl min-w-[160px] max-w-[220px] group
-          bg-white dark:bg-[#2c2c2e]
-          border transition-all duration-200
-          ${selected 
-            ? 'border-emerald-500 shadow-md shadow-emerald-500/20' 
-            : 'border-gray-200 dark:border-gray-700 shadow-sm'
-          }
-          ${idea.completed ? 'opacity-60' : ''}
-        `}
-      >
-        <div className="flex items-start gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle(idea.id);
-            }}
-            className={`
-              w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5
-              flex items-center justify-center transition-all
-              ${idea.completed 
-                ? 'bg-emerald-500 border-emerald-500' 
-                : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
-              }
-            `}
-          >
-            {idea.completed && (
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-          <p className={`text-sm text-gray-800 dark:text-gray-200 leading-snug flex-1 ${idea.completed ? 'line-through text-gray-400' : ''}`}>
-            {idea.title}
-          </p>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(idea.id);
-            }}
-            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors opacity-0 group-hover:opacity-100"
-          >
-            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </motion.div>
-      <Handle type="source" position={Position.Bottom} className="!bg-emerald-500 !w-2.5 !h-2.5 !border-2 !border-white dark:!border-[#1c1c1e]" />
-    </>
-  );
-};
+// TaskNode removed - tasks only shown in drawer for mobile-friendly UX
 
 export default function IdeasBoard() {
   const [user, setUser] = useState<{ id: string } | null>(null);
@@ -228,18 +163,23 @@ export default function IdeasBoard() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
+  const [isEditingIdeaTitle, setIsEditingIdeaTitle] = useState(false); // Voice edit for title
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   
+  // Swipe state for steps
+  const [swipingStepId, setSwipingStepId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartX = useRef(0);
+  
   const router = useRouter();
   const supabase = createClient();
 
-  // Node types with callbacks
+  // Node types (only ideas on canvas)
   const nodeTypes: NodeTypes = {
     idea: IdeaNode,
-    task: TaskNode,
   };
 
   // Load dark mode
@@ -275,7 +215,7 @@ export default function IdeasBoard() {
     }
   }, [selectedIdea, ideas]);
 
-  // Convert ideas to nodes
+  // Convert ideas to nodes (ONLY ideas, no task nodes for mobile-friendly canvas)
   useEffect(() => {
     const ideasOnly = ideas.filter(i => i.type === 'idea');
     const tasksOnly = ideas.filter(i => i.parent_idea_id);
@@ -284,47 +224,20 @@ export default function IdeasBoard() {
       id: idea.id,
       type: 'idea',
       position: { 
-        x: idea.position_x ?? (150 + (index % 4) * 320), 
-        y: idea.position_y ?? (100 + Math.floor(index / 4) * 250) 
+        x: idea.position_x ?? (150 + (index % 3) * 280), 
+        y: idea.position_y ?? (100 + Math.floor(index / 3) * 200) 
       },
       data: { 
         idea, 
         onDelete: deleteIdea,
         hasChildren: tasksOnly.some(t => t.parent_idea_id === idea.id),
+        childCount: tasksOnly.filter(t => t.parent_idea_id === idea.id).length,
       },
     }));
 
-    const taskNodes: Node[] = tasksOnly.map((task) => {
-      const parentIdea = ideasOnly.find(i => i.id === task.parent_idea_id);
-      const siblingTasks = tasksOnly.filter(t => t.parent_idea_id === task.parent_idea_id);
-      const siblingIndex = siblingTasks.findIndex(t => t.id === task.id);
-      
-      return {
-        id: task.id,
-        type: 'task',
-        position: {
-          x: (parentIdea?.position_x ?? 150) + (siblingIndex * 180) - ((siblingTasks.length - 1) * 90),
-          y: (parentIdea?.position_y ?? 100) + 180,
-        },
-        data: { 
-          idea: task, 
-          onDelete: deleteTask,
-          onToggle: toggleTask,
-        },
-      };
-    });
-
-    setNodes([...ideaNodes, ...taskNodes]);
-
-    const newEdges: Edge[] = tasksOnly.map(task => ({
-      id: `e-${task.parent_idea_id}-${task.id}`,
-      source: task.parent_idea_id!,
-      target: task.id,
-      animated: !task.completed,
-      style: { stroke: task.completed ? '#9ca3af' : '#6b8f71', strokeWidth: 2 },
-    }));
-
-    setEdges(newEdges);
+    // Only idea nodes - no task nodes on canvas (mobile-friendly)
+    setNodes(ideaNodes);
+    setEdges([]); // No edges needed
   }, [ideas]);
 
   // Initialize
@@ -539,6 +452,90 @@ export default function IdeasBoard() {
     setEditingStepIndex(null);
   };
 
+  // Voice recording for idea title
+  const startRecordingForTitle = async () => {
+    try {
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm',
+      });
+
+      chunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        await processVoiceEditForTitle();
+      };
+
+      mediaRecorder.start(250);
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch (e) {
+      console.error('Recording error:', e);
+    }
+  };
+
+  const processVoiceEditForTitle = async () => {
+    if (!selectedIdea) return;
+    const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      
+      const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
+      if (!transcribeRes.ok) throw new Error('Transcription failed');
+      
+      const { text } = await transcribeRes.json();
+      if (text?.trim()) {
+        await supabase.from('tasks').update({ title: text.trim() }).eq('id', selectedIdea.id);
+        setIdeas(prev => prev.map(i => i.id === selectedIdea.id ? { ...i, title: text.trim() } : i));
+        setSelectedIdea(prev => prev ? { ...prev, title: text.trim() } : null);
+        setEditedTitle(text.trim());
+      }
+    } catch (e) {
+      console.error('Voice edit error:', e);
+    }
+
+    setIsEditingIdeaTitle(false);
+  };
+
+  // Swipe handlers for steps
+  const handleStepTouchStart = (e: React.TouchEvent, taskId: string) => {
+    touchStartX.current = e.touches[0].clientX;
+    setSwipingStepId(taskId);
+  };
+
+  const handleStepTouchMove = (e: React.TouchEvent) => {
+    if (!swipingStepId) return;
+    const diff = e.touches[0].clientX - touchStartX.current;
+    setSwipeOffset(diff);
+  };
+
+  const handleStepTouchEnd = async (task: Idea) => {
+    if (swipeOffset > 80) {
+      // Swipe right - complete
+      await toggleTask(task.id);
+    } else if (swipeOffset < -80) {
+      // Swipe left - delete
+      await deleteTask(task.id);
+    }
+    setSwipingStepId(null);
+    setSwipeOffset(0);
+  };
+
   // Focus input when shown
   useEffect(() => {
     if (showInput && inputRef.current) {
@@ -653,7 +650,7 @@ export default function IdeasBoard() {
 
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {/* Title */}
+                {/* Title with voice edit */}
                 <div>
                   {editingTitle ? (
                     <div className="flex gap-2">
@@ -673,14 +670,36 @@ export default function IdeasBoard() {
                       </button>
                     </div>
                   ) : (
-                    <h2 
-                      onClick={() => setEditingTitle(true)}
-                      className="text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-[#6b8f71] transition-colors"
-                    >
-                      {selectedIdea.title}
-                    </h2>
+                    <div className="flex items-start gap-3">
+                      <h2 
+                        onClick={() => setEditingTitle(true)}
+                        className="flex-1 text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-[#6b8f71] transition-colors"
+                      >
+                        {selectedIdea.title}
+                      </h2>
+                      {/* Voice edit for title */}
+                      <button
+                        onClick={() => {
+                          if (isRecording && isEditingIdeaTitle) {
+                            stopRecording();
+                          } else {
+                            setIsEditingIdeaTitle(true);
+                            startRecordingForTitle();
+                          }
+                        }}
+                        className={`p-2 rounded-full transition-all flex-shrink-0 ${
+                          isRecording && isEditingIdeaTitle
+                            ? 'bg-red-500 text-white animate-pulse'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-[#6b8f71]'
+                        }`}
+                      >
+                        {isRecording && isEditingIdeaTitle ? Icons.check : Icons.mic}
+                      </button>
+                    </div>
                   )}
-                  <p className="text-xs text-gray-400 mt-1">Toca para editar</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {isRecording && isEditingIdeaTitle ? `Grabando... ${formatTime(recordingTime)}` : 'Toca para editar o usa el micrófono'}
+                  </p>
                 </div>
 
                 {/* Voice Context */}
@@ -710,25 +729,49 @@ export default function IdeasBoard() {
                   )}
                 </button>
 
-                {/* Action Points */}
+                {/* Action Points with swipe */}
                 {childTasks.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Plan de Acción ({childTasks.length} pasos)
                     </h3>
+                    <p className="text-xs text-gray-400">← Desliza para eliminar · Desliza para completar →</p>
                     
                     {childTasks.map((task, index) => (
                       <motion.div
                         key={task.id}
                         initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          x: swipingStepId === task.id ? swipeOffset : 0,
+                        }}
                         transition={{ delay: index * 0.05 }}
-                        className={`group p-3 rounded-xl border transition-all ${
+                        onTouchStart={(e) => handleStepTouchStart(e, task.id)}
+                        onTouchMove={handleStepTouchMove}
+                        onTouchEnd={() => handleStepTouchEnd(task)}
+                        className={`group p-3 rounded-xl border transition-all relative overflow-hidden ${
                           task.completed 
                             ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
                             : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700 hover:border-[#6b8f71]'
-                        }`}
+                        } ${swipingStepId === task.id && swipeOffset > 50 ? '!bg-emerald-100 dark:!bg-emerald-900/40' : ''}
+                        ${swipingStepId === task.id && swipeOffset < -50 ? '!bg-red-100 dark:!bg-red-900/40' : ''}`}
                       >
+                        {/* Swipe indicators */}
+                        {swipingStepId === task.id && swipeOffset > 50 && (
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
+                        {swipingStepId === task.id && swipeOffset < -50 && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </div>
+                        )}
                         <div className="flex items-start gap-3">
                           {/* Step number / checkbox */}
                           <button
