@@ -75,8 +75,8 @@ const Icons = {
 };
 
 // Custom Idea Node Component
-const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; onSelect: (idea: Idea) => void; hasChildren: boolean }; selected: boolean }) => {
-  const { idea, onDelete, onSelect, hasChildren } = data;
+const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; hasChildren: boolean }; selected: boolean }) => {
+  const { idea, onDelete, hasChildren } = data;
   
   return (
     <>
@@ -84,7 +84,6 @@ const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: strin
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        onClick={() => onSelect(idea)}
         className={`
           relative p-4 rounded-2xl min-w-[180px] max-w-[280px] cursor-pointer
           bg-white dark:bg-[#2c2c2e]
@@ -291,7 +290,6 @@ export default function IdeasBoard() {
       data: { 
         idea, 
         onDelete: deleteIdea,
-        onSelect: openDrawer,
         hasChildren: tasksOnly.some(t => t.parent_idea_id === idea.id),
       },
     }));
@@ -596,6 +594,12 @@ export default function IdeasBoard() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
+        onNodeClick={(_, node) => {
+          if (node.type === 'idea') {
+            const idea = ideas.find(i => i.id === node.id);
+            if (idea) openDrawer(idea);
+          }
+        }}
         nodeTypes={nodeTypes}
         fitView
         className="bg-gray-50 dark:bg-[#1c1c1e]"
