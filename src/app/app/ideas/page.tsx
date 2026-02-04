@@ -516,6 +516,7 @@ export default function IdeasBoard() {
   const handleStepTouchStart = (e: React.TouchEvent, taskId: string) => {
     touchStartX.current = e.touches[0].clientX;
     setSwipingStepId(taskId);
+    setSwipeOffset(0);
   };
 
   const handleStepTouchMove = (e: React.TouchEvent) => {
@@ -524,16 +525,20 @@ export default function IdeasBoard() {
     setSwipeOffset(diff);
   };
 
-  const handleStepTouchEnd = async (task: Idea) => {
-    if (swipeOffset > 80) {
-      // Swipe right - complete
-      await toggleTask(task.id);
-    } else if (swipeOffset < -80) {
-      // Swipe left - delete
-      await deleteTask(task.id);
-    }
+  const handleStepTouchEnd = (task: Idea) => {
+    const currentOffset = swipeOffset;
+    // Reset state first
     setSwipingStepId(null);
     setSwipeOffset(0);
+    
+    // Then perform action based on offset
+    if (currentOffset > 60) {
+      // Swipe right - complete
+      toggleTask(task.id);
+    } else if (currentOffset < -60) {
+      // Swipe left - delete
+      deleteTask(task.id);
+    }
   };
 
   // Focus input when shown
@@ -738,8 +743,8 @@ export default function IdeasBoard() {
                     
                     {childTasks.map((task, index) => {
                       const isBeingSwiped = swipingStepId === task.id;
-                      const showComplete = isBeingSwiped && swipeOffset > 50;
-                      const showDelete = isBeingSwiped && swipeOffset < -50;
+                      const showComplete = isBeingSwiped && swipeOffset > 40;
+                      const showDelete = isBeingSwiped && swipeOffset < -40;
                       
                       return (
                         <div key={task.id} className="relative overflow-hidden rounded-xl">
@@ -766,12 +771,19 @@ export default function IdeasBoard() {
                             transition={{ delay: index * 0.05 }}
                             style={{ 
                               transform: isBeingSwiped ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-                              transition: isBeingSwiped ? 'none' : 'transform 0.2s ease-out'
+                              transition: isBeingSwiped ? 'none' : 'transform 0.2s ease-out',
+                              touchAction: 'pan-y', // Allow vertical scroll, capture horizontal
                             }}
                             onTouchStart={(e) => handleStepTouchStart(e, task.id)}
-                            onTouchMove={handleStepTouchMove}
+                            onTouchMove={(e) => {
+                              handleStepTouchMove(e);
+                              // Prevent default if significant horizontal movement
+                              if (Math.abs(swipeOffset) > 10) {
+                                e.preventDefault();
+                              }
+                            }}
                             onTouchEnd={() => handleStepTouchEnd(task)}
-                            className={`group p-3 border relative ${
+                            className={`group p-3 border relative cursor-grab active:cursor-grabbing ${
                               task.completed 
                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
                                 : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700'
