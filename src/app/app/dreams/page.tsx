@@ -16,6 +16,8 @@ interface Dream {
   completed?: boolean;
 }
 
+const DELETE_COLOR = '#8B2942'; // Burgundy red
+
 const Icons = {
   back: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -151,7 +153,7 @@ export default function DreamsPage() {
               >
                 {/* Swipe background */}
                 <div className="absolute inset-0 flex justify-end">
-                  <div className={`w-1/2 bg-red-600 flex items-center justify-end pr-5 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                  <div className={`w-1/2 flex items-center justify-end pr-5 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: DELETE_COLOR }}>
                     {Icons.trash}
                   </div>
                 </div>

@@ -20,8 +20,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
+import VoiceEditButton from '@/app/components/VoiceEditButton';
 
 const THEME_COLOR = '#6b8f71';
+const DELETE_COLOR = '#8B2942'; // Burgundy red
 
 // Types
 interface Idea {
@@ -802,11 +804,19 @@ export default function IdeasBoard() {
                         }}
                         className={`p-2 rounded-full transition-all flex-shrink-0 ${
                           isRecording && isEditingIdeaTitle
-                            ? 'bg-red-500 text-white animate-pulse'
+                            ? 'bg-[#6b8f71] text-white'
                             : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-[#6b8f71]'
                         }`}
                       >
-                        {isRecording && isEditingIdeaTitle ? Icons.check : Icons.mic}
+                        {/* Mic → Check animation */}
+                        <div className="relative w-5 h-5">
+                          <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && isEditingIdeaTitle ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                            {Icons.mic}
+                          </div>
+                          <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && isEditingIdeaTitle ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                            {Icons.check}
+                          </div>
+                        </div>
                       </button>
                     </div>
                   )}
@@ -873,7 +883,7 @@ export default function IdeasBoard() {
                                 </svg>
                               </div>
                               {/* Delete background (left swipe) - red */}
-                              <div className={`flex-1 bg-red-600 flex items-center justify-end pr-5 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                              <div className={`flex-1 flex items-center justify-end pr-5 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: DELETE_COLOR }}>
                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
@@ -952,7 +962,7 @@ export default function IdeasBoard() {
                                 </p>
                               )}
 
-                              {/* Mic button when selected */}
+                              {/* Mic button when selected - with mic→check animation */}
                               {isSelected && (
                                 <button
                                   onClick={(e) => {
@@ -964,21 +974,33 @@ export default function IdeasBoard() {
                                       startRecording(index);
                                     }
                                   }}
-                                  className={`p-2.5 rounded-full transition-all ${
+                                  className={`p-2.5 rounded-full transition-all relative ${
                                     isRecording && editingStepIndex === index
-                                      ? 'bg-red-500 text-white animate-pulse'
-                                      : 'bg-black dark:bg-white text-white dark:text-black'
+                                      ? 'bg-[#6b8f71] text-white'
+                                      : 'bg-[#6b8f71] text-white hover:bg-[#5a7d60]'
                                   }`}
                                 >
-                                  {isRecording && editingStepIndex === index ? Icons.check : Icons.mic}
+                                  {/* Pulsing ring when recording */}
+                                  {isRecording && editingStepIndex === index && (
+                                    <div className="absolute inset-0 rounded-full bg-[#6b8f71] animate-ping opacity-30" />
+                                  )}
+                                  {/* Mic → Check animation */}
+                                  <div className="relative w-5 h-5">
+                                    <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && editingStepIndex === index ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                                      {Icons.mic}
+                                    </div>
+                                    <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && editingStepIndex === index ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                                      {Icons.check}
+                                    </div>
+                                  </div>
                                 </button>
                               )}
                             </div>
 
                             {/* Recording indicator */}
                             {isRecording && editingStepIndex === index && (
-                              <div className="mt-3 flex items-center gap-2 text-xs text-red-500">
-                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                              <div className="mt-3 flex items-center gap-2 text-xs text-[#6b8f71]">
+                                <span className="w-2 h-2 rounded-full bg-[#6b8f71] animate-pulse" />
                                 Grabando... {formatTime(recordingTime)}
                               </div>
                             )}
@@ -1001,7 +1023,7 @@ export default function IdeasBoard() {
               <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <button
                   onClick={() => deleteIdea(selectedIdea.id)}
-                  className="w-full px-4 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition-colors"
+                  className="w-full px-4 py-2 rounded-xl text-[#8B2942] hover:bg-[#8B2942]/10 dark:hover:bg-[#8B2942]/20 text-sm font-medium transition-colors"
                 >
                   Eliminar idea
                 </button>
