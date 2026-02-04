@@ -436,7 +436,7 @@ function OnboardingContent() {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-semibold text-[var(--foreground)] text-center mb-1">
+        <h1 className="text-2xl font-semibold text-[var(--foreground)] text-center mb-1 tracking-tight">
           {step.id === 'complete' && userName ? `¡Listo, ${userName}!` : step.title}
         </h1>
 
@@ -527,8 +527,13 @@ function OnboardingContent() {
                     value={step.id === 'name' ? (inputText || userName) : inputText}
                     onChange={(e) => step.id === 'name' ? (setInputText(e.target.value), setUserName(e.target.value)) : setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-                    placeholder="Toca para grabar..."
-                    className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none"
+                    placeholder={
+                      step.id === 'name' ? 'Escribe tu nombre...' :
+                      step.id === 'first-capture' ? 'Escribe una idea o tarea...' :
+                      step.contextOptions ? 'O escríbelo aquí...' :
+                      'Escribe aquí...'
+                    }
+                    className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none font-medium tracking-tight"
                   />
                 ) : (
                   <>
