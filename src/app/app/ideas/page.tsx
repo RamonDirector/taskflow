@@ -174,6 +174,14 @@ export default function IdeasBoard() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
   
+  // Long press & double tap state
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+  const [inlineEditStepId, setInlineEditStepId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const DOUBLE_TAP_DELAY = 300;
+  
   const router = useRouter();
   const supabase = createClient();
 
@@ -568,19 +576,77 @@ export default function IdeasBoard() {
   };
 
   const handleStepTouchEnd = (task: Idea) => {
+    // End long press
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
     const currentOffset = swipeOffset;
-    // Reset state first
+    // Reset swipe state
     setSwipingStepId(null);
     setSwipeOffset(0);
     
-    // Then perform action based on offset
-    if (currentOffset > 60) {
-      // Swipe right - complete
-      toggleTask(task.id);
-    } else if (currentOffset < -60) {
-      // Swipe left - delete
-      deleteTask(task.id);
+    // Perform action based on offset (only if not selected for editing)
+    if (!selectedStepId && !inlineEditStepId) {
+      if (currentOffset > 60) {
+        toggleTask(task.id);
+      } else if (currentOffset < -60) {
+        deleteTask(task.id);
+      }
     }
+  };
+
+  // Long press to select for voice editing
+  const handleLongPressStart = (taskId: string) => {
+    longPressTimer.current = setTimeout(() => {
+      // Cancel any swipe
+      setSwipingStepId(null);
+      setSwipeOffset(0);
+      // Select this step
+      setSelectedStepId(taskId);
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  // Double tap for inline text edit
+  const handleStepTap = (task: Idea, index: number) => {
+    const now = Date.now();
+    const lastTap = lastTapRef.current;
+    
+    if (lastTap && lastTap.id === task.id && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
+      // Double tap → inline edit
+      lastTapRef.current = null;
+      setInlineEditStepId(task.id);
+      setInlineEditValue(task.title);
+      setSelectedStepId(null);
+    } else {
+      // First tap → wait for potential double tap
+      lastTapRef.current = { id: task.id, time: now };
+    }
+  };
+
+  // Save inline edit
+  const saveInlineEdit = async () => {
+    if (!inlineEditStepId || !inlineEditValue.trim()) return;
+    await supabase.from('tasks').update({ title: inlineEditValue.trim() }).eq('id', inlineEditStepId);
+    setIdeas(prev => prev.map(i => i.id === inlineEditStepId ? { ...i, title: inlineEditValue.trim() } : i));
+    setInlineEditStepId(null);
+    setInlineEditValue('');
+  };
+
+  // Cancel selection
+  const clearSelection = () => {
+    setSelectedStepId(null);
+    setInlineEditStepId(null);
   };
 
   // Focus input when shown
@@ -778,85 +844,78 @@ export default function IdeasBoard() {
 
                 {/* Action Points with swipe */}
                 {childTasks.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Plan de Acción ({childTasks.length} pasos)
-                    </h3>
+                  <div className="space-y-3" onClick={() => { if (selectedStepId) clearSelection(); }}>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Plan de Acción ({childTasks.length} pasos)
+                      </h3>
+                      <p className="text-xs text-gray-400">Long press = voz · 2x tap = texto</p>
+                    </div>
                     
                     {childTasks.map((task, index) => {
                       const isBeingSwiped = swipingStepId === task.id;
+                      const isSelected = selectedStepId === task.id;
+                      const isInlineEditing = inlineEditStepId === task.id;
                       const showComplete = isBeingSwiped && swipeOffset > 30;
                       const showDelete = isBeingSwiped && swipeOffset < -30;
                       const readyToComplete = isBeingSwiped && swipeOffset > 60;
                       const readyToDelete = isBeingSwiped && swipeOffset < -60;
                       
                       return (
-                        <div key={task.id} className="relative overflow-hidden rounded-xl">
-                          {/* Swipe backgrounds - always visible, opacity changes */}
-                          <div className="absolute inset-0 flex">
-                            {/* Complete background (right swipe) - GREEN */}
-                            <div 
-                              className={`flex-1 flex items-center pl-4 transition-all duration-150 ${
-                                readyToComplete ? 'bg-emerald-500' : showComplete ? 'bg-emerald-400' : 'bg-emerald-300'
-                              }`}
-                              style={{ opacity: showComplete ? 1 : 0.3 }}
-                            >
-                              <div className={`flex items-center gap-2 transition-transform duration-150 ${readyToComplete ? 'scale-110' : ''}`}>
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                        <div key={task.id} className="relative overflow-hidden rounded-2xl">
+                          {/* Swipe backgrounds */}
+                          {!isSelected && !isInlineEditing && (
+                            <div className="absolute inset-0 flex">
+                              {/* Complete background (right swipe) - matcha green */}
+                              <div className={`flex-1 bg-[#c8d9cb] flex items-center pl-5 transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
-                                <span className={`text-white text-sm font-medium transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
-                                  {readyToComplete ? '¡Suelta!' : 'Completar'}
-                                </span>
                               </div>
-                            </div>
-                            {/* Delete background (left swipe) - RED */}
-                            <div 
-                              className={`flex-1 flex items-center justify-end pr-4 transition-all duration-150 ${
-                                readyToDelete ? 'bg-red-500' : showDelete ? 'bg-red-400' : 'bg-red-300'
-                              }`}
-                              style={{ opacity: showDelete ? 1 : 0.3 }}
-                            >
-                              <div className={`flex items-center gap-2 transition-transform duration-150 ${readyToDelete ? 'scale-110' : ''}`}>
-                                <span className={`text-white text-sm font-medium transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
-                                  {readyToDelete ? '¡Suelta!' : 'Eliminar'}
-                                </span>
+                              {/* Delete background (left swipe) - red */}
+                              <div className={`flex-1 bg-red-600 flex items-center justify-end pr-5 transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </div>
                             </div>
-                          </div>
+                          )}
                           
                           {/* Card that moves */}
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
+                          <div
                             style={{ 
-                              transform: isBeingSwiped ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-                              transition: isBeingSwiped ? 'none' : 'transform 0.2s ease-out',
-                              touchAction: 'pan-y', // Allow vertical scroll, capture horizontal
+                              transform: isBeingSwiped && !isSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+                              transition: isBeingSwiped ? 'none' : 'transform 0.3s ease-out',
                             }}
-                            onTouchStart={(e) => handleStepTouchStart(e, task.id)}
+                            onTouchStart={(e) => {
+                              if (isRecording || isSelected || isInlineEditing) return;
+                              handleStepTouchStart(e, task.id);
+                              handleLongPressStart(task.id);
+                            }}
                             onTouchMove={(e) => {
+                              if (isSelected || isInlineEditing) return;
                               handleStepTouchMove(e);
-                              // Prevent default if significant horizontal movement
-                              if (Math.abs(swipeOffset) > 10) {
-                                e.preventDefault();
-                              }
+                              // Cancel long press if swiping
+                              if (Math.abs(swipeOffset) > 15) handleLongPressEnd();
                             }}
-                            onTouchEnd={() => handleStepTouchEnd(task)}
-                            className={`group p-3 border relative cursor-grab active:cursor-grabbing ${
-                              task.completed 
-                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
-                                : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700'
+                            onTouchEnd={() => {
+                              handleLongPressEnd();
+                              if (!isSelected && !isInlineEditing) handleStepTouchEnd(task);
+                            }}
+                            onTouchCancel={handleLongPressEnd}
+                            onClick={() => handleStepTap(task, index)}
+                            className={`relative rounded-2xl p-4 border-2 transition-all ${
+                              isSelected
+                                ? 'border-black dark:border-white ring-2 ring-black/20 dark:ring-white/30 scale-[1.02] bg-white dark:bg-[#2c2c2e]'
+                                : task.completed 
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
+                                  : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700 active:scale-[0.98] active:bg-gray-50 dark:active:bg-[#38383a]'
                             }`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-center gap-3">
                               {/* Step number / checkbox */}
                               <button
-                                onClick={() => toggleTask(task.id)}
+                                onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
                                 className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs font-medium transition-all ${
                                   task.completed
                                     ? 'bg-emerald-500 border-emerald-500 text-white'
@@ -872,32 +931,65 @@ export default function IdeasBoard() {
                                 )}
                               </button>
 
-                              {/* Title */}
-                              <p className={`flex-1 text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                                {task.title}
-                              </p>
+                              {/* Title or Inline Edit */}
+                              {isInlineEditing ? (
+                                <input
+                                  type="text"
+                                  value={inlineEditValue}
+                                  onChange={(e) => setInlineEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveInlineEdit();
+                                    if (e.key === 'Escape') setInlineEditStepId(null);
+                                  }}
+                                  onBlur={saveInlineEdit}
+                                  onClick={(e) => e.stopPropagation()}
+                                  autoFocus
+                                  className="flex-1 text-sm bg-transparent border-b border-gray-300 dark:border-gray-600 outline-none text-gray-800 dark:text-gray-200 py-1"
+                                />
+                              ) : (
+                                <p className={`flex-1 text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                                  {task.title}
+                                </p>
+                              )}
 
-                              {/* Voice edit button */}
-                              <button
-                                onClick={() => isRecording && editingStepIndex === index ? stopRecording() : startRecording(index)}
-                                className={`p-2 rounded-full transition-all ${
-                                  isRecording && editingStepIndex === index
-                                    ? 'bg-red-500 text-white'
-                                    : 'opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400'
-                                }`}
-                              >
-                                {isRecording && editingStepIndex === index ? Icons.check : Icons.mic}
-                              </button>
+                              {/* Mic button when selected */}
+                              {isSelected && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isRecording && editingStepIndex === index) {
+                                      stopRecording();
+                                    } else {
+                                      setEditingStepIndex(index);
+                                      startRecording(index);
+                                    }
+                                  }}
+                                  className={`p-2.5 rounded-full transition-all ${
+                                    isRecording && editingStepIndex === index
+                                      ? 'bg-red-500 text-white animate-pulse'
+                                      : 'bg-black dark:bg-white text-white dark:text-black'
+                                  }`}
+                                >
+                                  {isRecording && editingStepIndex === index ? Icons.check : Icons.mic}
+                                </button>
+                              )}
                             </div>
 
                             {/* Recording indicator */}
                             {isRecording && editingStepIndex === index && (
-                              <div className="mt-2 flex items-center gap-2 text-xs text-red-500">
+                              <div className="mt-3 flex items-center gap-2 text-xs text-red-500">
                                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                                 Grabando... {formatTime(recordingTime)}
                               </div>
                             )}
-                          </motion.div>
+
+                            {/* Selection hint */}
+                            {isSelected && !isRecording && (
+                              <p className="mt-2 text-xs text-gray-400">
+                                Toca 🎤 para editar por voz · Toca 2x para editar texto
+                              </p>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
