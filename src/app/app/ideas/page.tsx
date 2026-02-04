@@ -430,9 +430,10 @@ export default function IdeasBoard() {
   const processVoiceEdit = async (stepIndex: number) => {
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
     const task = childTasks[stepIndex];
-    if (!task) return;
+    if (!task || !selectedIdea) return;
 
     try {
+      // 1. Transcribe audio
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       
@@ -441,9 +442,30 @@ export default function IdeasBoard() {
       
       const { text } = await transcribeRes.json();
       if (text?.trim()) {
-        // Update the task title with the transcribed text
-        await supabase.from('tasks').update({ title: text.trim() }).eq('id', task.id);
-        setIdeas(prev => prev.map(i => i.id === task.id ? { ...i, title: text.trim() } : i));
+        // 2. Use AI to edit the task based on voice input
+        const editRes = await fetch('/api/voice-edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            editType: 'action-point',
+            voiceInput: text.trim(),
+            context: {
+              ideaTitle: selectedIdea.title,
+              stepTitle: task.title,
+              stepIndex: stepIndex,
+              totalSteps: childTasks.length,
+            },
+          }),
+        });
+        
+        if (editRes.ok) {
+          const { result } = await editRes.json();
+          const newTitle = result?.title || result?.new_step;
+          if (newTitle) {
+            await supabase.from('tasks').update({ title: newTitle }).eq('id', task.id);
+            setIdeas(prev => prev.map(i => i.id === task.id ? { ...i, title: newTitle } : i));
+          }
+        }
       }
     } catch (e) {
       console.error('Voice edit error:', e);
@@ -500,10 +522,30 @@ export default function IdeasBoard() {
       
       const { text } = await transcribeRes.json();
       if (text?.trim()) {
-        await supabase.from('tasks').update({ title: text.trim() }).eq('id', selectedIdea.id);
-        setIdeas(prev => prev.map(i => i.id === selectedIdea.id ? { ...i, title: text.trim() } : i));
-        setSelectedIdea(prev => prev ? { ...prev, title: text.trim() } : null);
-        setEditedTitle(text.trim());
+        // Use AI to edit the idea title based on voice input
+        const editRes = await fetch('/api/voice-edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            editType: 'action-point', // Reuse same logic
+            voiceInput: text.trim(),
+            context: {
+              ideaTitle: 'Idea',
+              stepTitle: selectedIdea.title,
+              stepIndex: 0,
+              totalSteps: 1,
+            },
+          }),
+        });
+        
+        if (editRes.ok) {
+          const { result } = await editRes.json();
+          const newTitle = result?.title || result?.new_step || text.trim();
+          await supabase.from('tasks').update({ title: newTitle }).eq('id', selectedIdea.id);
+          setIdeas(prev => prev.map(i => i.id === selectedIdea.id ? { ...i, title: newTitle } : i));
+          setSelectedIdea(prev => prev ? { ...prev, title: newTitle } : null);
+          setEditedTitle(newTitle);
+        }
       }
     } catch (e) {
       console.error('Voice edit error:', e);
@@ -743,24 +785,46 @@ export default function IdeasBoard() {
                     
                     {childTasks.map((task, index) => {
                       const isBeingSwiped = swipingStepId === task.id;
-                      const showComplete = isBeingSwiped && swipeOffset > 40;
-                      const showDelete = isBeingSwiped && swipeOffset < -40;
+                      const showComplete = isBeingSwiped && swipeOffset > 30;
+                      const showDelete = isBeingSwiped && swipeOffset < -30;
+                      const readyToComplete = isBeingSwiped && swipeOffset > 60;
+                      const readyToDelete = isBeingSwiped && swipeOffset < -60;
                       
                       return (
                         <div key={task.id} className="relative overflow-hidden rounded-xl">
-                          {/* Swipe backgrounds - revealed as you swipe */}
+                          {/* Swipe backgrounds - always visible, opacity changes */}
                           <div className="absolute inset-0 flex">
-                            {/* Complete background (right swipe) */}
-                            <div className={`flex-1 bg-emerald-500 flex items-center pl-4 transition-opacity duration-150 ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
-                              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
+                            {/* Complete background (right swipe) - GREEN */}
+                            <div 
+                              className={`flex-1 flex items-center pl-4 transition-all duration-150 ${
+                                readyToComplete ? 'bg-emerald-500' : showComplete ? 'bg-emerald-400' : 'bg-emerald-300'
+                              }`}
+                              style={{ opacity: showComplete ? 1 : 0.3 }}
+                            >
+                              <div className={`flex items-center gap-2 transition-transform duration-150 ${readyToComplete ? 'scale-110' : ''}`}>
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span className={`text-white text-sm font-medium transition-opacity ${showComplete ? 'opacity-100' : 'opacity-0'}`}>
+                                  {readyToComplete ? '¡Suelta!' : 'Completar'}
+                                </span>
+                              </div>
                             </div>
-                            {/* Delete background (left swipe) */}
-                            <div className={`flex-1 bg-red-500 flex items-center justify-end pr-4 transition-opacity duration-150 ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
-                              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
+                            {/* Delete background (left swipe) - RED */}
+                            <div 
+                              className={`flex-1 flex items-center justify-end pr-4 transition-all duration-150 ${
+                                readyToDelete ? 'bg-red-500' : showDelete ? 'bg-red-400' : 'bg-red-300'
+                              }`}
+                              style={{ opacity: showDelete ? 1 : 0.3 }}
+                            >
+                              <div className={`flex items-center gap-2 transition-transform duration-150 ${readyToDelete ? 'scale-110' : ''}`}>
+                                <span className={`text-white text-sm font-medium transition-opacity ${showDelete ? 'opacity-100' : 'opacity-0'}`}>
+                                  {readyToDelete ? '¡Suelta!' : 'Eliminar'}
+                                </span>
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </div>
                             </div>
                           </div>
                           
