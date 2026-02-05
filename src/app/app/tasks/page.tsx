@@ -97,6 +97,9 @@ export default function TasksPage() {
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
   const DOUBLE_TAP_DELAY = 300;
   
+  // Scroll state for header transparency
+  const [scrolled, setScrolled] = useState(false);
+  
   const router = useRouter();
   const supabase = createClient();
 
@@ -126,6 +129,15 @@ export default function TasksPage() {
     };
     init();
   }, [supabase, router, fetchTasks]);
+
+  // Track scroll for header transparency
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
@@ -346,8 +358,12 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#2d2d30]" onClick={clearSelection}>
-      {/* Header */}
-      <header className="sticky top-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#2d2d30]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+      {/* Header - more transparent when scrolled for seamless integration */}
+      <header className={`sticky top-0 z-10 px-4 py-3 backdrop-blur-lg transition-all duration-300 ${
+        scrolled 
+          ? 'bg-white/60 dark:bg-[#2d2d30]/60 border-b border-gray-200/50 dark:border-gray-800/50' 
+          : 'bg-white/90 dark:bg-[#2d2d30]/90 border-b border-gray-200 dark:border-gray-800'
+      }`}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
             <button
