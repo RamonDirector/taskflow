@@ -267,7 +267,7 @@ export default function IdeasBoard() {
     // Only idea nodes - no task nodes on canvas (mobile-friendly)
     setNodes(ideaNodes);
     setEdges([]); // No edges needed
-  }, [ideas]);
+  }, [ideas, setNodes, setEdges]);
 
   // Initialize
   useEffect(() => {
