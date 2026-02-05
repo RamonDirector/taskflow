@@ -767,7 +767,7 @@ export default function IdeasBoard() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
-            <Image src="/icon-192.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
+            <div className="rounded-lg overflow-hidden bg-white dark:bg-[#2c2c2e] p-0.5"><Image src="/icon-192.png" alt="Hansei" width={24} height={24} className="rounded-md" /></div>
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Idea Board</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
               {ideas.filter(i => i.type === 'idea').length} ideas
