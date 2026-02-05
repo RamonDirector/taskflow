@@ -361,8 +361,8 @@ export default function TasksPage() {
       {/* Header - more transparent when scrolled for seamless integration */}
       <header className={`sticky top-0 z-10 px-4 py-3 backdrop-blur-lg transition-all duration-300 ${
         scrolled 
-          ? 'bg-white/60 dark:bg-[#2d2d30]/60 border-b border-gray-200/50 dark:border-gray-800/50' 
-          : 'bg-white/90 dark:bg-[#2d2d30]/90 border-b border-gray-200 dark:border-gray-800'
+          ? 'bg-white/30 dark:bg-[#2d2d30]/30 border-b border-gray-200/30 dark:border-gray-800/30' 
+          : 'bg-white/80 dark:bg-[#2d2d30]/80 border-b border-gray-200 dark:border-gray-800'
       }`}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
