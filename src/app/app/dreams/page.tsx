@@ -280,7 +280,7 @@ export default function DreamsPage() {
             >
               {Icons.back}
             </button>
-            <div className="rounded-lg overflow-hidden bg-white dark:bg-[#2c2c2e] p-0.5"><Image src="/icon-192.png" alt="Hansei" width={24} height={24} className="rounded-md" /></div>
+            <Image src="/icon-192-transparent.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Sueños</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
               {dreams.length}

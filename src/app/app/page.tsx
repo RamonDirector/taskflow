@@ -419,15 +419,13 @@ export default function PandaHub() {
       <header className="fixed top-0 left-0 right-0 z-10 px-4 py-3 bg-[var(--background)]/80 backdrop-blur-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg overflow-hidden bg-white dark:bg-[#2c2c2e] p-0.5">
-              <Image
-                src="/icon-192.png"
-                alt="Hansei"
-                width={28}
-                height={28}
-                className="rounded-md"
-              />
-            </div>
+            <Image
+              src="/icon-192-transparent.png"
+              alt="Hansei"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
             <span className="text-sm font-medium text-[var(--foreground)]">hansei</span>
           </div>
           
