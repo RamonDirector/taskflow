@@ -668,8 +668,8 @@ export default function PandaHub() {
               className="absolute inset-0 bg-[#2d2d30] dark:bg-[#3d5a45] rounded-full transition-all"
               style={{ 
                 clipPath: isRecording 
-                  ? 'circle(150% at calc(100% - 24px) 50%)' 
-                  : 'circle(0% at calc(100% - 24px) 50%)',
+                  ? 'circle(150% at calc(100% - 36px) 50%)' 
+                  : 'circle(0% at calc(100% - 36px) 50%)',
                 transitionDuration: '700ms',
                 transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
               }}
