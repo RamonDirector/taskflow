@@ -50,6 +50,13 @@ export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   
+  // Voice recording for new task
+  const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingNewTask, setIsRecordingNewTask] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  
   // Inline text edit
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
   const [inlineEditValue, setInlineEditValue] = useState('');
@@ -217,6 +224,83 @@ export default function TasksPage() {
     setInlineEditId(null);
   };
 
+  // Voice recording for NEW task
+  const startRecordingForNewTask = async () => {
+    try {
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm',
+      });
+
+      chunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        await processNewTaskRecording();
+      };
+
+      mediaRecorder.start(250);
+      setIsRecording(true);
+      setIsRecordingNewTask(true);
+      if (navigator.vibrate) navigator.vibrate(50);
+    } catch (e) {
+      console.error('Recording error:', e);
+    }
+  };
+
+  const stopRecordingNewTask = () => {
+    if (mediaRecorderRef.current?.state !== 'inactive') {
+      mediaRecorderRef.current?.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const processNewTaskRecording = async () => {
+    if (!user) return;
+    const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      
+      const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
+      if (!transcribeRes.ok) throw new Error('Transcription failed');
+      
+      const { text } = await transcribeRes.json();
+      if (text?.trim()) {
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert({
+            user_id: user.id,
+            title: text.trim(),
+            type: 'task',
+            category: 'personal',
+            priority: 'medium',
+            completed: false,
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          setTasks(prev => [data, ...prev]);
+        }
+      }
+    } catch (e) {
+      console.error('New task recording error:', e);
+    }
+
+    setIsRecordingNewTask(false);
+  };
+
   const filteredTasks = tasks.filter(t => {
     if (filter === 'pending') return !t.completed;
     if (filter === 'completed') return t.completed;
@@ -250,6 +334,40 @@ export default function TasksPage() {
             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
               {completedCount}/{tasks.length}
             </span>
+          </div>
+          
+          {/* Voice button for new task */}
+          <div className="flex items-center gap-2">
+            {isRecording && isRecordingNewTask && (
+              <span className="text-xs text-[#6b8f71] font-medium animate-pulse">Grabando...</span>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isRecording && isRecordingNewTask) {
+                  stopRecordingNewTask();
+                } else {
+                  startRecordingForNewTask();
+                }
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-[#6b8f71]"
+            >
+              {isRecording && isRecordingNewTask && (
+                <div className="absolute inset-0 rounded-full bg-[#6b8f71] animate-ping opacity-30" />
+              )}
+              <div className="relative w-5 h-5">
+                <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && isRecordingNewTask ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && isRecordingNewTask ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 

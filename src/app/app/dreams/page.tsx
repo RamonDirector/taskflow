@@ -69,6 +69,13 @@ export default function DreamsPage() {
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   const [isInterpreting, setIsInterpreting] = useState(false);
   
+  // Voice recording for new dream
+  const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingNewDream, setIsRecordingNewDream] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  
   // Swipe state
   const [swipingId, setSwipingId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -175,6 +182,84 @@ export default function DreamsPage() {
     setSelectedDream(null);
   };
 
+  // Voice recording for NEW dream
+  const startRecordingForNewDream = async () => {
+    try {
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm',
+      });
+
+      chunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        await processNewDreamRecording();
+      };
+
+      mediaRecorder.start(250);
+      setIsRecording(true);
+      setIsRecordingNewDream(true);
+      if (navigator.vibrate) navigator.vibrate(50);
+    } catch (e) {
+      console.error('Recording error:', e);
+    }
+  };
+
+  const stopRecordingNewDream = () => {
+    if (mediaRecorderRef.current?.state !== 'inactive') {
+      mediaRecorderRef.current?.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const processNewDreamRecording = async () => {
+    if (!user) return;
+    const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      
+      const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
+      if (!transcribeRes.ok) throw new Error('Transcription failed');
+      
+      const { text } = await transcribeRes.json();
+      if (text?.trim()) {
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert({
+            user_id: user.id,
+            title: text.trim(),
+            voice_context: text.trim(),
+            type: 'dream',
+            category: 'personal',
+            priority: 'medium',
+            completed: false,
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          setDreams(prev => [data, ...prev]);
+        }
+      }
+    } catch (e) {
+      console.error('New dream recording error:', e);
+    }
+
+    setIsRecordingNewDream(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-[#1c1c1e] flex items-center justify-center">
@@ -200,6 +285,39 @@ export default function DreamsPage() {
             <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
               {dreams.length}
             </span>
+          </div>
+          
+          {/* Voice button for new dream */}
+          <div className="flex items-center gap-2">
+            {isRecording && isRecordingNewDream && (
+              <span className="text-xs text-purple-600 font-medium animate-pulse">Grabando...</span>
+            )}
+            <button
+              onClick={() => {
+                if (isRecording && isRecordingNewDream) {
+                  stopRecordingNewDream();
+                } else {
+                  startRecordingForNewDream();
+                }
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-purple-600"
+            >
+              {isRecording && isRecordingNewDream && (
+                <div className="absolute inset-0 rounded-full bg-purple-600 animate-ping opacity-30" />
+              )}
+              <div className="relative w-5 h-5">
+                <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && isRecordingNewDream ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && isRecordingNewDream ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </header>
