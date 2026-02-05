@@ -663,9 +663,9 @@ export default function PandaHub() {
           <div 
             className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden shadow-lg"
           >
-            {/* Black overlay when recording */}
+            {/* Overlay when recording - matcha green in dark mode for contrast */}
             <div 
-              className="absolute inset-0 bg-[#2d2d30] rounded-full transition-all"
+              className="absolute inset-0 bg-[#2d2d30] dark:bg-[#3d5a45] rounded-full transition-all"
               style={{ 
                 clipPath: isRecording 
                   ? 'circle(150% at calc(100% - 24px) 50%)' 
