@@ -571,13 +571,6 @@ export default function PandaHub() {
                       }}
                       className="relative touch-pan-y"
                     >
-                      {/* Delete indicator behind */}
-                      <div className="absolute inset-y-0 -right-2 flex items-center pr-4 text-red-500">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </div>
-                      
                       {isEditing ? (
                         <div className={`flex flex-col gap-2 p-4 rounded-2xl ${config.bg} border border-[var(--gray-2)] bg-[var(--background)]`}>
                           <div className="flex items-center gap-2">
@@ -621,9 +614,6 @@ export default function PandaHub() {
                             <p className="text-sm font-medium text-[var(--foreground)] line-clamp-2">{item.title}</p>
                             <p className="text-xs text-[var(--gray-4)] mt-0.5">{config.label} · {item.category}</p>
                           </div>
-                          <svg className="w-4 h-4 text-[var(--gray-3)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                          </svg>
                         </div>
                       )}
                     </motion.div>
