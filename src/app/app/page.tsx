@@ -414,7 +414,7 @@ export default function PandaHub() {
   }
 
   return (
-    <div className="h-screen bg-[var(--background)] flex flex-col overflow-hidden">
+    <div className="h-screen bg-[var(--background)] flex flex-col overflow-hidden fixed inset-0">
       {/* Header with logo */}
       <header className="fixed top-0 left-0 right-0 z-10 px-4 py-3 bg-[var(--background)]/80 backdrop-blur-lg">
         <div className="flex items-center justify-between">
@@ -459,9 +459,10 @@ export default function PandaHub() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32 pt-16">
         {/* Panda with matcha aura */}
         <motion.div 
-          className="relative w-40 h-40 mb-6"
+          className="relative w-40 h-40 mb-6 overflow-visible"
           animate={{ scale: isProcessing ? 0.95 : 1 }}
           transition={{ duration: 0.3 }}
+          style={{ willChange: 'transform' }}
         >
           {/* Matcha aura glow */}
           <div 
