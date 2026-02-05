@@ -418,6 +418,31 @@ header {
   animation: enso-brush 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* React Flow Controls - Dark Mode */
+.dark .react-flow__controls {
+  background: #1c1c1e !important;
+  border: 1px solid #4a4a4c !important;
+}
+
+.dark .react-flow__controls-button {
+  background: #1c1c1e !important;
+  border-bottom: 1px solid #3a3a3c !important;
+  fill: #ffffff !important;
+}
+
+.dark .react-flow__controls-button:hover {
+  background: #2c2c2e !important;
+}
+
+.dark .react-flow__controls-button svg {
+  fill: #ffffff !important;
+}
+
+.dark .react-flow__minimap {
+  background: #1c1c1e !important;
+  border: 1px solid #4a4a4c !important;
+}
+
 /* Panda Portal Animations */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
