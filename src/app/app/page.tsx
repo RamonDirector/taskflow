@@ -441,7 +441,7 @@ export default function PandaHub() {
                 document.documentElement.classList.remove('dark');
               }
             }}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-xl transition-opacity hover:opacity-70"
           >
             {darkMode ? (
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
