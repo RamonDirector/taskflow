@@ -337,24 +337,26 @@ export default function DreamsPage() {
                   </p>
                 </div>
 
-                {/* Interpret Button */}
-                <button
-                  onClick={interpretDream}
-                  disabled={isInterpreting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white font-medium transition-all hover:shadow-lg disabled:opacity-50"
-                >
-                  {isInterpreting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Interpretando...
-                    </>
-                  ) : (
-                    <>
-                      {Icons.sparkles}
-                      {selectedDream.interpretation ? 'Reinterpretar' : 'Interpretar sueño'}
-                    </>
-                  )}
-                </button>
+                {/* Interpret Button - only show if not yet interpreted */}
+                {!selectedDream.interpretation && (
+                  <button
+                    onClick={interpretDream}
+                    disabled={isInterpreting}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white font-medium transition-all hover:shadow-lg disabled:opacity-50"
+                  >
+                    {isInterpreting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Interpretando...
+                      </>
+                    ) : (
+                      <>
+                        {Icons.sparkles}
+                        Interpretar sueño
+                      </>
+                    )}
+                  </button>
+                )}
 
                 {/* Interpretation */}
                 {selectedDream.interpretation && (

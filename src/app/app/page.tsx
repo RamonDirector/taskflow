@@ -117,6 +117,9 @@ export default function PandaHub() {
   // Dark mode
   const [darkMode, setDarkMode] = useState(false);
   
+  // New items indicator for bottom nav
+  const [hasNew, setHasNew] = useState({ ideas: false, tasks: false, dreams: false });
+  
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -369,6 +372,19 @@ export default function PandaHub() {
 
     await supabase.from('tasks').insert(rows);
 
+    // Mark new items for nav indicators
+    const newIndicators = { ideas: false, tasks: false, dreams: false };
+    capturedItems.forEach(item => {
+      if (item.type === 'idea') newIndicators.ideas = true;
+      else if (item.type === 'task') newIndicators.tasks = true;
+      else if (item.type === 'dream') newIndicators.dreams = true;
+    });
+    setHasNew(prev => ({
+      ideas: prev.ideas || newIndicators.ideas,
+      tasks: prev.tasks || newIndicators.tasks,
+      dreams: prev.dreams || newIndicators.dreams,
+    }));
+
     // Reset
     setCapturedItems([]);
     setShowConfirmation(false);
@@ -575,24 +591,48 @@ export default function PandaHub() {
           <span className="text-[10px] font-medium">Home</span>
         </button>
         <button 
-          onClick={() => router.push('/app/ideas')}
-          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => {
+            setHasNew(prev => ({ ...prev, ideas: false }));
+            router.push('/app/ideas');
+          }}
+          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors relative"
         >
-          <span className="w-6 h-6">{Icons.ideas}</span>
+          <span className="w-6 h-6 relative">
+            {Icons.ideas}
+            {hasNew.ideas && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b8f71]" />
+            )}
+          </span>
           <span className="text-[10px] font-medium">Ideas</span>
         </button>
         <button 
-          onClick={() => router.push('/app/tasks')}
-          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => {
+            setHasNew(prev => ({ ...prev, tasks: false }));
+            router.push('/app/tasks');
+          }}
+          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors relative"
         >
-          <span className="w-6 h-6">{Icons.tasks}</span>
+          <span className="w-6 h-6 relative">
+            {Icons.tasks}
+            {hasNew.tasks && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b8f71]" />
+            )}
+          </span>
           <span className="text-[10px] font-medium">Tasks</span>
         </button>
         <button 
-          onClick={() => router.push('/app/dreams')}
-          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => {
+            setHasNew(prev => ({ ...prev, dreams: false }));
+            router.push('/app/dreams');
+          }}
+          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors relative"
         >
-          <span className="w-6 h-6">{Icons.dreams}</span>
+          <span className="w-6 h-6 relative">
+            {Icons.dreams}
+            {hasNew.dreams && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b8f71]" />
+            )}
+          </span>
           <span className="text-[10px] font-medium">Dreams</span>
         </button>
       </nav>
