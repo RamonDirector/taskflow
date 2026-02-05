@@ -113,6 +113,8 @@ export default function PandaHub() {
   // Captured items (for confirmation)
   const [capturedItems, setCapturedItems] = useState<CapturedItem[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
   
   // Dark mode
   const [darkMode, setDarkMode] = useState(false);
@@ -249,7 +251,7 @@ export default function PandaHub() {
   const processInput = async (audioBlob: Blob | null, text: string | null) => {
     setIsProcessing(true);
     setPandaImage('/panda/panda-thinking.png');
-    setPandaMessage('Procesando...');
+    setPandaMessage('Déjame pensar...');
 
     try {
       let transcribedText = text;
@@ -345,7 +347,7 @@ export default function PandaHub() {
       const primaryType = items[0].type;
       const config = typeConfig[primaryType];
       setPandaImage(config.panda);
-      setPandaMessage(`¡${config.label} capturada!`);
+      setPandaMessage(items.length === 1 ? '¡Listo! ¿Esto querías decir?' : '¡Listo! Esto es lo que capté:');
       setShowConfirmation(true);
 
     } catch (e) {
@@ -401,8 +403,41 @@ export default function PandaHub() {
   const discardItems = () => {
     setCapturedItems([]);
     setShowConfirmation(false);
+    setEditingIndex(null);
     setPandaImage('/panda/panda-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
+  };
+
+  // Remove single item
+  const removeItem = (index: number) => {
+    const newItems = capturedItems.filter((_, i) => i !== index);
+    if (newItems.length === 0) {
+      discardItems();
+    } else {
+      setCapturedItems(newItems);
+    }
+  };
+
+  // Start editing item
+  const startEditing = (index: number) => {
+    setEditingIndex(index);
+    setEditText(capturedItems[index].title);
+  };
+
+  // Save edited item
+  const saveEdit = () => {
+    if (editingIndex === null || !editText.trim()) return;
+    const newItems = [...capturedItems];
+    newItems[editingIndex] = { ...newItems[editingIndex], title: editText.trim() };
+    setCapturedItems(newItems);
+    setEditingIndex(null);
+    setEditText('');
+  };
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditText('');
   };
 
   if (loading) {
@@ -514,33 +549,104 @@ export default function PandaHub() {
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               className="w-full max-w-sm mt-6 space-y-3"
             >
-              {capturedItems.map((item, i) => {
-                const config = typeConfig[item.type];
-                return (
-                  <div 
-                    key={i}
-                    className={`flex items-center gap-3 p-4 rounded-2xl ${config.bg} border border-[var(--gray-2)]`}
-                  >
-                    <span className={config.color}>{config.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--foreground)] line-clamp-2">{item.title}</p>
-                      <p className="text-xs text-[var(--gray-4)] mt-0.5">{config.label} · {item.category}</p>
-                    </div>
-                  </div>
-                );
-              })}
+              <AnimatePresence mode="popLayout">
+                {capturedItems.map((item, i) => {
+                  const config = typeConfig[item.type];
+                  const isEditing = editingIndex === i;
+                  
+                  return (
+                    <motion.div
+                      key={`${item.title}-${i}`}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={{ left: 0.5, right: 0 }}
+                      onDragEnd={(_, info) => {
+                        if (info.offset.x < -80) {
+                          removeItem(i);
+                        }
+                      }}
+                      className="relative touch-pan-y"
+                    >
+                      {/* Delete indicator behind */}
+                      <div className="absolute inset-y-0 -right-2 flex items-center pr-4 text-red-500">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </div>
+                      
+                      {isEditing ? (
+                        <div className={`flex flex-col gap-2 p-4 rounded-2xl ${config.bg} border border-[var(--gray-2)] bg-[var(--background)]`}>
+                          <div className="flex items-center gap-2">
+                            <span className={config.color}>{config.icon}</span>
+                            <span className="text-xs text-[var(--gray-4)]">{config.label}</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit();
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                            autoFocus
+                            className="w-full bg-transparent text-sm font-medium text-[var(--foreground)] focus:outline-none border-b border-[var(--gray-3)] pb-1"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={cancelEdit}
+                              className="px-3 py-1 text-xs text-[var(--gray-4)] hover:text-[var(--foreground)]"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={saveEdit}
+                              className="px-3 py-1 text-xs text-white rounded-full"
+                              style={{ backgroundColor: THEME_COLOR }}
+                            >
+                              OK
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => startEditing(i)}
+                          className={`flex items-center gap-3 p-4 rounded-2xl ${config.bg} border border-[var(--gray-2)] bg-[var(--background)] cursor-pointer active:scale-[0.98] transition-transform`}
+                        >
+                          <span className={config.color}>{config.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[var(--foreground)] line-clamp-2">{item.title}</p>
+                            <p className="text-xs text-[var(--gray-4)] mt-0.5">{config.label} · {item.category}</p>
+                          </div>
+                          <svg className="w-4 h-4 text-[var(--gray-3)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                          </svg>
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+
+              {/* Hint */}
+              <p className="text-xs text-center text-[var(--gray-4)]">
+                Desliza ← para eliminar · Toca para editar
+              </p>
 
               {/* Action buttons */}
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={discardItems}
-                  className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] font-medium transition-all active:scale-[0.98]"
+                  className="flex-1 h-11 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium transition-all active:scale-[0.98]"
                 >
-                  Descartar
+                  Descartar todo
                 </button>
                 <button
                   onClick={saveItems}
-                  className="flex-1 h-12 rounded-full text-white font-medium transition-all active:scale-[0.98]"
+                  className="flex-1 h-11 rounded-full text-white text-sm font-medium transition-all active:scale-[0.98]"
                   style={{ backgroundColor: THEME_COLOR }}
                 >
                   Guardar
