@@ -754,7 +754,7 @@ export default function IdeasBoard() {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-50 dark:bg-[#2d2d30] overflow-hidden">
+    <div className="fixed inset-0 bg-gray-50 dark:bg-[#2d2d30] overflow-hidden">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#2d2d30]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
