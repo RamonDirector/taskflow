@@ -393,7 +393,7 @@ export default function TasksPage() {
 
       {/* Task list */}
       <main className="max-w-2xl mx-auto p-4 space-y-3 pb-20">
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {filteredTasks.map(task => {
             const isSwiping = swipingId === task.id;
             const isSelected = selectedTaskId === task.id;
@@ -404,9 +404,15 @@ export default function TasksPage() {
             return (
               <motion.div
                 key={task.id}
+                layout
+                layoutId={task.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -100 }}
+                exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                transition={{ 
+                  layout: { type: "spring", stiffness: 500, damping: 35 },
+                  opacity: { duration: 0.2 }
+                }}
                 className="relative overflow-hidden rounded-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
