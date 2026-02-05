@@ -833,9 +833,9 @@ export default function IdeasBoard() {
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
       >
         <Background color={darkMode ? '#333' : '#ddd'} gap={24} size={1} />
-        <Controls className="!bg-white dark:!bg-[#2c2c2e] !border-gray-200 dark:!border-gray-700 !rounded-xl !shadow-lg" />
+        <Controls className="!bg-white dark:!bg-[#1c1c1e] !border !border-gray-200 dark:!border-gray-600 !rounded-xl !shadow-lg" />
         <MiniMap 
-          className="!bg-white dark:!bg-[#2c2c2e] !border-gray-200 dark:!border-gray-700 !rounded-xl"
+          className="!bg-white dark:!bg-[#1c1c1e] !border !border-gray-200 dark:!border-gray-600 !rounded-xl !overflow-hidden"
           nodeColor={(node) => node.type === 'idea' ? '#f59e0b' : '#10b981'}
           maskColor={darkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)'}
         />
