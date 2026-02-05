@@ -406,12 +406,12 @@ export default function TasksPage() {
                 key={task.id}
                 layout
                 layoutId={task.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                initial={false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
                 transition={{ 
-                  layout: { type: "spring", stiffness: 500, damping: 35 },
-                  opacity: { duration: 0.2 }
+                  layout: { type: "tween", duration: 0.2, ease: "easeOut" },
+                  opacity: { duration: 0.15 }
                 }}
                 className="relative overflow-hidden rounded-2xl"
                 onClick={(e) => e.stopPropagation()}
