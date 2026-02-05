@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceEditButton from '@/app/components/VoiceEditButton';
+import Image from 'next/image';
 
 const THEME_COLOR = '#6b8f71';
 const DELETE_COLOR = '#8B2942'; // Burgundy red
@@ -244,6 +245,7 @@ export default function TasksPage() {
             >
               {Icons.back}
             </button>
+            <Image src="/icon-192.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Tareas</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
               {completedCount}/{tasks.length}

@@ -21,6 +21,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceEditButton from '@/app/components/VoiceEditButton';
+import Image from 'next/image';
 
 const THEME_COLOR = '#6b8f71';
 const DELETE_COLOR = '#8B2942'; // Burgundy red
@@ -680,6 +681,7 @@ export default function IdeasBoard() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
+            <Image src="/icon-192.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Idea Board</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
               {ideas.filter(i => i.type === 'idea').length} ideas

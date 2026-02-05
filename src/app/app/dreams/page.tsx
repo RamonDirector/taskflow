@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface Dream {
   id: string;
@@ -194,6 +195,7 @@ export default function DreamsPage() {
             >
               {Icons.back}
             </button>
+            <Image src="/icon-192.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Sueños</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
               {dreams.length}

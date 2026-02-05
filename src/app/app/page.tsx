@@ -415,8 +415,22 @@ export default function PandaHub() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
+      {/* Header with logo */}
+      <header className="fixed top-0 left-0 right-0 z-10 px-4 py-3 bg-[var(--background)]/80 backdrop-blur-lg">
+        <div className="flex items-center gap-2">
+          <Image
+            src="/icon-192.png"
+            alt="Hansei"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
+          <span className="text-sm font-medium text-[var(--foreground)]">hansei</span>
+        </div>
+      </header>
+      
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32 pt-16">
         {/* Panda with matcha aura */}
         <motion.div 
           className="relative w-40 h-40 mb-6"
