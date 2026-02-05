@@ -311,16 +311,16 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#1c1c1e] flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-[#262628] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#1c1c1e]" onClick={clearSelection}>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#262628]" onClick={clearSelection}>
       {/* Header */}
-      <header className="sticky top-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+      <header className="sticky top-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#262628]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
             <button

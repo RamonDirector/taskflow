@@ -559,7 +559,7 @@ export default function PandaHub() {
           >
             {/* Black overlay when recording */}
             <div 
-              className="absolute inset-0 bg-[#1c1c1e] rounded-full transition-all"
+              className="absolute inset-0 bg-[#262628] rounded-full transition-all"
               style={{ 
                 clipPath: isRecording 
                   ? 'circle(150% at calc(100% - 24px) 50%)' 
