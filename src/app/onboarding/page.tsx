@@ -499,7 +499,7 @@ function OnboardingContent() {
             >
               {/* Black overlay that expands from the mic button */}
               <div 
-                className="absolute inset-0 bg-[#262628] rounded-full transition-all"
+                className="absolute inset-0 bg-[#2d2d30] rounded-full transition-all"
                 style={{ 
                   clipPath: isRecording 
                     ? 'circle(150% at calc(100% - 24px) 50%)' 

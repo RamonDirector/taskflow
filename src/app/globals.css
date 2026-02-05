@@ -15,7 +15,7 @@
 }
 
 .dark {
-  --background: #262628;
+  --background: #2d2d30;
   --foreground: #ffffff;
   --gray-1: #2c2c2e;
   --gray-2: #38383a;
@@ -303,9 +303,9 @@ header {
 .dark .animate-gradient-mesh {
   background: linear-gradient(
     135deg,
-    #262628 0%,
+    #2d2d30 0%,
     #2c2c2e 50%,
-    #262628 100%
+    #2d2d30 100%
   );
 }
 

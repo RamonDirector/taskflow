@@ -262,16 +262,16 @@ export default function DreamsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#262628] flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-[#2d2d30] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-[#262628] dark:to-[#262628]">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-[#2d2d30] dark:to-[#2d2d30]">
       {/* Header */}
-      <header className="sticky top-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#262628]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+      <header className="sticky top-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#2d2d30]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
             <button
@@ -414,7 +414,7 @@ export default function DreamsPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 right-0 bottom-0 z-50 max-h-[85vh] bg-white dark:bg-[#262628] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+              className="fixed left-0 right-0 bottom-0 z-50 max-h-[85vh] bg-white dark:bg-[#2d2d30] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
             >
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-2">

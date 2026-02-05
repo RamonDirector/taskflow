@@ -747,16 +747,16 @@ export default function IdeasBoard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#262628] flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-[#2d2d30] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-50 dark:bg-[#262628] overflow-hidden">
+    <div className="h-screen w-screen bg-gray-50 dark:bg-[#2d2d30] overflow-hidden">
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#262628]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+      <header className="absolute top-0 left-0 right-0 z-10 px-4 py-3 bg-white/80 dark:bg-[#2d2d30]/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <button
@@ -827,7 +827,7 @@ export default function IdeasBoard() {
         }}
         nodeTypes={nodeTypes}
         fitView
-        className="bg-gray-50 dark:bg-[#262628]"
+        className="bg-gray-50 dark:bg-[#2d2d30]"
         minZoom={0.3}
         maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
@@ -860,7 +860,7 @@ export default function IdeasBoard() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white dark:bg-[#262628] shadow-2xl overflow-hidden flex flex-col"
+              className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white dark:bg-[#2d2d30] shadow-2xl overflow-hidden flex flex-col"
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
@@ -1167,7 +1167,7 @@ export default function IdeasBoard() {
                 onChange={(e) => setNewIdeaTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addNewIdea()}
                 placeholder="¿Qué tienes en mente?"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#262628] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2d2d30] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/50"
               />
 
               <div className="flex gap-3 mt-4">
