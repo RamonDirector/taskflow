@@ -156,11 +156,26 @@ export default function VoiceEditButton({
         </div>
       </button>
       
-      {/* Recording time indicator */}
+      {/* Recording indicator - "Grabando..." with animated dots */}
       {isRecording && (
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs text-gray-500 tabular-nums">{formatTime(recordingTime)}</span>
+        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+          <span className="text-xs text-[#6b8f71] font-medium">Grabando</span>
+          <span className="dots text-[#6b8f71]">
+            <span>.</span><span>.</span><span>.</span>
+          </span>
+          <style jsx>{`
+            .dots span {
+              animation: dotFade 1.4s infinite;
+              opacity: 0;
+            }
+            .dots span:nth-child(1) { animation-delay: 0s; }
+            .dots span:nth-child(2) { animation-delay: 0.2s; }
+            .dots span:nth-child(3) { animation-delay: 0.4s; }
+            @keyframes dotFade {
+              0%, 80%, 100% { opacity: 0; }
+              40% { opacity: 1; }
+            }
+          `}</style>
         </div>
       )}
     </div>

@@ -58,8 +58,7 @@ export default function TasksPage() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
   
-  // Long press
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Double tap detection
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
   const DOUBLE_TAP_DELAY = 300;
   
@@ -151,68 +150,57 @@ export default function TasksPage() {
     setSelectedTaskId(null);
   };
 
-  // Swipe handlers
+  // Swipe handlers (for complete/delete)
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
-    if (selectedTaskId || inlineEditId) return;
+    if (inlineEditId) return;
     touchStartX.current = e.touches[0].clientX;
     setSwipingId(id);
     setSwipeOffset(0);
-    
-    // Start long press timer
-    longPressTimer.current = setTimeout(() => {
-      setSwipingId(null);
-      setSwipeOffset(0);
-      setSelectedTaskId(id);
-      if (navigator.vibrate) navigator.vibrate(50);
-    }, 500);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!swipingId || selectedTaskId || inlineEditId) return;
+    if (!swipingId || inlineEditId) return;
     const diff = e.touches[0].clientX - touchStartX.current;
     setSwipeOffset(diff);
-    
-    // Cancel long press if moving
-    if (Math.abs(diff) > 15 && longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
   };
 
   const handleTouchEnd = (task: Task) => {
-    // Clear long press timer
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    
-    if (selectedTaskId || inlineEditId) return;
+    if (inlineEditId) return;
     
     const offset = swipeOffset;
     setSwipingId(null);
     setSwipeOffset(0);
     
-    if (offset > 60) {
-      toggleTask(task.id);
-    } else if (offset < -60) {
-      deleteTask(task.id);
+    // Only trigger swipe actions if actually swiped
+    if (Math.abs(offset) > 60) {
+      if (offset > 60) {
+        toggleTask(task.id);
+      } else if (offset < -60) {
+        deleteTask(task.id);
+      }
     }
   };
 
-  // Double tap for inline edit
+  // Tap to select (show mic), double tap for inline edit
   const handleTaskTap = (task: Task) => {
-    if (selectedTaskId) return;
-    
     const now = Date.now();
     const lastTap = lastTapRef.current;
     
     if (lastTap && lastTap.id === task.id && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
       // Double tap → inline edit
       lastTapRef.current = null;
+      setSelectedTaskId(null);
       setInlineEditId(task.id);
       setInlineEditValue(task.title);
     } else {
+      // Single tap → select task (show mic)
       lastTapRef.current = { id: task.id, time: now };
+      if (selectedTaskId === task.id) {
+        // Tap again on selected → deselect
+        setSelectedTaskId(null);
+      } else {
+        setSelectedTaskId(task.id);
+      }
     }
   };
 
