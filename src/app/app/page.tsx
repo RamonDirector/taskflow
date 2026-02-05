@@ -414,7 +414,7 @@ export default function PandaHub() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col">
+    <div className="h-screen bg-[var(--background)] flex flex-col overflow-hidden">
       {/* Header with logo */}
       <header className="fixed top-0 left-0 right-0 z-10 px-4 py-3 bg-[var(--background)]/80 backdrop-blur-lg">
         <div className="flex items-center justify-between">
