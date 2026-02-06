@@ -596,7 +596,6 @@ export default function PandaHub() {
         {!showConfirmation && (
         <motion.div 
           layoutId="panda-mascot"
-          data-panda-container=""
           className="relative overflow-visible"
           animate={{ 
             scale: isProcessing ? 0.95 : 1,
@@ -606,7 +605,7 @@ export default function PandaHub() {
             marginTop: inputFocused ? 8 : 0,
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-          style={{ willChange: 'transform' }}
+          style={{ willChange: 'transform', viewTransitionName: 'none' } as React.CSSProperties}
         >
           {/* Matcha aura glow */}
           <div 
@@ -967,19 +966,6 @@ export default function PandaHub() {
         ::view-transition-new(root) {
           z-index: 9999;
         }
-        /* Keep panda stable during theme transition */
-        [data-panda-container] {
-          view-transition-name: panda;
-        }
-        ::view-transition-group(panda) {
-          animation: none;
-        }
-        ::view-transition-old(panda),
-        ::view-transition-new(panda) {
-          animation: none;
-          mix-blend-mode: normal;
-        }
-        
         @keyframes float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
