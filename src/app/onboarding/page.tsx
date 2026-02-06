@@ -83,13 +83,13 @@ const STEPS: OnboardingStep[] = [
   },
   {
     id: 'first-capture',
-    panda: '/panda/panda-excited.png',
+    panda: '/panda/panda-mic.png',
     title: '¿Qué tienes en mente?',
     subtitle: 'Cuéntame una idea o tarea',
   },
   {
     id: 'processing',
-    panda: '/panda/panda-neutral.png',
+    panda: '/panda/panda-thinking.png',
     title: 'Analizando...',
   },
   {
