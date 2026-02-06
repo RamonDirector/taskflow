@@ -129,6 +129,8 @@ export default function PandaHub() {
   
   // Dark mode
   const [darkMode, setDarkMode] = useState(false);
+  const [themeTransition, setThemeTransition] = useState(false);
+  const themeToggleRef = useRef<HTMLButtonElement>(null);
   
   // New items indicator for bottom nav
   const [hasNew, setHasNew] = useState({ ideas: false, tasks: false, dreams: false });
@@ -501,15 +503,27 @@ export default function PandaHub() {
           
           {/* Dark mode toggle */}
           <button
+            ref={themeToggleRef}
             onClick={() => {
-              const newMode = !darkMode;
-              setDarkMode(newMode);
-              localStorage.setItem('hansei-darkmode', String(newMode));
-              if (newMode) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
+              if (themeTransition) return; // Prevent double-click during transition
+              setThemeTransition(true);
+              
+              // Apply theme change at animation midpoint
+              setTimeout(() => {
+                const newMode = !darkMode;
+                setDarkMode(newMode);
+                localStorage.setItem('hansei-darkmode', String(newMode));
+                if (newMode) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              }, 350); // Midpoint of 700ms animation
+              
+              // End transition
+              setTimeout(() => {
+                setThemeTransition(false);
+              }, 700);
             }}
             className="p-2 bg-transparent transition-opacity hover:opacity-70"
           >
@@ -524,6 +538,18 @@ export default function PandaHub() {
           </button>
         </div>
       </header>
+      
+      {/* Theme transition overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none z-[100]"
+        style={{
+          backgroundColor: darkMode ? '#ffffff' : '#1a1a1a',
+          clipPath: themeTransition 
+            ? 'circle(150% at calc(100% - 28px) 28px)' 
+            : 'circle(0% at calc(100% - 28px) 28px)',
+          transition: 'clip-path 700ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      />
       
       {/* Main content */}
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
