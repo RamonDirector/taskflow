@@ -488,46 +488,6 @@ export default function TasksPage() {
           ))}
         </div>
         
-        {/* Origin filter chips - only show if there are tasks from ideas */}
-        {uniqueOrigins.length > 0 && (
-          <div className="mt-3 max-w-2xl mx-auto overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 pb-1">
-              <button
-                onClick={() => setOriginFilter(null)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  originFilter === null
-                    ? 'bg-[#6b8f71] text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                Todas
-              </button>
-              <button
-                onClick={() => setOriginFilter('independent')}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  originFilter === 'independent'
-                    ? 'bg-[#6b8f71] text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                Propias
-              </button>
-              {uniqueOrigins.map(id => (
-                <button
-                  key={id}
-                  onClick={() => setOriginFilter(id)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all truncate max-w-[150px] ${
-                    originFilter === id
-                      ? 'bg-[#6b8f71] text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {getIdeaTitle(id)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Task list */}
