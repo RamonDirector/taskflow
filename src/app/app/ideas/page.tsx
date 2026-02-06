@@ -986,9 +986,37 @@ export default function IdeasBoard() {
                 {/* Action Points with swipe */}
                 {childTasks.length > 0 && (
                   <div className="space-y-3" onClick={() => { if (selectedStepId) clearSelection(); }}>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Plan de Acción ({childTasks.length} pasos)
-                    </h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Plan de Acción ({childTasks.length} pasos)
+                      </h3>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          // Move all pending tasks to main task list
+                          const pendingTasks = childTasks.filter(t => !t.completed);
+                          if (pendingTasks.length === 0) return;
+                          
+                          await Promise.all(
+                            pendingTasks.map(task => 
+                              supabase.from('tasks').update({ parent_idea_id: null }).eq('id', task.id)
+                            )
+                          );
+                          
+                          // Refresh ideas
+                          await fetchIdeas();
+                          
+                          // Haptic feedback
+                          if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-[#6b8f71] hover:bg-[#6b8f71]/10 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Añadir a tareas
+                      </button>
+                    </div>
                     
                     {childTasks.map((task, index) => {
                       const isBeingSwiped = swipingStepId === task.id;
@@ -1090,38 +1118,58 @@ export default function IdeasBoard() {
                                 </p>
                               )}
 
-                              {/* Mic button when selected - with mic→check animation */}
+                              {/* Action buttons when selected */}
                               {isSelected && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (isRecording && editingStepIndex === index) {
-                                      stopRecording();
-                                    } else {
-                                      setEditingStepIndex(index);
-                                      startRecording(index);
-                                    }
-                                  }}
-                                  className={`p-2.5 rounded-full transition-all relative ${
-                                    isRecording && editingStepIndex === index
-                                      ? 'bg-[#6b8f71] text-white'
-                                      : 'bg-[#6b8f71] text-white hover:bg-[#5a7d60]'
-                                  }`}
-                                >
-                                  {/* Pulsing ring when recording */}
-                                  {isRecording && editingStepIndex === index && (
-                                    <div className="absolute inset-0 rounded-full bg-[#6b8f71] animate-ping opacity-30" />
-                                  )}
-                                  {/* Mic → Check animation */}
-                                  <div className="relative w-5 h-5">
-                                    <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && editingStepIndex === index ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
-                                      {Icons.mic}
+                                <div className="flex items-center gap-2">
+                                  {/* Move to tasks button */}
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      await supabase.from('tasks').update({ parent_idea_id: null }).eq('id', task.id);
+                                      await fetchIdeas();
+                                      setSelectedStepId(null);
+                                      if (navigator.vibrate) navigator.vibrate(50);
+                                    }}
+                                    className="p-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                                    title="Mover a tareas"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                  </button>
+                                  
+                                  {/* Mic button with mic→check animation */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isRecording && editingStepIndex === index) {
+                                        stopRecording();
+                                      } else {
+                                        setEditingStepIndex(index);
+                                        startRecording(index);
+                                      }
+                                    }}
+                                    className={`p-2.5 rounded-full transition-all relative ${
+                                      isRecording && editingStepIndex === index
+                                        ? 'bg-[#6b8f71] text-white'
+                                        : 'bg-[#6b8f71] text-white hover:bg-[#5a7d60]'
+                                    }`}
+                                  >
+                                    {/* Pulsing ring when recording */}
+                                    {isRecording && editingStepIndex === index && (
+                                      <div className="absolute inset-0 rounded-full bg-[#6b8f71] animate-ping opacity-30" />
+                                    )}
+                                    {/* Mic → Check animation */}
+                                    <div className="relative w-5 h-5">
+                                      <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && editingStepIndex === index ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                                        {Icons.mic}
+                                      </div>
+                                      <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && editingStepIndex === index ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                                        {Icons.check}
+                                      </div>
                                     </div>
-                                    <div className={`absolute inset-0 flex items-center justify-center transition-all ease-out ${isRecording && editingStepIndex === index ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
-                                      {Icons.check}
-                                    </div>
-                                  </div>
-                                </button>
+                                  </button>
+                                </div>
                               )}
                             </div>
 

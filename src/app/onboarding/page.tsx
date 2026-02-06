@@ -472,18 +472,27 @@ function OnboardingContent() {
 
       {/* Bottom section - ALWAYS visible */}
       <div className="p-5 pb-8 space-y-4">
-        {/* Context options - horizontal, no boxes */}
+        {/* Context options - floating pills with hover effect */}
         {step.contextOptions && (
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-2">
+          <div className="flex flex-wrap justify-center gap-3 mb-4 px-2">
             {step.contextOptions.map(option => (
               <button
                 key={option}
                 onClick={() => handleOptionToggle(option)}
-                className={`text-sm font-medium transition-all ${
-                  isOptionSelected(option)
-                    ? 'text-[#6b8f71]'
-                    : 'text-[var(--gray-4)] hover:text-[var(--foreground)]'
-                }`}
+                className={`
+                  px-4 py-2.5 rounded-2xl text-sm font-medium
+                  transition-all duration-200 ease-out
+                  border-2 backdrop-blur-sm
+                  hover:scale-105 hover:-translate-y-0.5
+                  active:scale-95
+                  ${isOptionSelected(option)
+                    ? 'bg-[#6b8f71]/15 border-[#6b8f71] text-[#6b8f71] shadow-md shadow-[#6b8f71]/20'
+                    : 'bg-[var(--gray-1)] border-[var(--gray-2)] text-[var(--gray-5)] hover:border-[#6b8f71]/50 hover:text-[var(--foreground)] hover:shadow-sm'
+                  }
+                `}
+                style={{
+                  animationDelay: `${step.contextOptions!.indexOf(option) * 50}ms`,
+                }}
               >
                 {option}
               </button>
