@@ -579,7 +579,7 @@ export default function PandaHub() {
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="w-full max-w-sm mt-6 flex flex-col space-y-3 max-h-[60vh] overflow-y-auto"
+              className="w-full max-w-sm mt-4 flex flex-col space-y-3 max-h-[45vh] overflow-y-auto pb-20"
             >
               {/* Items container */}
               <div className="space-y-3">
@@ -683,26 +683,31 @@ export default function PandaHub() {
                 </div>
               )}
 
-              {/* Action buttons - sticky at bottom */}
-              <div className="flex gap-3 pt-3 pb-2 bg-[var(--background)] sticky bottom-0">
-                <button
-                  onClick={discardItems}
-                  className="flex-1 h-11 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium transition-all active:scale-[0.98]"
-                >
-                  Descartar todo
-                </button>
-                <button
-                  onClick={saveItems}
-                  className="flex-1 h-11 rounded-full text-white text-sm font-medium transition-all active:scale-[0.98]"
-                  style={{ backgroundColor: THEME_COLOR }}
-                >
-                  Guardar
-                </button>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Action buttons - fixed above nav when confirming */}
+      {showConfirmation && capturedItems.length > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 bg-gradient-to-t from-[var(--background)] via-[var(--background)] to-transparent pt-6">
+          <div className="flex gap-3 max-w-sm mx-auto">
+            <button
+              onClick={discardItems}
+              className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium transition-all active:scale-[0.98] bg-[var(--background)]"
+            >
+              Descartar
+            </button>
+            <button
+              onClick={saveItems}
+              className="flex-1 h-12 rounded-full text-white text-sm font-medium transition-all active:scale-[0.98]"
+              style={{ backgroundColor: THEME_COLOR }}
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Input bar - fixed at bottom */}
       {!showConfirmation && (
