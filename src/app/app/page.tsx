@@ -524,11 +524,16 @@ export default function PandaHub() {
       
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32 pt-16">
-        {/* Panda with matcha aura */}
+        {/* Panda with matcha aura - shrinks when confirming */}
         <motion.div 
-          className="relative w-40 h-40 mb-6 overflow-visible"
-          animate={{ scale: isProcessing ? 0.95 : 1 }}
-          transition={{ duration: 0.3 }}
+          className="relative overflow-visible"
+          animate={{ 
+            scale: isProcessing ? 0.95 : 1,
+            width: showConfirmation ? 80 : 160,
+            height: showConfirmation ? 80 : 160,
+            marginBottom: showConfirmation ? 8 : 24,
+          }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
           style={{ willChange: 'transform' }}
         >
           {/* Matcha aura glow */}
@@ -571,143 +576,159 @@ export default function PandaHub() {
         {!showConfirmation && !isRecording && !isProcessing && userName && (
           <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
         )}
-
-        {/* Confirmation card */}
-        <AnimatePresence>
-          {showConfirmation && capturedItems.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="w-full max-w-sm mt-4 flex flex-col space-y-3 max-h-[45vh] overflow-y-auto pb-20"
-            >
-              {/* Items container */}
-              <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
-                {capturedItems.map((item, i) => {
-                  const config = typeConfig[item.type];
-                  const isEditing = editingIndex === i;
-                  
-                  return (
-                    <motion.div
-                      key={`${item.title}-${i}`}
-                      layout
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
-                      drag="x"
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={{ left: 0.5, right: 0 }}
-                      onDragEnd={(_, info) => {
-                        if (info.offset.x < -80) {
-                          removeItem(i);
-                        }
-                      }}
-                      className="relative touch-pan-y"
-                    >
-                      {isEditing ? (
-                        <div className={`flex flex-col gap-2 p-4 rounded-2xl ${config.bg} border border-[var(--gray-2)] bg-[var(--background)]`}>
-                          <div className="flex items-center gap-2">
-                            <span className={config.color}>{config.icon}</span>
-                            <span className="text-xs text-[var(--gray-4)]">{config.label}</span>
-                          </div>
-                          <input
-                            type="text"
-                            value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit();
-                              if (e.key === 'Escape') cancelEdit();
-                            }}
-                            autoFocus
-                            className="w-full bg-transparent text-sm font-medium text-[var(--foreground)] focus:outline-none border-b border-[var(--gray-3)] pb-1"
-                          />
-                          <div className="flex gap-2 justify-end">
-                            <button
-                              onClick={cancelEdit}
-                              className="px-3 py-1 text-xs text-[var(--gray-4)] hover:text-[var(--foreground)]"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={saveEdit}
-                              className="px-3 py-1 text-xs text-white rounded-full"
-                              style={{ backgroundColor: THEME_COLOR }}
-                            >
-                              OK
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div 
-                          onClick={() => startEditing(i)}
-                          className={`flex items-center gap-3 p-4 rounded-2xl ${config.bg} border border-[var(--gray-2)] bg-[var(--background)] cursor-pointer active:scale-[0.98] transition-transform`}
-                        >
-                          <span className={config.color}>{config.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[var(--foreground)] line-clamp-2">{item.title}</p>
-                            <p className="text-xs text-[var(--gray-4)] mt-0.5">{config.label} · {item.category}</p>
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-              </div>
-
-              {/* Hint */}
-              <p className="text-xs text-center text-[var(--gray-4)]">
-                Desliza ← para eliminar · Toca para editar
-              </p>
-
-              {/* Deadline picker - only show if there are tasks */}
-              {capturedItems.some(item => item.type === 'task') && (
-                <div className="pt-2">
-                  <p className="text-xs text-[var(--gray-4)] mb-2">¿Para cuándo?</p>
-                  <div className="flex gap-2">
-                    {deadlineOptions.map(option => (
-                      <button
-                        key={option.id}
-                        onClick={() => setSelectedDeadline(option.id)}
-                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all ${
-                          selectedDeadline === option.id
-                            ? 'bg-[#6b8f71] text-white'
-                            : 'bg-[var(--gray-1)] text-[var(--gray-5)] hover:bg-[var(--gray-2)]'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* Action buttons - fixed above nav when confirming */}
-      {showConfirmation && capturedItems.length > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 bg-gradient-to-t from-[var(--background)] via-[var(--background)] to-transparent pt-6">
-          <div className="flex gap-3 max-w-sm mx-auto">
-            <button
+      {/* Bottom Sheet for confirmation */}
+      <AnimatePresence>
+        {showConfirmation && capturedItems.length > 0 && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/20 z-40"
               onClick={discardItems}
-              className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium transition-all active:scale-[0.98] bg-[var(--background)]"
+            />
+            
+            {/* Sheet */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.5 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 100 || info.velocity.y > 500) {
+                  discardItems();
+                }
+              }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--background)] rounded-t-3xl shadow-2xl max-h-[70vh] flex flex-col"
+              style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
             >
-              Descartar
-            </button>
-            <button
-              onClick={saveItems}
-              className="flex-1 h-12 rounded-full text-white text-sm font-medium transition-all active:scale-[0.98]"
-              style={{ backgroundColor: THEME_COLOR }}
-            >
-              Guardar
-            </button>
-          </div>
-        </div>
-      )}
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 rounded-full bg-[var(--gray-3)]" />
+              </div>
+
+              {/* Sheet content */}
+              <div className="flex-1 overflow-y-auto px-5 pb-4">
+                {/* Items */}
+                <div className="space-y-2">
+                  <AnimatePresence mode="popLayout">
+                    {capturedItems.map((item, i) => {
+                      const config = typeConfig[item.type];
+                      const isEditing = editingIndex === i;
+                      
+                      return (
+                        <motion.div
+                          key={`${item.title}-${i}`}
+                          layout
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                          drag="x"
+                          dragConstraints={{ left: 0, right: 0 }}
+                          dragElastic={{ left: 0.5, right: 0 }}
+                          onDragEnd={(_, info) => {
+                            if (info.offset.x < -80) {
+                              removeItem(i);
+                            }
+                          }}
+                          className="relative touch-pan-y"
+                        >
+                          {isEditing ? (
+                            <div className={`flex flex-col gap-2 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)]`}>
+                              <input
+                                type="text"
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEdit();
+                                  if (e.key === 'Escape') cancelEdit();
+                                }}
+                                autoFocus
+                                className="w-full bg-transparent text-sm font-medium text-[var(--foreground)] focus:outline-none"
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <button onClick={cancelEdit} className="px-3 py-1 text-xs text-[var(--gray-4)]">
+                                  Cancelar
+                                </button>
+                                <button onClick={saveEdit} className="px-3 py-1 text-xs text-white rounded-full" style={{ backgroundColor: THEME_COLOR }}>
+                                  OK
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              onClick={() => startEditing(i)}
+                              className={`flex items-center gap-3 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)] cursor-pointer active:scale-[0.98] transition-transform`}
+                            >
+                              <span className={config.color}>{config.icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[var(--foreground)] line-clamp-1">{item.title}</p>
+                                <p className="text-[10px] text-[var(--gray-4)]">{config.label}</p>
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+
+                {/* Hint */}
+                <p className="text-[10px] text-center text-[var(--gray-4)] mt-2 mb-3">
+                  Desliza ← eliminar · Toca editar · Arrastra ↓ descartar
+                </p>
+
+                {/* Deadline picker */}
+                {capturedItems.some(item => item.type === 'task') && (
+                  <div className="mb-4">
+                    <p className="text-xs text-[var(--gray-4)] mb-2">¿Para cuándo?</p>
+                    <div className="flex gap-2">
+                      {deadlineOptions.map(option => (
+                        <button
+                          key={option.id}
+                          onClick={() => setSelectedDeadline(option.id)}
+                          className={`flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-all ${
+                            selectedDeadline === option.id
+                              ? 'bg-[#6b8f71] text-white'
+                              : 'bg-[var(--gray-1)] text-[var(--gray-5)]'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action buttons - always at bottom of sheet */}
+              <div className="px-5 pb-4 pt-2 border-t border-[var(--gray-2)] bg-[var(--background)]">
+                <div className="flex gap-3">
+                  <button
+                    onClick={discardItems}
+                    className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium active:scale-[0.98]"
+                  >
+                    Descartar
+                  </button>
+                  <button
+                    onClick={saveItems}
+                    className="flex-1 h-12 rounded-full text-white text-sm font-medium active:scale-[0.98]"
+                    style={{ backgroundColor: THEME_COLOR }}
+                  >
+                    Guardar ({capturedItems.length})
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Input bar - fixed at bottom */}
       {!showConfirmation && (
