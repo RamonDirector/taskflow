@@ -634,11 +634,7 @@ export default function IdeasBoard() {
   };
 
   const processNewIdeaRecording = async () => {
-    if (!user) {
-      console.error('No user found');
-      setIsRecordingNewIdea(false);
-      return;
-    }
+    if (!user) return;
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
     try {
@@ -646,41 +642,27 @@ export default function IdeasBoard() {
       formData.append('audio', audioBlob, 'recording.webm');
       
       const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
-      if (!transcribeRes.ok) {
-        console.error('Transcription failed:', await transcribeRes.text());
-        throw new Error('Transcription failed');
-      }
+      if (!transcribeRes.ok) throw new Error('Transcription failed');
       
       const { text } = await transcribeRes.json();
-      console.log('Transcribed text:', text);
-      
       if (text?.trim()) {
-        // Create new idea directly from transcription
         const { data, error } = await supabase
           .from('tasks')
           .insert({
             user_id: user.id,
             title: text.trim(),
-            voice_context: text.trim(),
             type: 'idea',
             category: 'personal',
             priority: 'medium',
             completed: false,
-            position_x: 150 + Math.random() * 400,
-            position_y: 150 + Math.random() * 200,
           })
           .select()
           .single();
 
-        if (error) {
-          console.error('Supabase insert error:', error);
-        } else if (data) {
-          console.log('Idea created:', data);
-          // Refresh all ideas to ensure sync
-          await fetchIdeas();
+        if (!error && data) {
+          setIdeas(prev => [data, ...prev]);
+          if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         }
-      } else {
-        console.log('No text transcribed');
       }
     } catch (e) {
       console.error('New idea recording error:', e);
@@ -985,24 +967,26 @@ export default function IdeasBoard() {
                   </div>
                 )}
 
-                {/* Generate Plan Button */}
-                <button
-                  onClick={generatePlan}
-                  disabled={isGeneratingPlan}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#6b8f71] to-[#5a7d60] text-white font-medium transition-all hover:shadow-lg disabled:opacity-50"
-                >
-                  {isGeneratingPlan ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Generando plan...
-                    </>
-                  ) : (
-                    <>
-                      {Icons.sparkles}
-                      {childTasks.length > 0 ? 'Regenerar Plan' : 'Generar Plan'}
-                    </>
-                  )}
-                </button>
+                {/* Generate Plan Button - only show if no plan exists */}
+                {childTasks.length === 0 && (
+                  <button
+                    onClick={generatePlan}
+                    disabled={isGeneratingPlan}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#6b8f71] to-[#5a7d60] text-white font-medium transition-all hover:shadow-lg disabled:opacity-50"
+                  >
+                    {isGeneratingPlan ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Generando plan...
+                      </>
+                    ) : (
+                      <>
+                        {Icons.sparkles}
+                        Generar Plan
+                      </>
+                    )}
+                  </button>
+                )}
 
                 {/* Action Points with swipe */}
                 {childTasks.length > 0 && (

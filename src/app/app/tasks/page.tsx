@@ -488,22 +488,44 @@ export default function TasksPage() {
           ))}
         </div>
         
-        {/* Origin filter dropdown - only show if there are tasks from ideas */}
+        {/* Origin filter chips - only show if there are tasks from ideas */}
         {uniqueOrigins.length > 0 && (
-          <div className="mt-2 max-w-2xl mx-auto">
-            <select
-              value={originFilter || ''}
-              onChange={(e) => setOriginFilter(e.target.value || null)}
-              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-0 focus:ring-2 focus:ring-[#6b8f71]/50 transition-all"
-            >
-              <option value="">Todas las fuentes</option>
-              <option value="independent">Solo independientes</option>
+          <div className="mt-3 max-w-2xl mx-auto overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 pb-1">
+              <button
+                onClick={() => setOriginFilter(null)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  originFilter === null
+                    ? 'bg-[#6b8f71] text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setOriginFilter('independent')}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  originFilter === 'independent'
+                    ? 'bg-[#6b8f71] text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                Propias
+              </button>
               {uniqueOrigins.map(id => (
-                <option key={id} value={id}>
-                  De: {getIdeaTitle(id)}
-                </option>
+                <button
+                  key={id}
+                  onClick={() => setOriginFilter(id)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all truncate max-w-[150px] ${
+                    originFilter === id
+                      ? 'bg-[#6b8f71] text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {getIdeaTitle(id)}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         )}
       </header>
@@ -514,7 +536,11 @@ export default function TasksPage() {
         {focusTasks.length > 0 && filter === 'all' && (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">🎯</span>
+              <svg className="w-5 h-5 text-[#6b8f71]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="6" />
+                <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+              </svg>
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Foco de hoy</h2>
               {todayCount > 3 && (
                 <span className="text-xs text-[var(--gray-4)]">+{todayCount - 3} más</span>

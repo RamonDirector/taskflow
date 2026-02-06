@@ -93,11 +93,6 @@ const STEPS: OnboardingStep[] = [
     title: 'Analizando...',
   },
   {
-    id: 'preview',
-    panda: '/panda/panda-celebrate.png',
-    title: '¡Mira lo que capturé!',
-  },
-  {
     id: 'complete',
     panda: '/panda/panda-celebrate.png',
     title: '¡Listo!',
@@ -283,10 +278,10 @@ function OnboardingContent() {
           }
         }
         
-        setCurrentStep(currentStep + 2); // Go to preview
+        setCurrentStep(currentStep + 1); // Go to complete
       } catch (e) {
         console.error('Processing error:', e);
-        setCurrentStep(currentStep + 2); // Go to preview anyway
+        setCurrentStep(currentStep + 1); // Go to complete anyway
       }
     } else {
       // For other steps, transcribe and use as text input
@@ -340,9 +335,9 @@ function OnboardingContent() {
             ...(data.tasks || []).map((t: any) => ({ ...t, type: 'task' })),
             ...(data.ideas || []).map((i: any) => ({ ...i, type: 'idea' })),
           ]);
-          setCurrentStep(currentStep + 2);
+          setCurrentStep(currentStep + 1);
         })
-        .catch(() => setCurrentStep(currentStep + 2));
+        .catch(() => setCurrentStep(currentStep + 1));
     } else {
       goNext();
     }
@@ -387,7 +382,7 @@ function OnboardingContent() {
     return 'Escribe algo...';
   };
 
-  const showVoiceButton = step.id !== 'processing' && step.id !== 'preview' && step.id !== 'complete';
+  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete';
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
@@ -445,29 +440,6 @@ function OnboardingContent() {
           <p className="text-[var(--gray-4)] text-sm text-center mb-4">{step.subtitle}</p>
         )}
 
-        {/* Preview items */}
-        {step.id === 'preview' && (
-          <div className="w-full max-w-sm space-y-2 mt-4">
-            {extractedItems.length === 0 ? (
-              <p className="text-center text-[var(--gray-4)]">No detecté tareas o ideas</p>
-            ) : (
-              extractedItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--gray-1)]">
-                  <span className="text-[var(--gray-4)]">{item.type === 'idea' ? Icons.lightbulb : Icons.checkCircle}</span>
-                  <span className="flex-1 text-sm text-[var(--foreground)] truncate">{item.title}</span>
-                  <button onClick={() => setExtractedItems(items => items.filter((_, j) => j !== i))} className="text-[var(--gray-4)] hover:text-red-500">
-                    {Icons.x}
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Complete info */}
-        {step.id === 'complete' && extractedItems.length > 0 && (
-          <p className="text-[var(--gray-4)] text-sm">{extractedItems.length} items esperándote</p>
-        )}
       </div>
 
       {/* Bottom section - ALWAYS visible */}
@@ -501,7 +473,7 @@ function OnboardingContent() {
         )}
 
         {/* Input bar - voice first with smooth transition */}
-        {step.id !== 'processing' && step.id !== 'preview' && step.id !== 'complete' && step.id !== 'welcome' && (
+        {step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && (
           <div className="relative">
             <div 
               className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden"
@@ -619,14 +591,14 @@ function OnboardingContent() {
           </div>
         )}
 
-        {/* Preview/Complete button */}
-        {(step.id === 'preview' || step.id === 'complete') && (
+        {/* Complete button */}
+        {step.id === 'complete' && (
           <button
-            onClick={step.id === 'complete' ? saveAndFinish : goNext}
+            onClick={saveAndFinish}
             className="w-full h-14 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ backgroundColor: THEME_COLOR }}
           >
-            {step.id === 'complete' ? 'Ir a mi inbox' : 'Continuar'} {Icons.arrow}
+            Empezar {Icons.arrow}
           </button>
         )}
 
