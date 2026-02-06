@@ -505,27 +505,24 @@ export default function PandaHub() {
           <button
             ref={themeToggleRef}
             onClick={() => {
-              if (themeTransition) return; // Prevent double-click during transition
+              if (themeTransition) return;
               
-              // Start with overlay covering everything (old theme color)
+              // Start expansion animation (overlay will paint new theme)
               setThemeTransition(true);
               
-              // Immediately apply new theme (hidden behind overlay)
-              const newMode = !darkMode;
-              setDarkMode(newMode);
-              localStorage.setItem('hansei-darkmode', String(newMode));
-              if (newMode) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
-              
-              // Small delay then shrink overlay to reveal new theme
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  setThemeTransition(false);
-                });
-              });
+              // Apply actual theme when animation completes
+              setTimeout(() => {
+                const newMode = !darkMode;
+                setDarkMode(newMode);
+                localStorage.setItem('hansei-darkmode', String(newMode));
+                if (newMode) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+                // Hide overlay after theme is applied
+                setThemeTransition(false);
+              }, 500);
             }}
             className="p-2 bg-transparent transition-opacity hover:opacity-70"
           >
@@ -541,15 +538,15 @@ export default function PandaHub() {
         </div>
       </header>
       
-      {/* Theme transition overlay - covers old theme, shrinks to reveal new */}
+      {/* Theme transition overlay - expands to paint new theme */}
       <div
         className="fixed inset-0 pointer-events-none z-[100]"
         style={{
-          backgroundColor: darkMode ? '#f5f5f5' : '#1a1a1a', // Opposite of current (old theme)
+          backgroundColor: darkMode ? '#f5f5f5' : '#1a1a1a', // Color of NEW theme (opposite of current)
           clipPath: themeTransition 
             ? 'circle(150% at calc(100% - 28px) 28px)' 
             : 'circle(0% at calc(100% - 28px) 28px)',
-          transition: themeTransition ? 'none' : 'clip-path 600ms cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'clip-path 500ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
       
