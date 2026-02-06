@@ -539,8 +539,8 @@ export default function PandaHub() {
                       ],
                     },
                     {
-                      duration: 500,
-                      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                      duration: 800,
+                      easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
                       pseudoElement: '::view-transition-new(root)',
                     }
                   );
@@ -596,6 +596,7 @@ export default function PandaHub() {
         {!showConfirmation && (
         <motion.div 
           layoutId="panda-mascot"
+          data-panda-container=""
           className="relative overflow-visible"
           animate={{ 
             scale: isProcessing ? 0.95 : 1,
@@ -965,6 +966,18 @@ export default function PandaHub() {
         }
         ::view-transition-new(root) {
           z-index: 9999;
+        }
+        /* Keep panda stable during theme transition */
+        [data-panda-container] {
+          view-transition-name: panda;
+        }
+        ::view-transition-group(panda) {
+          animation: none;
+        }
+        ::view-transition-old(panda),
+        ::view-transition-new(panda) {
+          animation: none;
+          mix-blend-mode: normal;
         }
         
         @keyframes float {
