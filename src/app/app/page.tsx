@@ -527,19 +527,19 @@ export default function PandaHub() {
       
       {/* Main content */}
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
-        {/* Panda with matcha aura - hidden when confirmation sheet is open */}
-        {!showConfirmation && (
-        <>
+        {/* Panda with matcha aura - animates to top when sheet opens */}
         <motion.div 
-          className="relative overflow-visible"
+          className={`relative overflow-visible ${showConfirmation ? 'fixed left-1/2 -translate-x-1/2 z-[55]' : ''}`}
           animate={{ 
             scale: isProcessing ? 0.95 : 1,
-            width: inputFocused ? 80 : 160,
-            height: inputFocused ? 80 : 160,
-            marginBottom: inputFocused ? 8 : 24,
+            width: showConfirmation ? 100 : (inputFocused ? 80 : 160),
+            height: showConfirmation ? 100 : (inputFocused ? 80 : 160),
+            marginBottom: showConfirmation ? 0 : (inputFocused ? 8 : 24),
             marginTop: inputFocused ? 8 : 0,
+            bottom: showConfirmation ? 'calc(70vh - 30px)' : 'auto',
+            top: showConfirmation ? 'auto' : undefined,
           }}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           style={{ willChange: 'transform' }}
         >
           {/* Matcha aura glow */}
@@ -568,7 +568,8 @@ export default function PandaHub() {
           />
         </motion.div>
 
-        {/* Panda message */}
+        {/* Panda message - hidden when sheet is open */}
+        {!showConfirmation && (
         <motion.p 
           className="text-xl font-medium text-[var(--foreground)] text-center mb-2"
           initial={{ opacity: 0, y: 10 }}
@@ -577,12 +578,11 @@ export default function PandaHub() {
         >
           {pandaMessage}
         </motion.p>
+        )}
 
         {/* Greeting */}
-        {!isRecording && !isProcessing && !inputFocused && userName && (
+        {!showConfirmation && !isRecording && !isProcessing && !inputFocused && userName && (
           <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
-        )}
-        </>
         )}
       </div>
 
@@ -598,26 +598,6 @@ export default function PandaHub() {
               className="fixed inset-0 bg-black/20 z-40"
               onClick={discardItems}
             />
-            
-            {/* Floating Panda above sheet */}
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.8 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="fixed left-1/2 -translate-x-1/2 z-50 pointer-events-none"
-              style={{ bottom: 'calc(70vh - 20px)' }}
-            >
-              <div className="relative w-16 h-16">
-                <Image
-                  src={pandaImage}
-                  alt="Panda"
-                  fill
-                  className="object-contain drop-shadow-lg"
-                  style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }}
-                />
-              </div>
-            </motion.div>
             
             {/* Sheet */}
             <motion.div
