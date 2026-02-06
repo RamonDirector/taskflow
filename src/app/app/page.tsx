@@ -517,6 +517,9 @@ export default function PandaHub() {
               
               // Check if View Transitions API is supported
               if (document.startViewTransition) {
+                // Mark direction for CSS
+                document.documentElement.dataset.themeTransition = newMode ? 'to-dark' : 'to-light';
+                
                 const transition = document.startViewTransition(() => {
                   setDarkMode(newMode);
                   localStorage.setItem('hansei-darkmode', String(newMode));
@@ -541,6 +544,10 @@ export default function PandaHub() {
                       pseudoElement: '::view-transition-new(root)',
                     }
                   );
+                });
+                
+                transition.finished.then(() => {
+                  delete document.documentElement.dataset.themeTransition;
                 });
               } else {
                 // Fallback for browsers without View Transitions
@@ -952,17 +959,12 @@ export default function PandaHub() {
           animation: none;
           mix-blend-mode: normal;
         }
+        /* New theme always expands on top */
         ::view-transition-old(root) {
           z-index: 1;
         }
         ::view-transition-new(root) {
           z-index: 9999;
-        }
-        .dark::view-transition-old(root) {
-          z-index: 9999;
-        }
-        .dark::view-transition-new(root) {
-          z-index: 1;
         }
         
         @keyframes float {
