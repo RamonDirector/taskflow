@@ -528,16 +528,16 @@ export default function PandaHub() {
       {/* Main content */}
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
         {/* Panda with matcha aura - animates to top when sheet opens */}
+        {!showConfirmation && (
         <motion.div 
-          className={`relative overflow-visible ${showConfirmation ? 'fixed left-1/2 -translate-x-1/2 z-[55]' : ''}`}
+          layoutId="panda-mascot"
+          className="relative overflow-visible"
           animate={{ 
             scale: isProcessing ? 0.95 : 1,
-            width: showConfirmation ? 100 : (inputFocused ? 80 : 160),
-            height: showConfirmation ? 100 : (inputFocused ? 80 : 160),
-            marginBottom: showConfirmation ? 0 : (inputFocused ? 8 : 24),
+            width: inputFocused ? 80 : 160,
+            height: inputFocused ? 80 : 160,
+            marginBottom: inputFocused ? 8 : 24,
             marginTop: inputFocused ? 8 : 0,
-            bottom: showConfirmation ? 'calc(70vh - 30px)' : 'auto',
-            top: showConfirmation ? 'auto' : undefined,
           }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           style={{ willChange: 'transform' }}
@@ -567,6 +567,7 @@ export default function PandaHub() {
             priority
           />
         </motion.div>
+        )}
 
         {/* Panda message - hidden when sheet is open */}
         {!showConfirmation && (
@@ -598,6 +599,24 @@ export default function PandaHub() {
               className="fixed inset-0 bg-black/20 z-40"
               onClick={discardItems}
             />
+            
+            {/* Floating Panda above sheet */}
+            <motion.div
+              layoutId="panda-mascot"
+              className="fixed left-1/2 -translate-x-1/2 z-[55]"
+              style={{ bottom: 'calc(70vh - 30px)' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              <div className="relative w-24 h-24">
+                <Image
+                  src={pandaImage}
+                  alt="Panda"
+                  fill
+                  className="object-contain"
+                  style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.25))' }}
+                />
+              </div>
+            </motion.div>
             
             {/* Sheet */}
             <motion.div
