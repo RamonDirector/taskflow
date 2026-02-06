@@ -559,24 +559,33 @@ function OnboardingContent() {
                 )}
               </div>
 
-              {/* Mic/Check button with fade + subtle rotation */}
+              {/* Mic/Check button - shows check if text entered or recording */}
               {showVoiceButton && (
                 <button
-                  onClick={isRecording ? stopRecording : startRecording}
+                  onClick={() => {
+                    const hasText = inputText.trim().length > 0 || (step.id === 'name' && userName.trim().length > 0);
+                    if (isRecording) {
+                      stopRecording();
+                    } else if (hasText) {
+                      handleTextSubmit();
+                    } else {
+                      startRecording();
+                    }
+                  }}
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10"
                   style={{ backgroundColor: THEME_COLOR }}
                 >
-                  {/* Mic icon - fades out */}
+                  {/* Mic icon - shows when no text and not recording */}
                   <div 
-                    className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`}
-                    style={{ transitionDuration: '850ms' }}
+                    className={`absolute transition-all ease-out ${(isRecording || inputText.trim().length > 0 || (step.id === 'name' && userName.trim().length > 0)) ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`}
+                    style={{ transitionDuration: '300ms' }}
                   >
                     {Icons.mic}
                   </div>
-                  {/* Check icon - fades in with subtle rotation */}
+                  {/* Check icon - shows when text entered or recording */}
                   <div 
-                    className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`}
-                    style={{ transitionDuration: '850ms' }}
+                    className={`absolute transition-all ease-out ${(isRecording || inputText.trim().length > 0 || (step.id === 'name' && userName.trim().length > 0)) ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`}
+                    style={{ transitionDuration: '300ms' }}
                   >
                     {Icons.check}
                   </div>
