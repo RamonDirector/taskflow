@@ -579,10 +579,10 @@ export default function PandaHub() {
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="w-full max-w-sm mt-6 flex flex-col space-y-3"
+              className="w-full max-w-sm mt-6 flex flex-col space-y-3 max-h-[60vh] overflow-y-auto"
             >
-              {/* Scrollable items container */}
-              <div className="max-h-[40vh] overflow-y-auto space-y-3 pr-1">
+              {/* Items container */}
+              <div className="space-y-3">
               <AnimatePresence mode="popLayout">
                 {capturedItems.map((item, i) => {
                   const config = typeConfig[item.type];
@@ -683,8 +683,8 @@ export default function PandaHub() {
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex gap-3 pt-2">
+              {/* Action buttons - sticky at bottom */}
+              <div className="flex gap-3 pt-3 pb-2 bg-[var(--background)] sticky bottom-0">
                 <button
                   onClick={discardItems}
                   className="flex-1 h-11 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium transition-all active:scale-[0.98]"
