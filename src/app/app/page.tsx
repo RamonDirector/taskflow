@@ -539,7 +539,7 @@ export default function PandaHub() {
             marginBottom: inputFocused ? 8 : 24,
             marginTop: inputFocused ? 8 : 0,
           }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 200 }}
           style={{ willChange: 'transform' }}
         >
           {/* Matcha aura glow */}
@@ -605,7 +605,7 @@ export default function PandaHub() {
               layoutId="panda-mascot"
               className="fixed left-1/2 -translate-x-1/2 z-[55]"
               style={{ bottom: 'calc(70vh - 30px)' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 200 }}
             >
               <div className="relative w-24 h-24">
                 <Image
