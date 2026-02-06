@@ -506,24 +506,26 @@ export default function PandaHub() {
             ref={themeToggleRef}
             onClick={() => {
               if (themeTransition) return; // Prevent double-click during transition
+              
+              // Start with overlay covering everything (old theme color)
               setThemeTransition(true);
               
-              // Apply theme change at animation midpoint
-              setTimeout(() => {
-                const newMode = !darkMode;
-                setDarkMode(newMode);
-                localStorage.setItem('hansei-darkmode', String(newMode));
-                if (newMode) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-              }, 350); // Midpoint of 700ms animation
+              // Immediately apply new theme (hidden behind overlay)
+              const newMode = !darkMode;
+              setDarkMode(newMode);
+              localStorage.setItem('hansei-darkmode', String(newMode));
+              if (newMode) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
               
-              // End transition
-              setTimeout(() => {
-                setThemeTransition(false);
-              }, 700);
+              // Small delay then shrink overlay to reveal new theme
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  setThemeTransition(false);
+                });
+              });
             }}
             className="p-2 bg-transparent transition-opacity hover:opacity-70"
           >
@@ -539,15 +541,15 @@ export default function PandaHub() {
         </div>
       </header>
       
-      {/* Theme transition overlay */}
+      {/* Theme transition overlay - covers old theme, shrinks to reveal new */}
       <div
         className="fixed inset-0 pointer-events-none z-[100]"
         style={{
-          backgroundColor: darkMode ? '#ffffff' : '#1a1a1a',
+          backgroundColor: darkMode ? '#f5f5f5' : '#1a1a1a', // Opposite of current (old theme)
           clipPath: themeTransition 
             ? 'circle(150% at calc(100% - 28px) 28px)' 
             : 'circle(0% at calc(100% - 28px) 28px)',
-          transition: 'clip-path 700ms cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: themeTransition ? 'none' : 'clip-path 600ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
       
