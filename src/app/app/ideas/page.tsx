@@ -999,7 +999,10 @@ export default function IdeasBoard() {
                           
                           await Promise.all(
                             pendingTasks.map(task => 
-                              supabase.from('tasks').update({ parent_idea_id: null }).eq('id', task.id)
+                              supabase.from('tasks').update({ 
+                                parent_idea_id: null,
+                                origin_idea_id: selectedIdea?.id 
+                              }).eq('id', task.id)
                             )
                           );
                           
@@ -1123,7 +1126,11 @@ export default function IdeasBoard() {
                                 <button
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    await supabase.from('tasks').update({ parent_idea_id: null }).eq('id', task.id);
+                                    // Track origin before moving
+                                    await supabase.from('tasks').update({ 
+                                      parent_idea_id: null,
+                                      origin_idea_id: selectedIdea?.id 
+                                    }).eq('id', task.id);
                                     await fetchIdeas();
                                     setSelectedStepId(null);
                                     if (navigator.vibrate) navigator.vibrate(50);

@@ -46,6 +46,8 @@ interface Task {
   type?: string;
   completed?: boolean;
   parent_idea_id?: string;
+  origin_idea_id?: string;
+  origin_idea_title?: string; // Populated from join
 }
 
 const Icons = {
@@ -66,12 +68,20 @@ const Icons = {
   ),
 };
 
+// Idea type for origin tracking
+interface Idea {
+  id: string;
+  title: string;
+}
+
 export default function TasksPage() {
   const { darkMode, toggle: toggleDarkMode } = useDarkMode();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [ideas, setIdeas] = useState<Idea[]>([]); // For origin labels
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [originFilter, setOriginFilter] = useState<string | null>(null); // null = all, 'independent' = no origin, or idea id
   
   // Voice edit state
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -104,15 +114,28 @@ export default function TasksPage() {
   const supabase = createClient();
 
   const fetchTasks = useCallback(async () => {
-    const { data, error } = await supabase
+    // Fetch tasks
+    const { data: taskData, error: taskError } = await supabase
       .from('tasks')
       .select('*')
       .eq('type', 'task')
       .is('parent_idea_id', null)
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setTasks(data as Task[]);
+    if (!taskError && taskData) {
+      setTasks(taskData as Task[]);
+      
+      // Fetch ideas for origin labels
+      const originIds = [...new Set(taskData.filter(t => t.origin_idea_id).map(t => t.origin_idea_id))];
+      if (originIds.length > 0) {
+        const { data: ideaData } = await supabase
+          .from('tasks')
+          .select('id, title')
+          .in('id', originIds);
+        if (ideaData) {
+          setIdeas(ideaData as Idea[]);
+        }
+      }
     }
   }, [supabase]);
 
@@ -340,9 +363,21 @@ export default function TasksPage() {
     setIsRecordingNewTask(false);
   };
 
+  // Helper to get idea title by id
+  const getIdeaTitle = (ideaId: string) => ideas.find(i => i.id === ideaId)?.title || 'Idea';
+
+  // Get unique origins for filter dropdown
+  const uniqueOrigins = [...new Set(tasks.filter(t => t.origin_idea_id).map(t => t.origin_idea_id!))];
+
   const filteredTasks = tasks.filter(t => {
-    if (filter === 'pending') return !t.completed;
-    if (filter === 'completed') return t.completed;
+    // Status filter
+    if (filter === 'pending' && t.completed) return false;
+    if (filter === 'completed' && !t.completed) return false;
+    
+    // Origin filter
+    if (originFilter === 'independent' && t.origin_idea_id) return false;
+    if (originFilter && originFilter !== 'independent' && t.origin_idea_id !== originFilter) return false;
+    
     return true;
   });
 
@@ -432,7 +467,24 @@ export default function TasksPage() {
           ))}
         </div>
         
-{/* Hint removed - UI should be self-explanatory */}
+        {/* Origin filter dropdown - only show if there are tasks from ideas */}
+        {uniqueOrigins.length > 0 && (
+          <div className="mt-2 max-w-2xl mx-auto">
+            <select
+              value={originFilter || ''}
+              onChange={(e) => setOriginFilter(e.target.value || null)}
+              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-0 focus:ring-2 focus:ring-[#6b8f71]/50 transition-all"
+            >
+              <option value="">Todas las fuentes</option>
+              <option value="independent">Solo independientes</option>
+              {uniqueOrigins.map(id => (
+                <option key={id} value={id}>
+                  De: {getIdeaTitle(id)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </header>
 
       {/* Task list */}
@@ -528,11 +580,18 @@ export default function TasksPage() {
                           {task.title}
                         </p>
                       )}
-                      {task.category && !isInlineEditing && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 mt-1 inline-block">
-                          {task.category}
-                        </span>
-                      )}
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {task.category && !isInlineEditing && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                            {task.category}
+                          </span>
+                        )}
+                        {task.origin_idea_id && !isInlineEditing && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                            De: {getIdeaTitle(task.origin_idea_id)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Voice edit button when selected */}
