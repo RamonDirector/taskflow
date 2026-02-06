@@ -60,41 +60,41 @@ interface OnboardingStep {
 const STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
-    panda: '/panda/panda-wave.png',
+    panda: '/panda/new-wave.png',
     title: '¡Hola!',
     subtitle: 'Soy tu compañero para capturar ideas',
   },
   {
     id: 'name',
-    panda: '/panda/panda-neutral.png',
+    panda: '/panda/new-neutral.png',
     title: '¿Cómo te llamas?',
   },
   {
     id: 'what-capture',
-    panda: '/panda/panda-thinking.png',
+    panda: '/panda/new-thinking.png',
     title: '¿Qué sueles capturar?',
     contextOptions: ['Ideas', 'Tareas', 'Notas', 'Listas', 'Pensamientos', 'Sueños'],
   },
   {
     id: 'when-ideas',
-    panda: '/panda/panda-thinking.png',
+    panda: '/panda/new-thinking.png',
     title: '¿Cuándo te vienen ideas?',
     contextOptions: ['Caminando', 'Ducha', 'Cama', 'Mañana', 'Ejercicio', 'Random'],
   },
   {
     id: 'first-capture',
-    panda: '/panda/panda-neutral.png',
+    panda: '/panda/new-neutral.png',
     title: '¿Qué tienes en mente?',
     subtitle: 'Cuéntame una idea o tarea',
   },
   {
     id: 'processing',
-    panda: '/panda/panda-thinking.png',
+    panda: '/panda/new-thinking.png',
     title: 'Analizando...',
   },
   {
     id: 'complete',
-    panda: '/panda/panda-celebrate.png',
+    panda: '/panda/new-celebrate.png',
     title: '¡Listo!',
   },
 ];

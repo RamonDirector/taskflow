@@ -71,21 +71,21 @@ const typeConfig = {
     label: 'Tarea',
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/10',
-    panda: '/panda/panda-celebrate.png',
+    panda: '/panda/new-celebrate.png',
   },
   idea: {
     icon: Icons.lightbulb,
     label: 'Idea',
     color: 'text-amber-500',
     bg: 'bg-amber-500/10',
-    panda: '/panda/panda-excited.png',
+    panda: '/panda/new-celebrate.png',
   },
   dream: {
     icon: Icons.moon,
     label: 'Sueño',
     color: 'text-indigo-500',
     bg: 'bg-indigo-500/10',
-    panda: '/panda/panda-thinking.png',
+    panda: '/panda/new-thinking.png',
   },
 };
 
@@ -111,7 +111,7 @@ export default function PandaHub() {
   const [userName, setUserName] = useState('');
   
   // Panda state
-  const [pandaImage, setPandaImage] = useState('/panda/panda-wave.png');
+  const [pandaImage, setPandaImage] = useState('/panda/new-wave.png');
   const [pandaMessage, setPandaMessage] = useState('');
   
   // Input state
@@ -222,7 +222,7 @@ export default function PandaHub() {
       mediaRecorder.start(250);
       setIsRecording(true);
       setRecordingTime(0);
-      setPandaImage('/panda/panda-neutral.png');
+      setPandaImage('/panda/new-neutral.png');
       setPandaMessage('Te escucho...');
       
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
@@ -248,7 +248,7 @@ export default function PandaHub() {
     setIsRecording(false);
     setRecordingTime(0);
     chunksRef.current = [];
-    setPandaImage('/panda/panda-wave.png');
+    setPandaImage('/panda/new-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
 
@@ -268,7 +268,7 @@ export default function PandaHub() {
   // Unified processing
   const processInput = async (audioBlob: Blob | null, text: string | null) => {
     setIsProcessing(true);
-    setPandaImage('/panda/panda-thinking.png');
+    setPandaImage('/panda/new-thinking.png');
     setPandaMessage('Déjame pensar...');
 
     try {
@@ -287,7 +287,7 @@ export default function PandaHub() {
       }
 
       if (!transcribedText?.trim()) {
-        setPandaImage('/panda/panda-wave.png');
+        setPandaImage('/panda/new-wave.png');
         setPandaMessage('No te escuché, ¿puedes repetir?');
         setIsProcessing(false);
         return;
@@ -370,7 +370,7 @@ export default function PandaHub() {
 
     } catch (e) {
       console.error('Processing error:', e);
-      setPandaImage('/panda/panda-neutral.png');
+      setPandaImage('/panda/new-neutral.png');
       setPandaMessage('Hubo un error, ¿intentamos de nuevo?');
     }
 
@@ -421,11 +421,11 @@ export default function PandaHub() {
     setCapturedItems([]);
     setShowConfirmation(false);
     setSelectedDeadline('today'); // Reset to default
-    setPandaImage('/panda/panda-celebrate.png');
+    setPandaImage('/panda/new-celebrate.png');
     setPandaMessage('¡Guardado! ¿Algo más?');
     
     setTimeout(() => {
-      setPandaImage('/panda/panda-wave.png');
+      setPandaImage('/panda/new-wave.png');
       setPandaMessage('¿Qué tienes en mente?');
     }, 2000);
   };
@@ -436,7 +436,7 @@ export default function PandaHub() {
     setShowConfirmation(false);
     setEditingIndex(null);
     setSelectedDeadline('today'); // Reset to default
-    setPandaImage('/panda/panda-wave.png');
+    setPandaImage('/panda/new-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
 
