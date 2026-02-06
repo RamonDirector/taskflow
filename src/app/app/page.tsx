@@ -71,21 +71,21 @@ const typeConfig = {
     label: 'Tarea',
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/10',
-    panda: '/panda/panda-task.png',
+    panda: '/panda/panda-celebrate.png',
   },
   idea: {
     icon: Icons.lightbulb,
     label: 'Idea',
     color: 'text-amber-500',
     bg: 'bg-amber-500/10',
-    panda: '/panda/panda-idea.png',
+    panda: '/panda/panda-excited.png',
   },
   dream: {
     icon: Icons.moon,
     label: 'Sueño',
     color: 'text-indigo-500',
     bg: 'bg-indigo-500/10',
-    panda: '/panda/panda-dream.png',
+    panda: '/panda/panda-thinking.png',
   },
 };
 
@@ -228,7 +228,7 @@ export default function PandaHub() {
       mediaRecorder.start(250);
       setIsRecording(true);
       setRecordingTime(0);
-      setPandaImage('/panda/panda-mic.png');
+      setPandaImage('/panda/panda-neutral.png');
       setPandaMessage('Te escucho...');
       
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
