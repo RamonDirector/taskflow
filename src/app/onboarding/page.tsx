@@ -417,7 +417,7 @@ function OnboardingContent() {
         <div className="relative w-32 h-32 mb-6">
           {/* Panda background circle */}
           <div 
-            className="absolute inset-1 rounded-2xl bg-[#f5f5f5] dark:bg-[#3a3a3c]"
+            className="absolute inset-1 rounded-2xl bg-[#f5f5f5] dark:bg-[#3a3a3c] z-[5]"
           />
           {/* Matcha aura glow */}
           <div 
