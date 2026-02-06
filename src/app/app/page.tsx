@@ -127,12 +127,6 @@ export default function PandaHub() {
   const [editText, setEditText] = useState('');
   const [selectedDeadline, setSelectedDeadline] = useState('today'); // Default to today
   
-  // Idea Threads state
-  const [matchedIdea, setMatchedIdea] = useState<{ id: string; title: string; voice_context?: string } | null>(null);
-  const [newContext, setNewContext] = useState('');
-  const [showThreadMatch, setShowThreadMatch] = useState(false);
-  const [isAddingToThread, setIsAddingToThread] = useState(false);
-  
   // Dark mode
   const [darkMode, setDarkMode] = useState(false);
   
@@ -319,43 +313,6 @@ export default function PandaHub() {
         }
       }
 
-      // === IDEA THREADS: Check if this relates to an existing idea ===
-      // Fetch existing ideas
-      const { data: existingIdeas } = await supabase
-        .from('tasks')
-        .select('id, title, voice_context')
-        .eq('type', 'idea')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (existingIdeas && existingIdeas.length > 0) {
-        // Check for match with existing ideas
-        const matchRes = await fetch('/api/match-idea', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            text: transcribedText, 
-            ideas: existingIdeas 
-          }),
-        });
-
-        if (matchRes.ok) {
-          const matchData = await matchRes.json();
-          
-          if (matchData.match && !matchData.isNewIdea) {
-            // Found a match! Show thread confirmation
-            setMatchedIdea(matchData.match);
-            setNewContext(transcribedText);
-            setShowThreadMatch(true);
-            setPandaImage('/panda/panda-thinking.png');
-            setPandaMessage('¡Esto parece relacionado con una idea que ya tienes!');
-            setIsProcessing(false);
-            return;
-          }
-        }
-      }
-      // === END IDEA THREADS ===
-
       // Extract and classify
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
@@ -515,118 +472,6 @@ export default function PandaHub() {
     setEditText('');
   };
 
-  // === IDEA THREADS FUNCTIONS ===
-  
-  // Add context to existing idea and regenerate plan
-  const addToIdeaThread = async () => {
-    if (!matchedIdea || !newContext.trim()) return;
-    
-    setIsAddingToThread(true);
-    setPandaImage('/panda/panda-thinking.png');
-    setPandaMessage('Actualizando tu idea...');
-
-    try {
-      // 1. Update the idea's voice_context with new context
-      const updatedContext = matchedIdea.voice_context 
-        ? `${matchedIdea.voice_context}\n\n---\n\n${newContext}`
-        : newContext;
-
-      await supabase
-        .from('tasks')
-        .update({ voice_context: updatedContext })
-        .eq('id', matchedIdea.id);
-
-      // 2. Delete existing child tasks (plan) and regenerate
-      await supabase
-        .from('tasks')
-        .delete()
-        .eq('parent_idea_id', matchedIdea.id);
-
-      // 3. Generate new action plan with combined context
-      const planRes = await fetch('/api/action-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          idea: matchedIdea.title, 
-          voiceContext: updatedContext 
-        }),
-      });
-
-      if (planRes.ok) {
-        const { action_points } = await planRes.json();
-        
-        if (action_points?.length > 0 && user) {
-          const rows = action_points.map((point: { title: string; category: string }, index: number) => ({
-            user_id: user.id,
-            title: point.title,
-            category: point.category,
-            priority: 'medium',
-            completed: false,
-            type: 'task',
-            parent_idea_id: matchedIdea.id,
-            order_index: index,
-          }));
-          await supabase.from('tasks').insert(rows);
-        }
-      }
-
-      // 4. Success feedback
-      setPandaImage('/panda/panda-celebrate.png');
-      setPandaMessage('¡Idea actualizada con nuevo contexto!');
-      setHasNew(prev => ({ ...prev, ideas: true }));
-
-      // 5. Reset state
-      setTimeout(() => {
-        setShowThreadMatch(false);
-        setMatchedIdea(null);
-        setNewContext('');
-        setPandaImage('/panda/panda-wave.png');
-        setPandaMessage('¿Algo más?');
-      }, 2000);
-
-    } catch (e) {
-      console.error('Error adding to thread:', e);
-      setPandaImage('/panda/panda-neutral.png');
-      setPandaMessage('Error al actualizar. Intenta de nuevo.');
-    }
-
-    setIsAddingToThread(false);
-  };
-
-  // Cancel thread match and create as new item
-  const cancelThreadMatch = async () => {
-    setShowThreadMatch(false);
-    setMatchedIdea(null);
-    
-    // Process as new item
-    if (newContext.trim()) {
-      // Create as new idea
-      if (user) {
-        await supabase.from('tasks').insert({
-          user_id: user.id,
-          title: newContext.trim().slice(0, 100), // Truncate for title
-          voice_context: newContext,
-          type: 'idea',
-          category: 'personal',
-          priority: 'medium',
-          completed: false,
-        });
-        
-        setPandaImage('/panda/panda-celebrate.png');
-        setPandaMessage('¡Guardado como nueva idea!');
-        setHasNew(prev => ({ ...prev, ideas: true }));
-      }
-    }
-    
-    setNewContext('');
-    setTimeout(() => {
-      setPandaImage('/panda/panda-wave.png');
-      setPandaMessage('¿Qué tienes en mente?');
-    }, 2000);
-  };
-  
-  // === END IDEA THREADS FUNCTIONS ===
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
@@ -726,64 +571,6 @@ export default function PandaHub() {
         {!showConfirmation && !isRecording && !isProcessing && userName && (
           <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
         )}
-
-        {/* Idea Thread Match card */}
-        <AnimatePresence>
-          {showThreadMatch && matchedIdea && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="w-full max-w-sm mt-6 space-y-4"
-            >
-              {/* Matched idea */}
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-amber-500">{Icons.lightbulb}</span>
-                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Idea existente</span>
-                </div>
-                <p className="text-sm font-medium text-[var(--foreground)]">{matchedIdea.title}</p>
-              </div>
-
-              {/* New context */}
-              <div className="p-4 rounded-2xl bg-[var(--gray-1)] border border-[var(--gray-2)]">
-                <p className="text-xs text-[var(--gray-4)] mb-2">Nuevo contexto:</p>
-                <p className="text-sm text-[var(--foreground)] italic">"{newContext}"</p>
-              </div>
-
-              {/* Question */}
-              <p className="text-sm text-center text-[var(--gray-5)]">
-                ¿Añadir este contexto a la idea y regenerar el plan?
-              </p>
-
-              {/* Action buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={cancelThreadMatch}
-                  disabled={isAddingToThread}
-                  className="flex-1 h-11 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                  Crear nueva idea
-                </button>
-                <button
-                  onClick={addToIdeaThread}
-                  disabled={isAddingToThread}
-                  className="flex-1 h-11 rounded-full text-white text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: THEME_COLOR }}
-                >
-                  {isAddingToThread ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Actualizando...
-                    </>
-                  ) : (
-                    'Añadir a idea'
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Confirmation card */}
         <AnimatePresence>
@@ -915,7 +702,7 @@ export default function PandaHub() {
       </div>
 
       {/* Input bar - fixed at bottom */}
-      {!showConfirmation && !showThreadMatch && (
+      {!showConfirmation && (
         <div className="fixed bottom-20 left-0 right-0 px-6 pb-4">
           <div 
             className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden shadow-lg"
