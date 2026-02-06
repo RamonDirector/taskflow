@@ -686,6 +686,10 @@ export default function PandaHub() {
           transition={{ duration: 0.3 }}
           style={{ willChange: 'transform' }}
         >
+          {/* Panda background circle - works in both light and dark mode */}
+          <div 
+            className="absolute inset-2 rounded-3xl bg-[#f5f5f5] dark:bg-[#3a3a3c]"
+          />
           {/* Matcha aura glow */}
           <div 
             className="absolute inset-0 rounded-full blur-2xl scale-150"
