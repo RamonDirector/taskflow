@@ -104,9 +104,9 @@ export default function TasksPage() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
   
-  // Double tap detection
-  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
-  const DOUBLE_TAP_DELAY = 300;
+  // Long press for edit
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const LONG_PRESS_DELAY = 500;
   
   // Scroll state for header transparency
   const [scrolled, setScrolled] = useState(false);
@@ -227,21 +227,27 @@ export default function TasksPage() {
     setSelectedTaskId(null);
   };
 
-  // Swipe handlers (for complete/delete)
-  const handleTouchStart = (e: React.TouchEvent, id: string) => {
+  // Swipe handlers (for complete/delete) + long press for edit
+  const handleTouchStart = (e: React.TouchEvent, task: Task) => {
     if (inlineEditId) return;
     touchStartX.current = e.touches[0].clientX;
-    setSwipingId(id);
+    setSwipingId(task.id);
     setSwipeOffset(0);
+    handleLongPressStart(task);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!swipingId || inlineEditId) return;
     const diff = e.touches[0].clientX - touchStartX.current;
     setSwipeOffset(diff);
+    // Cancel long press if user is swiping
+    if (Math.abs(diff) > 10) {
+      handleLongPressEnd();
+    }
   };
 
   const handleTouchEnd = (task: Task) => {
+    handleLongPressEnd();
     if (inlineEditId) return;
     
     const offset = swipeOffset;
@@ -258,26 +264,33 @@ export default function TasksPage() {
     }
   };
 
-  // Tap to select (show mic), double tap for inline edit
+  // Tap to select (show mic)
   const handleTaskTap = (task: Task) => {
-    const now = Date.now();
-    const lastTap = lastTapRef.current;
-    
-    if (lastTap && lastTap.id === task.id && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
-      // Double tap → inline edit
-      lastTapRef.current = null;
+    if (inlineEditId) return; // Don't change selection while editing
+    if (selectedTaskId === task.id) {
+      setSelectedTaskId(null);
+    } else {
+      setSelectedTaskId(task.id);
+    }
+  };
+
+  // Long press handlers
+  const handleLongPressStart = (task: Task) => {
+    longPressTimerRef.current = setTimeout(() => {
+      // Long press → inline edit
+      setSwipingId(null);
+      setSwipeOffset(0);
       setSelectedTaskId(null);
       setInlineEditId(task.id);
       setInlineEditValue(task.title);
-    } else {
-      // Single tap → select task (show mic)
-      lastTapRef.current = { id: task.id, time: now };
-      if (selectedTaskId === task.id) {
-        // Tap again on selected → deselect
-        setSelectedTaskId(null);
-      } else {
-        setSelectedTaskId(task.id);
-      }
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, LONG_PRESS_DELAY);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
   };
 
@@ -603,7 +616,7 @@ export default function TasksPage() {
                     transform: isSwiping && !isSelected ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                     transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
                   }}
-                  onTouchStart={(e) => handleTouchStart(e, task.id)}
+                  onTouchStart={(e) => handleTouchStart(e, task)}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={() => handleTouchEnd(task)}
                   onClick={() => handleTaskTap(task)}
