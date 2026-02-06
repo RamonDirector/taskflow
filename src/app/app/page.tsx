@@ -93,7 +93,16 @@ interface CapturedItem {
   type: 'task' | 'idea' | 'dream';
   category: string;
   priority: 'high' | 'medium' | 'low';
+  due_date?: string; // ISO date string
 }
+
+// Deadline options
+const deadlineOptions = [
+  { id: 'today', label: 'Hoy', days: 0 },
+  { id: 'tomorrow', label: 'Mañana', days: 1 },
+  { id: 'week', label: 'Esta semana', days: 7 },
+  { id: 'none', label: 'Sin fecha', days: null },
+];
 
 export default function PandaHub() {
   const [user, setUser] = useState<{ id: string } | null>(null);
@@ -115,6 +124,7 @@ export default function PandaHub() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+  const [selectedDeadline, setSelectedDeadline] = useState('today'); // Default to today
   
   // Dark mode
   const [darkMode, setDarkMode] = useState(false);
@@ -363,6 +373,17 @@ export default function PandaHub() {
   const saveItems = async () => {
     if (!user || capturedItems.length === 0) return;
 
+    // Calculate due date based on selection
+    const getDueDate = () => {
+      const option = deadlineOptions.find(o => o.id === selectedDeadline);
+      if (!option || option.days === null) return null;
+      const date = new Date();
+      date.setDate(date.getDate() + option.days);
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    };
+
+    const dueDate = getDueDate();
+
     const rows = capturedItems.map(item => ({
       user_id: user.id,
       title: item.title,
@@ -370,6 +391,7 @@ export default function PandaHub() {
       priority: item.priority,
       completed: false,
       type: item.type === 'dream' ? 'dream' : item.type,
+      due_date: item.type === 'task' ? dueDate : null, // Only tasks get due dates
     }));
 
     await supabase.from('tasks').insert(rows);
@@ -390,6 +412,7 @@ export default function PandaHub() {
     // Reset
     setCapturedItems([]);
     setShowConfirmation(false);
+    setSelectedDeadline('today'); // Reset to default
     setPandaImage('/panda/panda-celebrate.png');
     setPandaMessage('¡Guardado! ¿Algo más?');
     
@@ -404,6 +427,7 @@ export default function PandaHub() {
     setCapturedItems([]);
     setShowConfirmation(false);
     setEditingIndex(null);
+    setSelectedDeadline('today'); // Reset to default
     setPandaImage('/panda/panda-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
@@ -625,6 +649,28 @@ export default function PandaHub() {
               <p className="text-xs text-center text-[var(--gray-4)]">
                 Desliza ← para eliminar · Toca para editar
               </p>
+
+              {/* Deadline picker - only show if there are tasks */}
+              {capturedItems.some(item => item.type === 'task') && (
+                <div className="pt-2">
+                  <p className="text-xs text-[var(--gray-4)] mb-2">¿Para cuándo?</p>
+                  <div className="flex gap-2">
+                    {deadlineOptions.map(option => (
+                      <button
+                        key={option.id}
+                        onClick={() => setSelectedDeadline(option.id)}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all ${
+                          selectedDeadline === option.id
+                            ? 'bg-[#6b8f71] text-white'
+                            : 'bg-[var(--gray-1)] text-[var(--gray-5)] hover:bg-[var(--gray-2)]'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Action buttons */}
               <div className="flex gap-3 pt-2">
