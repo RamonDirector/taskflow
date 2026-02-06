@@ -133,6 +133,9 @@ export default function PandaHub() {
   // New items indicator for bottom nav
   const [hasNew, setHasNew] = useState({ ideas: false, tasks: false, dreams: false });
   
+  // Input focus state
+  const [inputFocused, setInputFocused] = useState(false);
+  
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -523,15 +526,16 @@ export default function PandaHub() {
       </header>
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32 pt-16">
-        {/* Panda with matcha aura - shrinks when confirming */}
+      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
+        {/* Panda with matcha aura - shrinks when confirming or input focused */}
         <motion.div 
           className="relative overflow-visible"
           animate={{ 
             scale: isProcessing ? 0.95 : 1,
-            width: showConfirmation ? 80 : 160,
-            height: showConfirmation ? 80 : 160,
-            marginBottom: showConfirmation ? 8 : 24,
+            width: showConfirmation || inputFocused ? 80 : 160,
+            height: showConfirmation || inputFocused ? 80 : 160,
+            marginBottom: showConfirmation || inputFocused ? 8 : 24,
+            marginTop: inputFocused ? 8 : 0,
           }}
           transition={{ duration: 0.3, ease: 'easeInOut' }}
           style={{ willChange: 'transform' }}
@@ -573,7 +577,7 @@ export default function PandaHub() {
         </motion.p>
 
         {/* Greeting */}
-        {!showConfirmation && !isRecording && !isProcessing && userName && (
+        {!showConfirmation && !isRecording && !isProcessing && !inputFocused && userName && (
           <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
         )}
       </div>
@@ -767,6 +771,8 @@ export default function PandaHub() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
                   placeholder="Escribe o habla..."
                   disabled={isProcessing}
                   className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none font-medium tracking-tight disabled:opacity-50"
