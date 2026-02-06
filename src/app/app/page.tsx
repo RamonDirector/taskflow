@@ -504,25 +504,58 @@ export default function PandaHub() {
           {/* Dark mode toggle */}
           <button
             ref={themeToggleRef}
-            onClick={() => {
+            onClick={async (e) => {
               if (themeTransition) return;
               
-              // Start expansion animation (overlay will paint new theme)
-              setThemeTransition(true);
+              const newMode = !darkMode;
+              const x = e.clientX;
+              const y = e.clientY;
+              const endRadius = Math.hypot(
+                Math.max(x, window.innerWidth - x),
+                Math.max(y, window.innerHeight - y)
+              );
               
-              // Apply actual theme when animation completes
-              setTimeout(() => {
-                const newMode = !darkMode;
-                setDarkMode(newMode);
-                localStorage.setItem('hansei-darkmode', String(newMode));
-                if (newMode) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-                // Hide overlay after theme is applied
-                setThemeTransition(false);
-              }, 500);
+              // Check if View Transitions API is supported
+              if (document.startViewTransition) {
+                const transition = document.startViewTransition(() => {
+                  setDarkMode(newMode);
+                  localStorage.setItem('hansei-darkmode', String(newMode));
+                  if (newMode) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                });
+                
+                transition.ready.then(() => {
+                  document.documentElement.animate(
+                    {
+                      clipPath: [
+                        `circle(0px at ${x}px ${y}px)`,
+                        `circle(${endRadius}px at ${x}px ${y}px)`,
+                      ],
+                    },
+                    {
+                      duration: 500,
+                      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                      pseudoElement: '::view-transition-new(root)',
+                    }
+                  );
+                });
+              } else {
+                // Fallback for browsers without View Transitions
+                setThemeTransition(true);
+                setTimeout(() => {
+                  setDarkMode(newMode);
+                  localStorage.setItem('hansei-darkmode', String(newMode));
+                  if (newMode) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                  setThemeTransition(false);
+                }, 500);
+              }
             }}
             className="p-2 bg-transparent transition-opacity hover:opacity-70"
           >
@@ -913,6 +946,25 @@ export default function PandaHub() {
 
       {/* Animations */}
       <style jsx global>{`
+        /* View Transitions for theme toggle */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+          animation: none;
+          mix-blend-mode: normal;
+        }
+        ::view-transition-old(root) {
+          z-index: 1;
+        }
+        ::view-transition-new(root) {
+          z-index: 9999;
+        }
+        .dark::view-transition-old(root) {
+          z-index: 9999;
+        }
+        .dark::view-transition-new(root) {
+          z-index: 1;
+        }
+        
         @keyframes float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
