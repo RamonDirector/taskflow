@@ -830,7 +830,7 @@ export default function PandaHub() {
           <span className="w-6 h-6 relative">
             {Icons.ideas}
             {hasNew.ideas && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b8f71]" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
             )}
           </span>
           <span className="text-[10px] font-medium">Ideas</span>
@@ -845,7 +845,7 @@ export default function PandaHub() {
           <span className="w-6 h-6 relative">
             {Icons.tasks}
             {hasNew.tasks && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b8f71]" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
             )}
           </span>
           <span className="text-[10px] font-medium">Tasks</span>
@@ -860,7 +860,7 @@ export default function PandaHub() {
           <span className="w-6 h-6 relative">
             {Icons.dreams}
             {hasNew.dreams && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b8f71]" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
             )}
           </span>
           <span className="text-[10px] font-medium">Dreams</span>
