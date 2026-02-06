@@ -634,7 +634,11 @@ export default function IdeasBoard() {
   };
 
   const processNewIdeaRecording = async () => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found');
+      setIsRecordingNewIdea(false);
+      return;
+    }
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
     try {
@@ -642,9 +646,14 @@ export default function IdeasBoard() {
       formData.append('audio', audioBlob, 'recording.webm');
       
       const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
-      if (!transcribeRes.ok) throw new Error('Transcription failed');
+      if (!transcribeRes.ok) {
+        console.error('Transcription failed:', await transcribeRes.text());
+        throw new Error('Transcription failed');
+      }
       
       const { text } = await transcribeRes.json();
+      console.log('Transcribed text:', text);
+      
       if (text?.trim()) {
         // Create new idea directly from transcription
         const { data, error } = await supabase
@@ -663,9 +672,15 @@ export default function IdeasBoard() {
           .select()
           .single();
 
-        if (!error && data) {
-          setIdeas(prev => [data, ...prev]);
+        if (error) {
+          console.error('Supabase insert error:', error);
+        } else if (data) {
+          console.log('Idea created:', data);
+          // Refresh all ideas to ensure sync
+          await fetchIdeas();
         }
+      } else {
+        console.log('No text transcribed');
       }
     } catch (e) {
       console.error('New idea recording error:', e);
