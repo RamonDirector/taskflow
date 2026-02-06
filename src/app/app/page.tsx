@@ -579,8 +579,10 @@ export default function PandaHub() {
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="w-full max-w-sm mt-6 space-y-3"
+              className="w-full max-w-sm mt-6 flex flex-col space-y-3"
             >
+              {/* Scrollable items container */}
+              <div className="max-h-[40vh] overflow-y-auto space-y-3 pr-1">
               <AnimatePresence mode="popLayout">
                 {capturedItems.map((item, i) => {
                   const config = typeConfig[item.type];
@@ -652,6 +654,7 @@ export default function PandaHub() {
                   );
                 })}
               </AnimatePresence>
+              </div>
 
               {/* Hint */}
               <p className="text-xs text-center text-[var(--gray-4)]">
