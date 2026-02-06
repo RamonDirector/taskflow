@@ -48,6 +48,7 @@ interface Task {
   parent_idea_id?: string;
   origin_idea_id?: string;
   origin_idea_title?: string; // Populated from join
+  due_date?: string; // YYYY-MM-DD format
 }
 
 const Icons = {
@@ -369,6 +370,16 @@ export default function TasksPage() {
   // Get unique origins for filter dropdown
   const uniqueOrigins = [...new Set(tasks.filter(t => t.origin_idea_id).map(t => t.origin_idea_id!))];
 
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+
+  // Focus tasks: due today, not completed, max 3
+  const focusTasks = tasks
+    .filter(t => t.due_date === today && !t.completed)
+    .slice(0, 3);
+  
+  const focusTaskIds = new Set(focusTasks.map(t => t.id));
+
   const filteredTasks = tasks.filter(t => {
     // Status filter
     if (filter === 'pending' && t.completed) return false;
@@ -378,10 +389,14 @@ export default function TasksPage() {
     if (originFilter === 'independent' && t.origin_idea_id) return false;
     if (originFilter && originFilter !== 'independent' && t.origin_idea_id !== originFilter) return false;
     
+    // Exclude focus tasks from main list (they show separately)
+    if (filter === 'all' && focusTaskIds.has(t.id)) return false;
+    
     return true;
   });
 
   const completedCount = tasks.filter(t => t.completed).length;
+  const todayCount = tasks.filter(t => t.due_date === today && !t.completed).length;
 
   if (loading) {
     return (
@@ -489,6 +504,66 @@ export default function TasksPage() {
 
       {/* Task list */}
       <main className="max-w-2xl mx-auto p-4 space-y-3 pb-20">
+        {/* Focus section - Today's top 3 */}
+        {focusTasks.length > 0 && filter === 'all' && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🎯</span>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Foco de hoy</h2>
+              {todayCount > 3 && (
+                <span className="text-xs text-[var(--gray-4)]">+{todayCount - 3} más</span>
+              )}
+            </div>
+            <div className="space-y-2">
+              {focusTasks.map(task => (
+                <div
+                  key={task.id}
+                  onClick={() => handleTaskTap(task)}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                    selectedTaskId === task.id
+                      ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-white dark:bg-[#2c2c2e]'
+                      : 'border-[#6b8f71]/30 bg-[#6b8f71]/5 dark:bg-[#6b8f71]/10 hover:border-[#6b8f71]/50'
+                  }`}
+                >
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+                    className="w-6 h-6 rounded-full border-2 border-[#6b8f71] flex-shrink-0 flex items-center justify-center hover:bg-[#6b8f71] hover:text-white transition-all"
+                  >
+                    {task.completed && Icons.check}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#6b8f71]/20 text-[#6b8f71] font-medium">
+                        HOY
+                      </span>
+                      {task.origin_idea_id && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                          De: {getIdeaTitle(task.origin_idea_id)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {selectedTaskId === task.id && (
+                    <VoiceEditButton
+                      onTranscript={handleVoiceTranscript}
+                      size="md"
+                      disabled={isProcessingVoice}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Separator */}
+            <div className="mt-4 border-t border-gray-200 dark:border-gray-700" />
+          </div>
+        )}
+
+        {/* Rest of tasks */}
+        {filteredTasks.length > 0 && focusTasks.length > 0 && filter === 'all' && (
+          <p className="text-xs text-[var(--gray-4)] mb-2">Todas las tareas</p>
+        )}
+
         <AnimatePresence mode="popLayout">
           {filteredTasks.map(task => {
             const isSwiping = swipingId === task.id;
