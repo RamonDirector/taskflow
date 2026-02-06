@@ -163,6 +163,12 @@ export default function TasksPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Prefetch routes for instant navigation
+  useEffect(() => {
+    router.prefetch('/app');
+    router.prefetch('/app/ideas');
+  }, [router]);
+
   const toggleTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;

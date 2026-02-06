@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -176,6 +177,13 @@ export default function PandaHub() {
     }
   }, []);
 
+  // Prefetch routes for instant navigation
+  useEffect(() => {
+    router.prefetch('/app/ideas');
+    router.prefetch('/app/tasks');
+    router.prefetch('/app/dreams');
+  }, [router]);
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -290,17 +298,17 @@ export default function PandaHub() {
       if (lowerText.includes('ir a') || lowerText.includes('muéstrame') || lowerText.includes('abrir')) {
         if (lowerText.includes('idea') || lowerText.includes('ideas')) {
           setPandaMessage('¡Vamos al Idea Board!');
-          setTimeout(() => router.push('/app/ideas'), 500);
+          router.push('/app/ideas');
           return;
         }
         if (lowerText.includes('tarea') || lowerText.includes('tareas')) {
           setPandaMessage('¡Vamos a tus tareas!');
-          setTimeout(() => router.push('/app/tasks'), 500);
+          router.push('/app/tasks');
           return;
         }
         if (lowerText.includes('sueño') || lowerText.includes('sueños')) {
           setPandaMessage('¡Vamos a tus sueños!');
-          setTimeout(() => router.push('/app/dreams'), 500);
+          router.push('/app/dreams');
           return;
         }
       }

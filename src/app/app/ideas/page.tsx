@@ -292,6 +292,12 @@ export default function IdeasBoard() {
     };
   }, []);
 
+  // Prefetch routes for instant navigation
+  useEffect(() => {
+    router.prefetch('/app');
+    router.prefetch('/app/tasks');
+  }, [router]);
+
   const onConnect = useCallback((params: Connection) => {
     setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#6b8f71', strokeWidth: 2 } }, eds));
   }, [setEdges]);
