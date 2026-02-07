@@ -164,14 +164,89 @@ export default function PandaHub() {
       }
       
       setUser(user);
-      setUserName(localStorage.getItem('taskflow-user-name') || '');
+      const name = localStorage.getItem('taskflow-user-name') || '';
+      setUserName(name);
       setLoading(false);
       
-      // Welcome message
-      setPandaMessage('¿Qué tienes en mente?');
+      // Generate contextual affirmation
+      generateAffirmation(user.id, name);
     };
     init();
   }, [supabase, router]);
+
+  // Generate AI-powered contextual affirmation
+  const generateAffirmation = async (userId: string, name: string) => {
+    try {
+      // Fetch user stats
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [ideasRes, tasksRes, completedTodayRes] = await Promise.all([
+        supabase.from('tasks').select('id, title, created_at').eq('user_id', userId).eq('type', 'idea'),
+        supabase.from('tasks').select('id, title, completed, created_at').eq('user_id', userId).eq('type', 'task'),
+        supabase.from('tasks').select('id').eq('user_id', userId).eq('type', 'task').eq('completed', true).gte('created_at', today),
+      ]);
+
+      const ideas = ideasRes.data || [];
+      const tasks = tasksRes.data || [];
+      const completedToday = completedTodayRes.data?.length || 0;
+
+      // Calculate streak (simplified)
+      const completedTasks = tasks.filter(t => t.completed);
+      let streak = 0;
+      if (completedTasks.length > 0) {
+        const dates = new Set(completedTasks.map(t => t.created_at?.split('T')[0]));
+        const todayDate = new Date();
+        for (let i = 0; i < 365; i++) {
+          const checkDate = new Date(todayDate);
+          checkDate.setDate(todayDate.getDate() - i);
+          const dateStr = checkDate.toISOString().split('T')[0];
+          if (dates.has(dateStr)) {
+            streak++;
+          } else if (i > 0) break;
+        }
+      }
+
+      // Determine last action
+      let lastAction = null;
+      let lastItemTitle = null;
+      
+      if (ideas.length === 1) lastAction = 'first_idea';
+      else if (completedTasks.length === 1) lastAction = 'first_task';
+      else if (completedToday > 0) lastAction = 'task_completed';
+      else if (ideas.length > 0) {
+        const latestIdea = ideas.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+        lastAction = 'idea_created';
+        lastItemTitle = latestIdea?.title;
+      }
+
+      // Call affirmation API
+      const response = await fetch('/api/affirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            userName: name,
+            totalIdeas: ideas.length,
+            totalTasks: tasks.length,
+            completedToday,
+            streak,
+            lastAction,
+            lastItemTitle,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const { affirmation } = await response.json();
+        setPandaMessage(affirmation);
+      } else {
+        setPandaMessage('¿Qué tienes en mente?');
+      }
+    } catch (error) {
+      console.error('Affirmation error:', error);
+      setPandaMessage('¿Qué tienes en mente?');
+    }
+  };
 
   // Load dark mode
   useEffect(() => {
