@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bamboo Growth Demo - Taskflow</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: white;
+    }
+    
+    h1 {
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    .subtitle {
+      color: #888;
+      margin-bottom: 30px;
+    }
+    
+    .demo-container {
+      display: flex;
+      gap: 40px;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 40px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .bamboo-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .bamboo-label {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .panda-container {
+      display: flex;
+      align-items: flex-end;
+    }
+    
+    .panda-container img {
+      width: 120px;
+      height: auto;
+    }
+    
+    /* Bamboo SVG Styles */
+    .bamboo-svg {
+      width: 50px;
+      height: 200px;
+      overflow: visible;
+    }
+    
+    .bamboo-segment {
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .bamboo-leaf {
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: center bottom;
+    }
+    
+    .bamboo-leaf.hidden {
+      transform: scale(0);
+      opacity: 0;
+    }
+    
+    .bamboo-segment.hidden {
+      transform: scaleY(0);
+      opacity: 0;
+    }
+    
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .slider-container {
+      width: 100%;
+    }
+    
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      background: #4ade80;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(74, 222, 128, 0.4);
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 10px;
+    }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #4ade80;
+      color: #1a1a2e;
+    }
+    
+    .btn-primary:hover {
+      background: #22c55e;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .progress-text {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4ade80;
+    }
+    
+    .info-box {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      max-width: 500px;
+      text-align: left;
+    }
+    
+    .info-box h3 {
+      margin-bottom: 10px;
+      color: #4ade80;
+    }
+    
+    .info-box ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .info-box li {
+      padding: 5px 0;
+      color: #aaa;
+    }
+    
+    .info-box li::before {
+      content: "🎋 ";
+    }
+  </style>
+</head>
+<body>
+  <h1>Bamboo Growth System</h1>
+  <p class="subtitle">Gamificación visual para Taskflow</p>
+  
+  <div class="demo-container">
+    <!-- Left Bamboo -->
+    <div class="bamboo-wrapper">
+      <svg class="bamboo-svg" viewBox="0 0 50 200" id="bamboo-left">
+        <!-- Base/Pot -->
+        <ellipse cx="25" cy="195" rx="18" ry="5" fill="#8B7355" stroke="#5D4E37" stroke-width="1.5"/>
+        
+        <!-- Segment 1 (always visible - sprout) -->
+        <g class="bamboo-segment" id="seg1">
+          <rect x="20" y="160" width="10" height="35" rx="3" fill="#7CB342" stroke="#558B2F" stroke-width="1.5"/>
+          <ellipse cx="25" cy="160" rx="5" ry="3" fill="#8BC34A" stroke="#558B2F" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 2 -->
+        <g class="bamboo-segment hidden" id="seg2">
+          <rect x="20" y="125" width="10" height="35" rx="3" fill="#8BC34A" stroke="#558B2F" stroke-width="1.5"/>
+          <ellipse cx="25" cy="125" rx="5" ry="3" fill="#9CCC65" stroke="#558B2F" stroke-width="1"/>
+          <!-- Small leaf -->
+          <path class="bamboo-leaf" d="M30 140 Q45 135 40 125 Q35 130 30 140" fill="#7CB342" stroke="#558B2F" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 3 -->
+        <g class="bamboo-segment hidden" id="seg3">
+          <rect x="20" y="90" width="10" height="35" rx="3" fill="#9CCC65" stroke="#689F38" stroke-width="1.5"/>
+          <ellipse cx="25" cy="90" rx="5" ry="3" fill="#AED581" stroke="#689F38" stroke-width="1"/>
+          <!-- Leaf left -->
+          <path class="bamboo-leaf" d="M20 105 Q5 100 10 90 Q15 95 20 105" fill="#8BC34A" stroke="#558B2F" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 4 -->
+        <g class="bamboo-segment hidden" id="seg4">
+          <rect x="20" y="55" width="10" height="35" rx="3" fill="#AED581" stroke="#689F38" stroke-width="1.5"/>
+          <ellipse cx="25" cy="55" rx="5" ry="3" fill="#C5E1A5" stroke="#689F38" stroke-width="1"/>
+          <!-- Leaf right -->
+          <path class="bamboo-leaf" d="M30 70 Q50 60 42 50 Q38 58 30 70" fill="#9CCC65" stroke="#689F38" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 5 (full growth) -->
+        <g class="bamboo-segment hidden" id="seg5">
+          <rect x="20" y="25" width="10" height="30" rx="3" fill="#C5E1A5" stroke="#7CB342" stroke-width="1.5"/>
+          <ellipse cx="25" cy="25" rx="5" ry="3" fill="#DCEDC8" stroke="#7CB342" stroke-width="1"/>
+          <!-- Top leaves -->
+          <path class="bamboo-leaf" d="M20 35 Q0 25 8 15 Q12 25 20 35" fill="#AED581" stroke="#689F38" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M30 30 Q48 18 38 8 Q35 20 30 30" fill="#AED581" stroke="#689F38" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M25 25 Q25 5 30 0 Q28 15 25 25" fill="#C5E1A5" stroke="#7CB342" stroke-width="1"/>
+        </g>
+      </svg>
+      <span class="bamboo-label">Izquierda</span>
+    </div>
+    
+    <!-- Panda -->
+    <div class="panda-container">
+      <img src="/panda/panda-wave.png" alt="Panda" id="panda-img">
+    </div>
+    
+    <!-- Right Bamboo (mirror) -->
+    <div class="bamboo-wrapper">
+      <svg class="bamboo-svg" viewBox="0 0 50 200" id="bamboo-right" style="transform: scaleX(-1);">
+        <!-- Base/Pot -->
+        <ellipse cx="25" cy="195" rx="18" ry="5" fill="#8B7355" stroke="#5D4E37" stroke-width="1.5"/>
+        
+        <!-- Segment 1 -->
+        <g class="bamboo-segment" id="seg1-r">
+          <rect x="20" y="160" width="10" height="35" rx="3" fill="#7CB342" stroke="#558B2F" stroke-width="1.5"/>
+          <ellipse cx="25" cy="160" rx="5" ry="3" fill="#8BC34A" stroke="#558B2F" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 2 -->
+        <g class="bamboo-segment hidden" id="seg2-r">
+          <rect x="20" y="125" width="10" height="35" rx="3" fill="#8BC34A" stroke="#558B2F" stroke-width="1.5"/>
+          <ellipse cx="25" cy="125" rx="5" ry="3" fill="#9CCC65" stroke="#558B2F" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M30 140 Q45 135 40 125 Q35 130 30 140" fill="#7CB342" stroke="#558B2F" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 3 -->
+        <g class="bamboo-segment hidden" id="seg3-r">
+          <rect x="20" y="90" width="10" height="35" rx="3" fill="#9CCC65" stroke="#689F38" stroke-width="1.5"/>
+          <ellipse cx="25" cy="90" rx="5" ry="3" fill="#AED581" stroke="#689F38" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M20 105 Q5 100 10 90 Q15 95 20 105" fill="#8BC34A" stroke="#558B2F" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 4 -->
+        <g class="bamboo-segment hidden" id="seg4-r">
+          <rect x="20" y="55" width="10" height="35" rx="3" fill="#AED581" stroke="#689F38" stroke-width="1.5"/>
+          <ellipse cx="25" cy="55" rx="5" ry="3" fill="#C5E1A5" stroke="#689F38" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M30 70 Q50 60 42 50 Q38 58 30 70" fill="#9CCC65" stroke="#689F38" stroke-width="1"/>
+        </g>
+        
+        <!-- Segment 5 -->
+        <g class="bamboo-segment hidden" id="seg5-r">
+          <rect x="20" y="25" width="10" height="30" rx="3" fill="#C5E1A5" stroke="#7CB342" stroke-width="1.5"/>
+          <ellipse cx="25" cy="25" rx="5" ry="3" fill="#DCEDC8" stroke="#7CB342" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M20 35 Q0 25 8 15 Q12 25 20 35" fill="#AED581" stroke="#689F38" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M30 30 Q48 18 38 8 Q35 20 30 30" fill="#AED581" stroke="#689F38" stroke-width="1"/>
+          <path class="bamboo-leaf" d="M25 25 Q25 5 30 0 Q28 15 25 25" fill="#C5E1A5" stroke="#7CB342" stroke-width="1"/>
+        </g>
+      </svg>
+      <span class="bamboo-label">Derecha</span>
+    </div>
+  </div>
+  
+  <div class="controls">
+    <div class="progress-text"><span id="progress-value">0</span>% Tareas completadas</div>
+    
+    <div class="slider-container">
+      <div class="slider-label">
+        <span>0 tareas</span>
+        <span id="task-count">0/10 tareas</span>
+        <span>10 tareas</span>
+      </div>
+      <input type="range" id="progress-slider" min="0" max="100" value="0">
+    </div>
+    
+    <div class="button-row">
+      <button class="btn-primary" onclick="completeTask()">✓ Completar tarea</button>
+      <button class="btn-secondary" onclick="resetDay()">🌅 Nuevo día</button>
+    </div>
+  </div>
+  
+  <div class="info-box">
+    <h3>Cómo funciona</h3>
+    <ul>
+      <li>El bambú empieza como un brote pequeño</li>
+      <li>Cada tarea completada hace crecer un segmento</li>
+      <li>Las hojas aparecen a medida que crece</li>
+      <li>Al final del día, vuelve a ser un brote</li>
+      <li>Animaciones suaves con CSS transitions</li>
+    </ul>
+  </div>
+
+  <script>
+    let currentProgress = 0;
+    const totalTasks = 10;
+    
+    function updateBamboo(progress) {
+      // Map progress (0-100) to segments (1-5)
+      // 0% = only segment 1 visible (sprout)
+      // 25% = segments 1-2
+      // 50% = segments 1-3
+      // 75% = segments 1-4
+      // 100% = all segments
+      
+      const segmentsToShow = Math.ceil((progress / 100) * 4) + 1; // 1-5
+      
+      for (let i = 2; i <= 5; i++) {
+        const segLeft = document.getElementById(`seg${i}`);
+        const segRight = document.getElementById(`seg${i}-r`);
+        
+        if (i <= segmentsToShow) {
+          segLeft?.classList.remove('hidden');
+          segRight?.classList.remove('hidden');
+        } else {
+          segLeft?.classList.add('hidden');
+          segRight?.classList.add('hidden');
+        }
+      }
+      
+      // Update panda expression based on progress
+      const panda = document.getElementById('panda-img');
+      if (progress >= 100) {
+        panda.src = '/panda/panda-celebrate.png';
+      } else if (progress >= 50) {
+        panda.src = '/panda/panda-excited.png';
+      } else {
+        panda.src = '/panda/panda-wave.png';
+      }
+      
+      // Update UI
+      document.getElementById('progress-value').textContent = progress;
+      document.getElementById('task-count').textContent = 
+        `${Math.round(progress / 100 * totalTasks)}/${totalTasks} tareas`;
+    }
+    
+    function completeTask() {
+      if (currentProgress < 100) {
+        currentProgress = Math.min(100, currentProgress + 10);
+        document.getElementById('progress-slider').value = currentProgress;
+        updateBamboo(currentProgress);
+      }
+    }
+    
+    function resetDay() {
+      currentProgress = 0;
+      document.getElementById('progress-slider').value = 0;
+      updateBamboo(0);
+    }
+    
+    // Slider event
+    document.getElementById('progress-slider').addEventListener('input', (e) => {
+      currentProgress = parseInt(e.target.value);
+      updateBamboo(currentProgress);
+    });
+    
+    // Initial state
+    updateBamboo(0);
+  </script>
+</body>
+</html>
