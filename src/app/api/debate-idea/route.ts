@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -7,6 +8,15 @@ interface Message { role: 'user' | 'assistant'; content: string; }
 
 export async function POST(request: NextRequest) {
   try {
+    // Check AI access (rate limiting + enabled check)
+    const access = await checkAIAccess();
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: access.error, remaining: access.remaining },
+        { status: 429 }
+      );
+    }
+
     const { idea, currentPlan, messages, userMessage } = await request.json();
     if (!idea || !userMessage) return NextResponse.json({ error: 'Missing idea or message' }, { status: 400 });
 
@@ -45,6 +55,12 @@ Return ONLY valid JSON:
 
     let cleanContent = content.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleanContent);
+
+    // Increment usage counter
+    if (access.userId) {
+      await incrementAIUsage(access.userId);
+    }
+
     return NextResponse.json({
       response: parsed.response || '',
       action_points: parsed.action_points || currentPlan || [],

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI, { toFile } from 'openai';
+import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,6 +8,15 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check AI access (rate limiting + enabled check)
+    const access = await checkAIAccess();
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: access.error, remaining: access.remaining },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
 
@@ -30,6 +40,11 @@ export async function POST(request: NextRequest) {
       file: file,
       model: 'whisper-1',
     });
+
+    // Increment usage counter
+    if (access.userId) {
+      await incrementAIUsage(access.userId);
+    }
 
     return NextResponse.json({ text: transcription.text });
   } catch (error: any) {

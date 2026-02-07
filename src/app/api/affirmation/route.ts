@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,6 +8,15 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
+    // Check AI access (rate limiting + enabled check)
+    const access = await checkAIAccess();
+    if (!access.allowed) {
+      return NextResponse.json(
+        { affirmation: 'Qué tienes en mente?', error: access.error },
+        { status: 429 }
+      );
+    }
+
     const { context } = await request.json();
     
     const {
@@ -75,7 +85,12 @@ BAD examples (avoid):
       temperature: 0.8,
     });
 
-    const affirmation = completion.choices[0]?.message?.content?.trim() || '¿Qué tienes en mente?';
+    const affirmation = completion.choices[0]?.message?.content?.trim() || 'Qué tienes en mente?';
+
+    // Increment usage counter
+    if (access.userId) {
+      await incrementAIUsage(access.userId);
+    }
 
     return NextResponse.json({ affirmation });
   } catch (error) {

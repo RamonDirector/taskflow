@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
+    // Check AI access (rate limiting + enabled check)
+    const access = await checkAIAccess();
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: access.error, remaining: access.remaining },
+        { status: 429 }
+      );
+    }
+
     const { idea, voiceContext } = await request.json();
     if (!idea) return NextResponse.json({ error: 'No idea provided' }, { status: 400 });
 
@@ -54,6 +64,12 @@ Return ONLY valid JSON:
 
     let cleanContent = content.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleanContent);
+
+    // Increment usage counter
+    if (access.userId) {
+      await incrementAIUsage(access.userId);
+    }
+
     return NextResponse.json({ action_points: parsed.action_points || [] });
   } catch (error) {
     console.error('Action plan error:', error);

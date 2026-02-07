@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
+    // Check AI access (rate limiting + enabled check)
+    const access = await checkAIAccess();
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: access.error, remaining: access.remaining },
+        { status: 429 }
+      );
+    }
+
     const { dream, voiceContext } = await request.json();
     if (!dream) return NextResponse.json({ error: 'No dream provided' }, { status: 400 });
 
@@ -38,6 +48,11 @@ Extensión: 150-250 palabras.`;
 
     const result = await model.generateContent(prompt);
     const interpretation = result.response.text();
+
+    // Increment usage counter
+    if (access.userId) {
+      await incrementAIUsage(access.userId);
+    }
 
     return NextResponse.json({ interpretation });
   } catch (error) {

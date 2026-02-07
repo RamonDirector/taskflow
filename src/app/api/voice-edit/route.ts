@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -38,6 +39,15 @@ function generateCalendarLink(title: string, date: string, time: string | null, 
 
 export async function POST(request: NextRequest) {
   try {
+    // Check AI access (rate limiting + enabled check)
+    const access = await checkAIAccess();
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: access.error, remaining: access.remaining },
+        { status: 429 }
+      );
+    }
+
     const { editType, voiceInput, context } = await request.json();
     if (!editType || !voiceInput) return NextResponse.json({ error: 'Missing editType or voiceInput' }, { status: 400 });
 
@@ -151,6 +161,11 @@ Return ONLY this exact JSON format (no markdown, no extra text):
         parsed.params.duration || 60
       );
       parsed.params.calendarLink = calendarLink;
+    }
+
+    // Increment usage counter
+    if (access.userId) {
+      await incrementAIUsage(access.userId);
     }
 
     return NextResponse.json({ 
