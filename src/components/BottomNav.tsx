@@ -44,25 +44,24 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
     : pathname.includes('/dreams') ? 'dreams'
     : 'home';
 
-  // Hide nav on scroll down, show on scroll up
+  // Hide nav on scroll down, show on scroll up (X-style behavior)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      const scrollingDown = currentScrollY > lastScrollY.current;
-      const scrollingUp = currentScrollY < lastScrollY.current;
+      const delta = currentScrollY - lastScrollY.current;
       
-      if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
-        if (scrollingDown && currentScrollY > 50) {
-          setNavVisible(false);
-        } else if (scrollingUp) {
-          setNavVisible(true);
-        }
-        lastScrollY.current = currentScrollY;
-      }
+      // Only react if scroll delta is significant enough (reduces jitter)
+      if (Math.abs(delta) < 3) return;
       
-      if (currentScrollY < 10) {
+      if (delta > 0 && currentScrollY > 20) {
+        // Scrolling down & past threshold → hide
+        setNavVisible(false);
+      } else if (delta < 0) {
+        // Scrolling up → show immediately
         setNavVisible(true);
       }
+      
+      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -78,7 +77,7 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
 
   return (
     <nav 
-      className={`fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)] border-t border-[var(--gray-2)] flex items-center justify-around px-6 z-50 transition-transform duration-300 ${
+      className={`fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)] border-t border-[var(--gray-2)] flex items-center justify-around px-6 z-50 transition-transform duration-150 ease-out ${
         navVisible ? 'translate-y-0' : 'translate-y-full'
       }`}
       style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
