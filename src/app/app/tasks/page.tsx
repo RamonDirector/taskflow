@@ -685,7 +685,7 @@ export default function TasksPage() {
                       )}
                     </div>
                   </div>
-                  {selectedTaskId === task.id && (
+                  {selectedTaskId === task.id && !task.completed && (
                     <VoiceEditButton
                       onTranscript={handleVoiceTranscript}
                       size="md"
@@ -810,8 +810,8 @@ export default function TasksPage() {
                       </div>
                     </div>
 
-                    {/* Voice edit button when selected */}
-                    {isSelected && (
+                    {/* Voice edit button when selected (only for incomplete tasks) */}
+                    {isSelected && !task.completed && (
                       <VoiceEditButton
                         onTranscript={handleVoiceTranscript}
                         size="md"
