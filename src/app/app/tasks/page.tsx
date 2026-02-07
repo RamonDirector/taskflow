@@ -578,7 +578,9 @@ export default function TasksPage() {
         {streak > 0 && filter === 'all' && (
           <div className="mb-4 flex items-center justify-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#6b8f71]/10 to-[#6b8f71]/5 border border-[#6b8f71]/20">
-              <span className="text-lg">🔥</span>
+              <svg className="w-5 h-5 text-[#6b8f71]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 23c-4.97 0-9-3.582-9-8 0-2.09.812-3.988 2.139-5.417.735-.79 1.861-1.583 2.861-2.583 1-1 1.5-2.5 1.5-4 0 1.5.5 3 2 4.5s3.5 3 3.5 6c0 .828-.25 1.5-.75 2-.333.333-.75.667-.75 1.5 0 .5.5 1 1 1s1-.5 1-1c0-.5-.25-.833-.5-1.167-.25-.333-.5-.667-.5-1.333 0-1.5 1-2.5 1.5-4 1.5 2 2.5 4 2.5 6.5 0 4.418-4.03 8-9 8z"/>
+              </svg>
               <span className="text-sm font-semibold text-[#6b8f71]">{streak} {streak === 1 ? 'día' : 'días'}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">racha</span>
             </div>
