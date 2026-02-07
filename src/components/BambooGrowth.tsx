@@ -27,11 +27,11 @@ export function BambooGrowth({
   // 0% = just sprout, 100% = full bamboo
   const segmentsToShow = Math.min(5, Math.max(1, Math.ceil(progress * 5)));
   
-  // Colors matching the panda's palette
-  const stemLight = '#8fbc8f';  // Light green stem
-  const stemDark = '#6b8f71';   // Dark green (matches theme)
-  const leafDark = '#4a6b52';   // Dark leaves
-  const leafLight = '#6b8f71';  // Light leaves
+  // Colors - darker matcha green
+  const stemLight = '#5a7d5a';  // Darker green stem
+  const stemDark = '#3d5a45';   // Dark matcha green
+  const leafDark = '#2d4a35';   // Very dark leaves
+  const leafLight = '#4a6b52';  // Medium dark leaves
   const soil = '#5d4e37';       // Soil brown
   
   return (

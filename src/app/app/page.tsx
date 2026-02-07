@@ -829,6 +829,21 @@ export default function PandaHub() {
         }}
       />
       
+      {/* Bamboo Growth - Fixed on left side */}
+      {!showConfirmation && (
+        <div 
+          className="fixed left-2 bottom-24 z-10 pointer-events-none"
+          style={{ 
+            transform: 'translateY(0)',
+          }}
+        >
+          <BambooGrowth 
+            progress={bambooProgress} 
+            size={180}
+          />
+        </div>
+      )}
+      
       {/* Main content */}
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
         {/* Daily Affirmation - above panda */}
@@ -862,84 +877,46 @@ export default function PandaHub() {
           </motion.div>
         )}
 
-        {/* Panda with bamboo growth - animates to top when sheet opens */}
+        {/* Panda - animates to top when sheet opens */}
         {!showConfirmation && (
-        <div className="flex items-end justify-center gap-2">
-          {/* Left Bamboo */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ 
-              opacity: inputFocused ? 0 : 1, 
-              x: inputFocused ? -20 : 0,
-              scale: inputFocused ? 0.5 : 1,
+        <motion.div 
+          layoutId="panda-mascot"
+          className="relative overflow-visible"
+          animate={{ 
+            scale: isProcessing ? 0.95 : 1,
+            width: inputFocused ? 80 : 160,
+            height: inputFocused ? 80 : 160,
+            marginBottom: inputFocused ? 8 : 24,
+            marginTop: inputFocused ? 8 : 0,
+          }}
+          transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+          style={{ willChange: 'transform' }}
+        >
+          {/* Matcha aura glow */}
+          <div 
+            className="absolute inset-0 rounded-full blur-2xl scale-150"
+            style={{ 
+              backgroundColor: `${THEME_COLOR}50`,
+              animation: 'auraPulse 3s ease-in-out infinite' 
             }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="self-end"
-          >
-            <BambooGrowth 
-              progress={bambooProgress} 
-              size={inputFocused ? 60 : 120} 
-            />
-          </motion.div>
-
-          {/* Panda */}
-          <motion.div 
-            layoutId="panda-mascot"
-            className="relative overflow-visible"
-            animate={{ 
-              scale: isProcessing ? 0.95 : 1,
-              width: inputFocused ? 80 : 160,
-              height: inputFocused ? 80 : 160,
-              marginBottom: inputFocused ? 8 : 24,
-              marginTop: inputFocused ? 8 : 0,
+          />
+          {/* Shadow */}
+          <div 
+            className="absolute bottom-0 left-1/2 w-20 h-4 rounded-full bg-black/10 blur-sm -translate-x-1/2"
+            style={{ animation: 'shadowPulse 3s ease-in-out infinite' }}
+          />
+          <Image
+            src={pandaImage}
+            alt="Panda"
+            fill
+            className="object-contain relative z-10"
+            style={{ 
+              animation: isProcessing ? 'none' : 'float 3s ease-in-out infinite', 
+              filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))' 
             }}
-            transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-            style={{ willChange: 'transform' }}
-          >
-            {/* Matcha aura glow */}
-            <div 
-              className="absolute inset-0 rounded-full blur-2xl scale-150"
-              style={{ 
-                backgroundColor: `${THEME_COLOR}50`,
-                animation: 'auraPulse 3s ease-in-out infinite' 
-              }}
-            />
-            {/* Shadow */}
-            <div 
-              className="absolute bottom-0 left-1/2 w-20 h-4 rounded-full bg-black/10 blur-sm -translate-x-1/2"
-              style={{ animation: 'shadowPulse 3s ease-in-out infinite' }}
-            />
-            <Image
-              src={pandaImage}
-              alt="Panda"
-              fill
-              className="object-contain relative z-10"
-              style={{ 
-                animation: isProcessing ? 'none' : 'float 3s ease-in-out infinite', 
-                filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))' 
-              }}
-              priority
-            />
-          </motion.div>
-
-          {/* Right Bamboo (mirrored) */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ 
-              opacity: inputFocused ? 0 : 1, 
-              x: inputFocused ? 20 : 0,
-              scale: inputFocused ? 0.5 : 1,
-            }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="self-end"
-          >
-            <BambooGrowth 
-              progress={bambooProgress} 
-              size={inputFocused ? 60 : 120} 
-              mirror 
-            />
-          </motion.div>
-        </div>
+            priority
+          />
+        </motion.div>
         )}
 
         {/* Panda message - hidden when sheet is open */}
