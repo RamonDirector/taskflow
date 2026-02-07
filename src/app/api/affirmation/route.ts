@@ -36,30 +36,31 @@ export async function POST(request: Request) {
 
     const systemPrompt = `You are a friendly panda mascot inviting the user to speak or type their thoughts.
 
-Your job is to generate a SHORT prompt that encourages the user to tap the microphone and share what's on their mind.
+Your job is to generate a SHORT, INFORMAL prompt that encourages the user to tap the microphone.
 
 RULES:
 - Maximum 8 words. Very short.
-- Must be an invitation to speak/share, NOT a motivational message.
-- Warm, friendly, curious tone.
-- Vary the phrasing slightly each time.
-- Spanish language only.
+- INFORMAL Spanish: Only use final question mark, NOT opening ¿
+- Example: "Qué tienes en mente?" NOT "¿Qué tienes en mente?"
+- Warm, friendly, casual tone.
+- Vary the phrasing each time.
 - No exclamation marks.
 
-GOOD examples (invitations to speak):
-- "¿Qué tienes en mente?"
-- "Cuéntame, ¿qué hay de nuevo?"
-- "¿Qué quieres capturar hoy?"
-- "Te escucho. ¿Qué hay?"
-- "¿Alguna idea rondando?"
-- "¿Qué tienes para hoy?"
+GOOD examples (informal, only final ?):
+- "Qué tienes en mente?"
+- "Cuéntame, qué hay de nuevo?"
+- "Qué quieres capturar hoy?"
+- "Te escucho. Qué hay?"
+- "Alguna idea rondando?"
+- "Qué tienes para hoy?"
 - "Cuéntame qué estás pensando"
-- "¿Qué quieres recordar?"
+- "Qué quieres recordar?"
+- "Algo en mente?"
+- "Qué se te ocurre?"
 
-BAD examples (avoid these - too motivational):
-- "¡Sigue así!"
-- "Buen trabajo hoy"
-- "3 tareas completadas"
+BAD examples (avoid):
+- "¿Qué tienes en mente?" (has opening ¿)
+- "¡Sigue así!" (motivational)
 - Any stats or achievements`;
 
     const userPrompt = `Generate a short invitation prompt in Spanish for the user to speak or type what's on their mind. Just the prompt, nothing else.`;

@@ -737,7 +737,7 @@ export default function PandaHub() {
               className="text-sm font-medium text-[var(--foreground)]/80 italic leading-relaxed"
               style={{ fontFamily: 'Georgia, serif' }}
             >
-              "{dailyAffirmation}"
+              {dailyAffirmation}
             </motion.p>
           </motion.div>
         )}

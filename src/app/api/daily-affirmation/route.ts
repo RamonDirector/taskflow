@@ -28,48 +28,45 @@ export async function POST(request: Request) {
     const isMonday = dayOfWeek === 1;
     const isFriday = dayOfWeek === 5;
 
-    const systemPrompt = `You generate affirmations that BALANCE two things:
-1. REWARDING past activity (acknowledge what user has done)
-2. MOTIVATING future action (encourage next step)
+    const systemPrompt = `You generate REWARD-ONLY affirmations using positive psychology. NO call-to-action.
+
+PURPOSE: Make the user feel good about what they've done. Build confidence and positive identity.
+DO NOT include questions or action prompts - another element handles that.
 
 PSYCHOLOGY PRINCIPLES:
-- Progress principle: Celebrate small wins to fuel motivation
-- Positive reinforcement: Reward behavior you want repeated
+- Progress principle: Celebrate small wins
+- Positive reinforcement: Acknowledge behavior you want repeated
 - Self-efficacy: Build confidence through recognition
-- Momentum: Use past success to drive future action
-- Identity reinforcement: "You ARE someone who captures ideas"
-
-STRATEGY BY CONTEXT:
-- If user has activity (tasks, ideas, completions): Lead with REWARD, then nudge action
-- If user is new or inactive: Lead with gentle ACTION encouragement
-- If user completed tasks today: Celebrate, then invite more
-- If user has many ideas: Acknowledge creativity, encourage action on them
+- Identity reinforcement: "You ARE someone who..."
 
 STYLE:
-- Warm but energizing
+- Warm and affirming
 - Specific when possible (reference their stats)
-- Brief: 1-2 sentences, under 20 words
-- Balance praise with forward momentum
+- Brief: 1 sentence, under 15 words
+- Statement, NOT a question
+- NO call-to-action, NO "¿Qué sigue?", NO prompts to do more
 - Spanish language
-- Natural tone, occasional exclamation mark OK
+- Natural tone
 
-REWARD + ACTION EXAMPLES:
-- "3 tareas hoy. Ese ritmo construye cosas grandes. ¿Qué sigue?"
-- "Ya tienes 12 ideas capturadas. Eso es mentalidad de creador."
-- "Primera tarea del día completada. El momentum está de tu lado."
-- "5 días seguidos activo. Los hábitos se construyen así."
-- "Volviste. Eso ya es un paso. ¿Qué capturamos hoy?"
+GOOD EXAMPLES (reward only):
+- "3 tareas hoy. Ese ritmo construye cosas grandes."
+- "Ya tienes 12 ideas capturadas. Mentalidad de creador."
+- "Primera tarea del día completada. El momentum está contigo."
+- "5 días seguidos activo. Eso ya es un hábito."
+- "Volviste. Eso ya es un paso."
+- "Cada idea capturada es una semilla plantada."
+- "Tu constancia habla por sí sola."
 
-PURE ACTION EXAMPLES (for new/inactive users):
-- "Esa idea que tienes? Captúrala antes de que se escape."
-- "Empieza pequeño, pero empieza ya."
-- "Tu yo del futuro te lo agradecerá."
+FOR NEW USERS (gentle encouragement, still no question):
+- "Las mejores ideas empiezan con un primer paso."
+- "Hoy es buen día para capturar algo nuevo."
+- "Tu próxima gran idea puede llegar en cualquier momento."
 
 BAD (avoid):
-- Only praise without forward nudge
-- Only action without acknowledgment (when user has activity)
+- "¿Qué sigue?" or any question
+- "¿Qué capturamos hoy?" or action prompts
 - Generic "¡Eres increíble!" without specifics
-- Preachy or condescending tone`;
+- Anything that sounds like a command or invitation`;
 
     const contextParts = [];
     if (timeContext) contextParts.push(`Time of day: ${timeContext}`);
@@ -85,11 +82,9 @@ BAD (avoid):
     if (totalIdeas > 10) contextParts.push('Active idea collector - acknowledge creativity');
     if (totalTasks === 0 && totalIdeas === 0) contextParts.push('NEW USER - no activity yet, focus on gentle encouragement');
 
-    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate a balanced affirmation in Spanish that:
-1. If user has activity: FIRST acknowledge/reward it, THEN nudge next action
-2. If new user: Gently encourage first action
-
-Keep it natural and warm. No quotes around the response.`;
+    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate a REWARD-ONLY affirmation in Spanish. Acknowledge their progress or encourage gently. 
+NO questions. NO call-to-action. Just a warm statement.
+No quotes around the response.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
