@@ -82,20 +82,10 @@ const STEPS: OnboardingStep[] = [
     contextOptions: ['Caminando', 'Ducha', 'Cama', 'Mañana', 'Ejercicio', 'Random'],
   },
   {
-    id: 'first-capture',
-    panda: '/panda/new-neutral.png',
-    title: '¿Qué tienes en mente?',
-    subtitle: 'Cuéntame una idea o tarea',
-  },
-  {
-    id: 'processing',
-    panda: '/panda/new-thinking.png',
-    title: 'Déjame pensar...',
-  },
-  {
     id: 'complete',
     panda: '/panda/new-celebrate.png',
     title: '¡Listo!',
+    subtitle: 'Ya puedes empezar a capturar',
   },
 ];
 
@@ -344,22 +334,6 @@ function OnboardingContent() {
   };
 
   const saveAndFinish = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user && extractedItems.length > 0) {
-      await supabase.from('tasks').insert(
-        extractedItems.map(item => ({
-          user_id: user.id,
-          title: item.title,
-          category: item.category,
-          priority: item.priority,
-          completed: false,
-          type: item.type,
-          voice_context: transcript,
-        }))
-      );
-    }
-
     localStorage.setItem('taskflow-onboarding-complete', 'true');
     localStorage.setItem('taskflow-user-name', userName);
     localStorage.setItem('taskflow-onboarding-answers', JSON.stringify(selectedOptions));
@@ -581,14 +555,6 @@ function OnboardingContent() {
           >
             Empezar {Icons.arrow}
           </button>
-        )}
-
-        {/* Processing state */}
-        {step.id === 'processing' && (
-          <div className="w-full h-14 rounded-full flex items-center justify-center gap-3 bg-[var(--gray-1)]">
-            <div className="w-5 h-5 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
-            <span className="text-[var(--gray-5)]">Un momento...</span>
-          </div>
         )}
 
         {/* Complete button */}
