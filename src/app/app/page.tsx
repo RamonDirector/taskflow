@@ -114,6 +114,9 @@ export default function PandaHub() {
   const [pandaImage, setPandaImage] = useState('/panda/new-wave.png');
   const [pandaMessage, setPandaMessage] = useState('');
   
+  // Daily affirmation state
+  const [dailyAffirmation, setDailyAffirmation] = useState('');
+  
   // Input state
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -168,11 +171,52 @@ export default function PandaHub() {
       setUserName(name);
       setLoading(false);
       
-      // Generate contextual affirmation
+      // Generate both affirmations
+      generateDailyAffirmation(user.id, name);
       generateAffirmation(user.id, name);
     };
     init();
   }, [supabase, router]);
+
+  // Generate daily motivational affirmation
+  const generateDailyAffirmation = async (userId: string, name: string) => {
+    try {
+      const now = new Date();
+      
+      // Fetch basic stats for context
+      const [tasksRes, ideasRes] = await Promise.all([
+        supabase.from('tasks').select('id, completed').eq('user_id', userId).eq('type', 'task'),
+        supabase.from('tasks').select('id').eq('user_id', userId).eq('type', 'idea'),
+      ]);
+
+      const tasks = tasksRes.data || [];
+      const ideas = ideasRes.data || [];
+      const completedToday = tasks.filter(t => t.completed).length;
+
+      const response = await fetch('/api/daily-affirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            userName: name,
+            currentHour: now.getHours(),
+            dayOfWeek: now.getDay(),
+            totalTasks: tasks.length,
+            totalIdeas: ideas.length,
+            completedToday,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const { affirmation } = await response.json();
+        setDailyAffirmation(affirmation);
+      }
+    } catch (error) {
+      console.error('Daily affirmation error:', error);
+      setDailyAffirmation('El camino se hace al andar.');
+    }
+  };
 
   // Generate AI-powered contextual affirmation
   const generateAffirmation = async (userId: string, name: string) => {
@@ -667,6 +711,37 @@ export default function PandaHub() {
       
       {/* Main content */}
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
+        {/* Daily Affirmation - above panda */}
+        {!showConfirmation && !inputFocused && dailyAffirmation && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="mb-8 max-w-xs text-center"
+          >
+            {/* Decorative line */}
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#6b8f71]/40" />
+              <svg className="w-4 h-4 text-[#6b8f71]/60" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/>
+              </svg>
+              <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#6b8f71]/40" />
+            </div>
+            
+            {/* Affirmation text */}
+            <motion.p
+              key={dailyAffirmation}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-sm font-medium text-[var(--foreground)]/80 italic leading-relaxed"
+              style={{ fontFamily: 'Georgia, serif' }}
+            >
+              "{dailyAffirmation}"
+            </motion.p>
+          </motion.div>
+        )}
+
         {/* Panda with matcha aura - animates to top when sheet opens */}
         {!showConfirmation && (
         <motion.div 
