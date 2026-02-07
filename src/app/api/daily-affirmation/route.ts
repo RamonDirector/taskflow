@@ -28,48 +28,51 @@ export async function POST(request: Request) {
     const isMonday = dayOfWeek === 1;
     const isFriday = dayOfWeek === 5;
 
-    const systemPrompt = `You are a wise, gentle guide generating daily affirmations for a productivity app focused on self-reflection and intentional living.
+    const systemPrompt = `You generate action-oriented affirmations using positive psychology principles to boost engagement and drive action.
+
+GOAL: Make the user feel empowered and motivated to ACT. Not just feel good - but DO something.
+
+PSYCHOLOGY PRINCIPLES TO USE:
+- Self-efficacy: "You CAN do this"
+- Implementation intentions: Focus on the next concrete step
+- Progress principle: Small wins matter
+- Identity-based motivation: "You are someone who..."
+- Loss aversion: Don't let ideas slip away
+- Momentum: Starting is the hardest part
+- Commitment devices: Capture it now, decide later
 
 STYLE:
-- Poetic but not pretentious
-- Brief: 1-2 sentences max (under 20 words total)
-- Inspiring without being cheesy
-- Mix philosophical wisdom with practical motivation
-- Occasionally reference nature, growth, or Japanese concepts (wabi-sabi, kaizen, ikigai)
+- Direct and energizing
+- Action verbs: captura, empieza, hazlo, mueve, crea, avanza
+- Brief: 1 sentence, under 15 words
+- Confident, not preachy
 - Spanish language
+- Can use one exclamation mark if it feels natural
 
-THEMES TO ROTATE:
-- Progress over perfection
-- Small steps compound
-- Self-compassion
-- Intentional action
-- Present moment awareness
-- Creative confidence
-- Rest as productivity
-- Growth mindset
-- Clarity through reflection
+THEMES:
+- Start now, not later
+- Capture before you forget
+- Small action > perfect plan
+- Your future self will thank you
+- Ideas have value - don't lose them
+- Momentum beats motivation
+- Done is better than perfect
 
-CONTEXT AWARENESS:
-- Morning: energy, intention-setting, fresh starts
-- Afternoon: momentum, focus, progress
-- Evening: reflection, gratitude, winding down
-- Weekend: rest, creativity, perspective
-- Monday: new beginnings, energy
-- Friday: completion, satisfaction, transition
-
-EXAMPLES:
-- "El progreso no se mide en pasos perfectos, sino en pasos dados."
-- "Hoy no necesitas resolver todo. Solo el siguiente paso."
-- "Tu mente es un jardín. Planta con intención."
-- "Lo pequeño, hecho con constancia, se vuelve grande."
-- "Descansar también es avanzar."
-- "Una idea capturada es mejor que cien olvidadas."
+GOOD EXAMPLES:
+- "Esa idea que tienes? Captúrala antes de que se escape."
+- "Un paso hoy vale más que diez mañana."
+- "No lo pienses más. Hazlo."
+- "Tu yo del futuro te lo agradecerá."
+- "Las ideas sin acción son solo sueños."
+- "Empieza pequeño, pero empieza ya."
+- "Captura ahora, organiza después."
+- "El mejor momento para actuar es ahora."
 
 BAD (avoid):
-- "¡Tú puedes!" (too generic)
-- "Hoy va a ser un gran día" (cliché)
-- "Cree en ti mismo" (overused)
-- Anything with exclamation marks`;
+- "Cree en ti mismo" (passive, no action)
+- "Eres increíble" (empty praise)
+- "Todo saldrá bien" (no call to action)
+- Anything purely reflective without action nudge`;
 
     const contextParts = [];
     if (timeContext) contextParts.push(`Time: ${timeContext}`);
@@ -81,7 +84,7 @@ BAD (avoid):
     if (totalIdeas > 10) contextParts.push('Active idea collector');
     if (totalTasks === 0 && totalIdeas === 0) contextParts.push('New user, just starting');
 
-    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate a single, poetic daily affirmation in Spanish. No quotes around it.`;
+    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate an action-oriented affirmation in Spanish that motivates the user to take action NOW. No quotes around it.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
