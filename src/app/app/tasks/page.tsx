@@ -470,20 +470,26 @@ export default function TasksPage() {
   
   const focusTaskIds = new Set(focusTasks.map(t => t.id));
 
-  const filteredTasks = tasks.filter(t => {
-    // Status filter
-    if (filter === 'pending' && t.completed) return false;
-    if (filter === 'completed' && !t.completed) return false;
-    
-    // Origin filter
-    if (originFilter === 'independent' && t.origin_idea_id) return false;
-    if (originFilter && originFilter !== 'independent' && t.origin_idea_id !== originFilter) return false;
-    
-    // Exclude focus tasks from main list (they show separately)
-    if (filter === 'all' && focusTaskIds.has(t.id)) return false;
-    
-    return true;
-  });
+  const filteredTasks = tasks
+    .filter(t => {
+      // Status filter
+      if (filter === 'pending' && t.completed) return false;
+      if (filter === 'completed' && !t.completed) return false;
+      
+      // Origin filter
+      if (originFilter === 'independent' && t.origin_idea_id) return false;
+      if (originFilter && originFilter !== 'independent' && t.origin_idea_id !== originFilter) return false;
+      
+      // Exclude focus tasks from main list (they show separately)
+      if (filter === 'all' && focusTaskIds.has(t.id)) return false;
+      
+      return true;
+    })
+    // Sort: pending first, completed last
+    .sort((a, b) => {
+      if (a.completed === b.completed) return 0;
+      return a.completed ? 1 : -1;
+    });
 
   const completedCount = tasks.filter(t => t.completed).length;
   const todayCount = tasks.filter(t => t.due_date === today && !t.completed).length;
