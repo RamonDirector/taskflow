@@ -30,6 +30,7 @@ export async function checkAIAccess(): Promise<AIAccessResult> {
 
   // If no settings exist, create default ones
   if (settingsError && settingsError.code === 'PGRST116') {
+    // Try to create settings for new user
     const { error: insertError } = await supabase
       .from('user_ai_settings')
       .insert({
@@ -44,16 +45,18 @@ export async function checkAIAccess(): Promise<AIAccessResult> {
       });
 
     if (insertError) {
-      console.error('Failed to create AI settings:', insertError);
-      return { allowed: false, error: 'Error interno' };
+      // During testing phase, allow access even if settings creation fails
+      console.error('Failed to create AI settings (allowing anyway):', insertError);
+      return { allowed: true, remaining: 200, userId: user.id };
     }
 
     return { allowed: true, remaining: 200, userId: user.id };
   }
 
   if (settingsError) {
-    console.error('Failed to get AI settings:', settingsError);
-    return { allowed: false, error: 'Error interno' };
+    // During testing phase, allow access on any error
+    console.error('Failed to get AI settings (allowing anyway):', settingsError);
+    return { allowed: true, remaining: 200, userId: user.id };
   }
 
   // Check if AI is enabled for this user

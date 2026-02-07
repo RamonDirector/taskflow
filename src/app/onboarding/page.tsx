@@ -90,7 +90,7 @@ const STEPS: OnboardingStep[] = [
   {
     id: 'processing',
     panda: '/panda/new-thinking.png',
-    title: 'Analizando...',
+    title: 'Déjame pensar...',
   },
   {
     id: 'complete',
@@ -587,7 +587,7 @@ function OnboardingContent() {
         {step.id === 'processing' && (
           <div className="w-full h-14 rounded-full flex items-center justify-center gap-3 bg-[var(--gray-1)]">
             <div className="w-5 h-5 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
-            <span className="text-[var(--gray-5)]">Procesando...</span>
+            <span className="text-[var(--gray-5)]">Un momento...</span>
           </div>
         )}
 
