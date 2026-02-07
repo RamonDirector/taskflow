@@ -579,9 +579,13 @@ export default function TasksPage() {
           <div className="mb-4 flex items-center justify-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#6b8f71]/10 to-[#6b8f71]/5 border border-[#6b8f71]/20">
               <svg className="w-5 h-5 text-[#6b8f71]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" fill="currentColor" opacity="0.2"/>
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                <path d="M12 3v18"/>
+                <path d="M12 6h4c1 0 2-.5 2-1.5S17 3 16 3h-4"/>
+                <path d="M12 11h-4c-1 0-2-.5-2-1.5S7 8 8 8h4"/>
+                <path d="M12 16h3c1 0 1.5-.5 1.5-1.5S16 13 15 13h-3"/>
+                <ellipse cx="12" cy="6" rx="1" ry="0.5" fill="currentColor"/>
+                <ellipse cx="12" cy="11" rx="1" ry="0.5" fill="currentColor"/>
+                <ellipse cx="12" cy="16" rx="1" ry="0.5" fill="currentColor"/>
               </svg>
               <span className="text-sm font-semibold text-[#6b8f71]">{streak} {streak === 1 ? 'día' : 'días'}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">racha</span>
