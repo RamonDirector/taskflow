@@ -1112,21 +1112,12 @@ export default function PandaHub() {
         ::view-transition-new(root) {
           z-index: 9999;
         }
-        /* Panda stays fixed, smooth crossfade */
-        ::view-transition-group(panda) {
-          animation-duration: 0ms;
+        /* Panda: hide old instantly to prevent duplication */
+        ::view-transition-old(panda) {
+          display: none;
         }
-        ::view-transition-old(panda),
         ::view-transition-new(panda) {
           animation: none;
-          mix-blend-mode: normal;
-          position: fixed;
-        }
-        ::view-transition-old(panda) {
-          z-index: 1;
-        }
-        ::view-transition-new(panda) {
-          z-index: 2;
         }
         @keyframes float {
           0%, 100% { transform: translateY(0); }
