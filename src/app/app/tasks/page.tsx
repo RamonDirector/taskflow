@@ -351,6 +351,7 @@ export default function TasksPage() {
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
     try {
+      // 1. Transcribe audio
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       
@@ -358,23 +359,52 @@ export default function TasksPage() {
       if (!transcribeRes.ok) throw new Error('Transcription failed');
       
       const { text } = await transcribeRes.json();
-      if (text?.trim()) {
-        const { data, error } = await supabase
-          .from('tasks')
-          .insert({
-            user_id: user.id,
-            title: text.trim(),
-            type: 'task',
-            category: 'personal',
-            priority: 'medium',
-            completed: false,
-          })
-          .select()
-          .single();
+      if (!text?.trim()) {
+        setIsRecordingNewTask(false);
+        return;
+      }
 
-        if (!error && data) {
-          setTasks(prev => [data, ...prev]);
-        }
+      // 2. Extract and separate tasks using AI
+      const extractRes = await fetch('/api/extract-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim() }),
+      });
+
+      if (!extractRes.ok) throw new Error('Extraction failed');
+      
+      const extractData = await extractRes.json();
+      const extractedTasks = extractData.tasks || [];
+      
+      // If no tasks extracted, create one from the raw text
+      if (extractedTasks.length === 0) {
+        extractedTasks.push({
+          title: text.trim(),
+          category: 'personal',
+          priority: 'high',
+        });
+      }
+
+      // 3. Insert all extracted tasks with today's date (Foco del día)
+      const todayDate = new Date().toISOString().split('T')[0];
+      
+      const tasksToInsert = extractedTasks.map((task: { title: string; category?: string; priority?: string }) => ({
+        user_id: user.id,
+        title: task.title,
+        type: 'task',
+        category: task.category || 'personal',
+        priority: task.priority || 'high', // Default to high since recording from Tasks view
+        completed: false,
+        due_date: todayDate, // Foco del día
+      }));
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert(tasksToInsert)
+        .select();
+
+      if (!error && data) {
+        setTasks(prev => [...data, ...prev]);
       }
     } catch (e) {
       console.error('New task recording error:', e);
