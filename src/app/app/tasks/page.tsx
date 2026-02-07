@@ -617,8 +617,13 @@ export default function TasksPage() {
                   />
                 </div>
                 {todayProgress === 100 && (
-                  <p className="text-xs text-center text-[#6b8f71] mt-2 font-medium">
-                    ✨ ¡Completaste todo tu foco de hoy!
+                  <p className="text-xs text-center text-[#6b8f71] mt-2 font-medium flex items-center justify-center gap-1">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5L12 2z"/>
+                      <path d="M5 5l1.5 3L5 9.5 6.5 11 5 12.5l1.5 1.5 1.5-1.5L9.5 14l-1.5-1.5L6.5 11 8 9.5 6.5 8 5 5z" opacity="0.6"/>
+                      <path d="M19 5l-1.5 3L19 9.5 17.5 11 19 12.5l-1.5 1.5-1.5-1.5L14.5 14l1.5-1.5L17.5 11 16 9.5 17.5 8 19 5z" opacity="0.6"/>
+                    </svg>
+                    ¡Completaste todo tu foco de hoy!
                   </p>
                 )}
                 {todayProgress > 0 && todayProgress < 100 && (
