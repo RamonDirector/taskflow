@@ -28,63 +28,68 @@ export async function POST(request: Request) {
     const isMonday = dayOfWeek === 1;
     const isFriday = dayOfWeek === 5;
 
-    const systemPrompt = `You generate action-oriented affirmations using positive psychology principles to boost engagement and drive action.
+    const systemPrompt = `You generate affirmations that BALANCE two things:
+1. REWARDING past activity (acknowledge what user has done)
+2. MOTIVATING future action (encourage next step)
 
-GOAL: Make the user feel empowered and motivated to ACT. Not just feel good - but DO something.
+PSYCHOLOGY PRINCIPLES:
+- Progress principle: Celebrate small wins to fuel motivation
+- Positive reinforcement: Reward behavior you want repeated
+- Self-efficacy: Build confidence through recognition
+- Momentum: Use past success to drive future action
+- Identity reinforcement: "You ARE someone who captures ideas"
 
-PSYCHOLOGY PRINCIPLES TO USE:
-- Self-efficacy: "You CAN do this"
-- Implementation intentions: Focus on the next concrete step
-- Progress principle: Small wins matter
-- Identity-based motivation: "You are someone who..."
-- Loss aversion: Don't let ideas slip away
-- Momentum: Starting is the hardest part
-- Commitment devices: Capture it now, decide later
+STRATEGY BY CONTEXT:
+- If user has activity (tasks, ideas, completions): Lead with REWARD, then nudge action
+- If user is new or inactive: Lead with gentle ACTION encouragement
+- If user completed tasks today: Celebrate, then invite more
+- If user has many ideas: Acknowledge creativity, encourage action on them
 
 STYLE:
-- Direct and energizing
-- Action verbs: captura, empieza, hazlo, mueve, crea, avanza
-- Brief: 1 sentence, under 15 words
-- Confident, not preachy
+- Warm but energizing
+- Specific when possible (reference their stats)
+- Brief: 1-2 sentences, under 20 words
+- Balance praise with forward momentum
 - Spanish language
-- Can use one exclamation mark if it feels natural
+- Natural tone, occasional exclamation mark OK
 
-THEMES:
-- Start now, not later
-- Capture before you forget
-- Small action > perfect plan
-- Your future self will thank you
-- Ideas have value - don't lose them
-- Momentum beats motivation
-- Done is better than perfect
+REWARD + ACTION EXAMPLES:
+- "3 tareas hoy. Ese ritmo construye cosas grandes. ¿Qué sigue?"
+- "Ya tienes 12 ideas capturadas. Eso es mentalidad de creador."
+- "Primera tarea del día completada. El momentum está de tu lado."
+- "5 días seguidos activo. Los hábitos se construyen así."
+- "Volviste. Eso ya es un paso. ¿Qué capturamos hoy?"
 
-GOOD EXAMPLES:
+PURE ACTION EXAMPLES (for new/inactive users):
 - "Esa idea que tienes? Captúrala antes de que se escape."
-- "Un paso hoy vale más que diez mañana."
-- "No lo pienses más. Hazlo."
-- "Tu yo del futuro te lo agradecerá."
-- "Las ideas sin acción son solo sueños."
 - "Empieza pequeño, pero empieza ya."
-- "Captura ahora, organiza después."
-- "El mejor momento para actuar es ahora."
+- "Tu yo del futuro te lo agradecerá."
 
 BAD (avoid):
-- "Cree en ti mismo" (passive, no action)
-- "Eres increíble" (empty praise)
-- "Todo saldrá bien" (no call to action)
-- Anything purely reflective without action nudge`;
+- Only praise without forward nudge
+- Only action without acknowledgment (when user has activity)
+- Generic "¡Eres increíble!" without specifics
+- Preachy or condescending tone`;
 
     const contextParts = [];
-    if (timeContext) contextParts.push(`Time: ${timeContext}`);
+    if (timeContext) contextParts.push(`Time of day: ${timeContext}`);
     if (isWeekend) contextParts.push('It\'s the weekend');
     if (isMonday) contextParts.push('It\'s Monday - fresh start');
     if (isFriday) contextParts.push('It\'s Friday - week wrapping up');
-    if (userName) contextParts.push(`User: ${userName}`);
-    if (completedToday > 0) contextParts.push(`Completed ${completedToday} tasks today`);
-    if (totalIdeas > 10) contextParts.push('Active idea collector');
-    if (totalTasks === 0 && totalIdeas === 0) contextParts.push('New user, just starting');
+    if (userName) contextParts.push(`User name: ${userName}`);
+    
+    // Activity stats for rewarding
+    if (completedToday > 0) contextParts.push(`✓ Completed ${completedToday} task(s) today - REWARD THIS`);
+    if (totalIdeas > 0) contextParts.push(`Has ${totalIdeas} ideas captured total`);
+    if (totalTasks > 0) contextParts.push(`Has ${totalTasks} tasks total`);
+    if (totalIdeas > 10) contextParts.push('Active idea collector - acknowledge creativity');
+    if (totalTasks === 0 && totalIdeas === 0) contextParts.push('NEW USER - no activity yet, focus on gentle encouragement');
 
-    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate an action-oriented affirmation in Spanish that motivates the user to take action NOW. No quotes around it.`;
+    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate a balanced affirmation in Spanish that:
+1. If user has activity: FIRST acknowledge/reward it, THEN nudge next action
+2. If new user: Gently encourage first action
+
+Keep it natural and warm. No quotes around the response.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
