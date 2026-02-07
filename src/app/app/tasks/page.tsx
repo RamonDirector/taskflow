@@ -104,6 +104,7 @@ export default function TasksPage() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+  const touchMoved = useRef(false); // Track if user moved during touch
   
   // Long press for edit
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -267,6 +268,7 @@ export default function TasksPage() {
     if (inlineEditId) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    touchMoved.current = false; // Reset movement flag
     setSwipingId(task.id);
     setSwipeOffset(0);
     handleLongPressStart(task);
@@ -277,8 +279,9 @@ export default function TasksPage() {
     const diffX = e.touches[0].clientX - touchStartX.current;
     const diffY = e.touches[0].clientY - touchStartY.current;
     setSwipeOffset(diffX);
-    // Cancel long press if user is swiping horizontally OR scrolling vertically
+    // Mark as moved if user swiped horizontally OR scrolled vertically
     if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+      touchMoved.current = true;
       handleLongPressEnd();
     }
   };
@@ -304,6 +307,7 @@ export default function TasksPage() {
   // Tap to select (show mic)
   const handleTaskTap = (task: Task) => {
     if (inlineEditId) return; // Don't change selection while editing
+    if (touchMoved.current) return; // Don't select if user was scrolling
     if (selectedTaskId === task.id) {
       setSelectedTaskId(null);
     } else {
