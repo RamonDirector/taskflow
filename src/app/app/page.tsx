@@ -547,11 +547,7 @@ export default function PandaHub() {
     setSelectedDeadline('today'); // Reset to default
     setPandaImage('/panda/new-celebrate.png');
     setPandaMessage('¡Guardado! ¿Algo más?');
-    
-    setTimeout(() => {
-      setPandaImage('/panda/new-wave.png');
-      setPandaMessage('¿Qué tienes en mente?');
-    }, 2000);
+    // Panda stays in celebration mode until user navigates away and returns
   };
 
   // Discard captured items
