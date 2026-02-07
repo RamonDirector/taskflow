@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { StreakBadge, MilestoneToast } from '@/components/StreakBadge';
+import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type StreakData, type MilestoneData } from '@/lib/gamification/streak';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -141,6 +143,11 @@ export default function PandaHub() {
   // Input focus state
   const [inputFocused, setInputFocused] = useState(false);
   
+  // Gamification state
+  const [streakData, setStreakData] = useState<StreakData | null>(null);
+  const [showMilestone, setShowMilestone] = useState<MilestoneData | null>(null);
+  const [achievedMilestones, setAchievedMilestones] = useState<string[]>([]);
+  
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -174,6 +181,9 @@ export default function PandaHub() {
       // Generate both affirmations
       generateDailyAffirmation(user.id, name);
       generateAffirmation(user.id, name);
+      
+      // Load gamification data
+      loadStreakData(user.id);
     };
     init();
   }, [supabase, router]);
@@ -289,6 +299,33 @@ export default function PandaHub() {
     } catch (error) {
       console.error('Affirmation error:', error);
       setPandaMessage('¿Qué tienes en mente?');
+    }
+  };
+
+  // Load gamification data (streak + milestones)
+  const loadStreakData = async (userId: string) => {
+    try {
+      const streak = await calculateStreak(supabase, userId);
+      setStreakData(streak);
+      
+      // Check for milestones
+      const milestones = await getMilestones(supabase, userId, streak);
+      const previouslyAchieved = JSON.parse(localStorage.getItem('hansei-achieved-milestones') || '[]');
+      const newMilestones = getNewlyAchievedMilestones(milestones, previouslyAchieved);
+      
+      if (newMilestones.length > 0) {
+        // Show first new milestone
+        setShowMilestone(newMilestones[0]);
+        // Save all achieved
+        const allAchieved = milestones.filter(m => m.achieved).map(m => m.id);
+        localStorage.setItem('hansei-achieved-milestones', JSON.stringify(allAchieved));
+        setAchievedMilestones(allAchieved);
+        
+        // Auto-hide after 4 seconds
+        setTimeout(() => setShowMilestone(null), 4000);
+      }
+    } catch (error) {
+      console.error('Streak calculation error:', error);
     }
   };
 
@@ -614,6 +651,10 @@ export default function PandaHub() {
               className="rounded-lg"
             />
             <span className="text-sm font-medium text-[var(--foreground)]">hansei</span>
+            {/* Streak badge */}
+            {streakData && streakData.currentStreak > 0 && (
+              <StreakBadge streak={streakData.currentStreak} compact />
+            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -1114,6 +1155,16 @@ export default function PandaHub() {
           <span className="text-[10px] font-medium">Dreams</span>
         </button>
       </nav>
+
+      {/* Milestone Toast */}
+      {showMilestone && (
+        <MilestoneToast
+          title={showMilestone.title}
+          description={showMilestone.description}
+          icon={showMilestone.icon}
+          onClose={() => setShowMilestone(null)}
+        />
+      )}
 
       {/* Animations */}
       <style jsx global>{`
