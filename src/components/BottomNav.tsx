@@ -36,6 +36,8 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
   const pathname = usePathname();
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const scrollDirection = useRef<'up' | 'down' | null>(null);
+  const scrollCount = useRef(0);
 
   // Determine active tab
   const activeTab = pathname === '/app' ? 'home' 
@@ -44,21 +46,32 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
     : pathname.includes('/dreams') ? 'dreams'
     : 'home';
 
-  // Hide nav on scroll down, show on scroll up (X-style behavior)
+  // Hide nav on scroll down, show on scroll up (X-style: reacts on 2nd consecutive scroll)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollY.current;
       
       // Only react if scroll delta is significant enough (reduces jitter)
-      if (Math.abs(delta) < 3) return;
+      if (Math.abs(delta) < 5) return;
       
-      if (delta > 0 && currentScrollY > 20) {
-        // Scrolling down & past threshold → hide
-        setNavVisible(false);
-      } else if (delta < 0) {
-        // Scrolling up → show immediately
-        setNavVisible(true);
+      const direction = delta > 0 ? 'down' : 'up';
+      
+      // Count consecutive scrolls in same direction
+      if (direction === scrollDirection.current) {
+        scrollCount.current += 1;
+      } else {
+        scrollDirection.current = direction;
+        scrollCount.current = 1;
+      }
+      
+      // Only change nav state on 2nd consecutive scroll
+      if (scrollCount.current >= 2) {
+        if (direction === 'down' && currentScrollY > 20) {
+          setNavVisible(false);
+        } else if (direction === 'up') {
+          setNavVisible(true);
+        }
       }
       
       lastScrollY.current = currentScrollY;
