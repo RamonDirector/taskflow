@@ -751,7 +751,7 @@ export default function PandaHub() {
             marginTop: inputFocused ? 8 : 0,
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-          style={{ willChange: 'transform', viewTransitionName: 'panda' } as React.CSSProperties}
+          style={{ willChange: 'transform' }}
         >
           {/* Matcha aura glow */}
           <div 
@@ -1111,13 +1111,6 @@ export default function PandaHub() {
         }
         ::view-transition-new(root) {
           z-index: 9999;
-        }
-        /* Panda: hide old instantly to prevent duplication */
-        ::view-transition-old(panda) {
-          display: none;
-        }
-        ::view-transition-new(panda) {
-          animation: none;
         }
         @keyframes float {
           0%, 100% { transform: translateY(0); }
