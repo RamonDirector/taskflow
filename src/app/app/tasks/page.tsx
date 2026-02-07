@@ -579,10 +579,9 @@ export default function TasksPage() {
           <div className="mb-4 flex items-center justify-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#6b8f71]/10 to-[#6b8f71]/5 border border-[#6b8f71]/20">
               <svg className="w-5 h-5 text-[#6b8f71]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22V12"/>
-                <path d="M12 12C12 12 8 9 8 6C8 3.5 10 2 12 2C14 2 16 3.5 16 6C16 9 12 12 12 12Z" fill="currentColor" opacity="0.3"/>
-                <path d="M12 12C12 12 8 9 8 6C8 3.5 10 2 12 2C14 2 16 3.5 16 6C16 9 12 12 12 12Z"/>
-                <path d="M7 17C7 17 9 15 12 15C15 15 17 17 17 17" strokeWidth={2}/>
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" fill="currentColor" opacity="0.2"/>
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
               </svg>
               <span className="text-sm font-semibold text-[#6b8f71]">{streak} {streak === 1 ? 'día' : 'días'}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">racha</span>
