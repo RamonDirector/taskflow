@@ -103,10 +103,11 @@ export default function TasksPage() {
   const [swipingId, setSwipingId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
   
   // Long press for edit
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const LONG_PRESS_DELAY = 500;
+  const LONG_PRESS_DELAY = 650; // Increased to prevent accidental triggers during scroll
   
   // Scroll state for header transparency
   const [scrolled, setScrolled] = useState(false);
@@ -265,6 +266,7 @@ export default function TasksPage() {
   const handleTouchStart = (e: React.TouchEvent, task: Task) => {
     if (inlineEditId) return;
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
     setSwipingId(task.id);
     setSwipeOffset(0);
     handleLongPressStart(task);
@@ -272,10 +274,11 @@ export default function TasksPage() {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!swipingId || inlineEditId) return;
-    const diff = e.touches[0].clientX - touchStartX.current;
-    setSwipeOffset(diff);
-    // Cancel long press if user is swiping
-    if (Math.abs(diff) > 10) {
+    const diffX = e.touches[0].clientX - touchStartX.current;
+    const diffY = e.touches[0].clientY - touchStartY.current;
+    setSwipeOffset(diffX);
+    // Cancel long press if user is swiping horizontally OR scrolling vertically
+    if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
       handleLongPressEnd();
     }
   };
