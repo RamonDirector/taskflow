@@ -148,6 +148,10 @@ export default function PandaHub() {
   const [showMilestone, setShowMilestone] = useState<MilestoneData | null>(null);
   const [achievedMilestones, setAchievedMilestones] = useState<string[]>([]);
   
+  // Nav visibility (hide on scroll down)
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -351,6 +355,33 @@ export default function PandaHub() {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
+  }, []);
+
+  // Hide nav on scroll down, show on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollingDown = currentScrollY > lastScrollY.current;
+      const scrollingUp = currentScrollY < lastScrollY.current;
+      
+      // Only trigger if scrolled more than 10px
+      if (Math.abs(currentScrollY - lastScrollY.current) > 10) {
+        if (scrollingDown && currentScrollY > 50) {
+          setNavVisible(false);
+        } else if (scrollingUp) {
+          setNavVisible(true);
+        }
+        lastScrollY.current = currentScrollY;
+      }
+      
+      // Always show at top
+      if (currentScrollY < 10) {
+        setNavVisible(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -1101,8 +1132,12 @@ export default function PandaHub() {
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)] border-t border-[var(--gray-2)] flex items-center justify-around px-6 safe-area-pb">
+      {/* Bottom Navigation - Hide on scroll */}
+      <nav 
+        className={`fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)] border-t border-[var(--gray-2)] flex items-center justify-around px-6 safe-area-pb transition-transform duration-300 ${
+          navVisible ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
         <button 
           className="flex flex-col items-center gap-1 text-[#6b8f71]"
         >
