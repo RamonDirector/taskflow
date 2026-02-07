@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StreakBadge, MilestoneToast } from '@/components/StreakBadge';
+import { BottomNav } from '@/components/BottomNav';
 import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type StreakData, type MilestoneData } from '@/lib/gamification/streak';
 
 const THEME_COLOR = '#6b8f71';
@@ -1132,64 +1133,11 @@ export default function PandaHub() {
         </div>
       )}
 
-      {/* Bottom Navigation - Hide on scroll */}
-      <nav 
-        className={`fixed bottom-0 left-0 right-0 h-16 bg-[var(--background)] border-t border-[var(--gray-2)] flex items-center justify-around px-6 safe-area-pb transition-transform duration-300 ${
-          navVisible ? 'translate-y-0' : 'translate-y-full'
-        }`}
-      >
-        <button 
-          className="flex flex-col items-center gap-1 text-[#6b8f71]"
-        >
-          <span className="w-6 h-6">{Icons.home}</span>
-          <span className="text-[10px] font-medium">Home</span>
-        </button>
-        <button 
-          onClick={() => {
-            setHasNew(prev => ({ ...prev, ideas: false }));
-            router.push('/app/ideas');
-          }}
-          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors relative"
-        >
-          <span className="w-6 h-6 relative">
-            {Icons.ideas}
-            {hasNew.ideas && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
-            )}
-          </span>
-          <span className="text-[10px] font-medium">Ideas</span>
-        </button>
-        <button 
-          onClick={() => {
-            setHasNew(prev => ({ ...prev, tasks: false }));
-            router.push('/app/tasks');
-          }}
-          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors relative"
-        >
-          <span className="w-6 h-6 relative">
-            {Icons.tasks}
-            {hasNew.tasks && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
-            )}
-          </span>
-          <span className="text-[10px] font-medium">Tasks</span>
-        </button>
-        <button 
-          onClick={() => {
-            setHasNew(prev => ({ ...prev, dreams: false }));
-            router.push('/app/dreams');
-          }}
-          className="flex flex-col items-center gap-1 text-[var(--gray-4)] hover:text-[var(--foreground)] transition-colors relative"
-        >
-          <span className="w-6 h-6 relative">
-            {Icons.dreams}
-            {hasNew.dreams && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
-            )}
-          </span>
-          <span className="text-[10px] font-medium">Dreams</span>
-        </button>
-      </nav>
+      {/* Bottom Navigation */}
+      <BottomNav 
+        hasNew={hasNew}
+        onClearNew={(type) => setHasNew(prev => ({ ...prev, [type]: false }))}
+      />
 
       {/* Milestone Toast */}
       {showMilestone && (

@@ -22,6 +22,7 @@ import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceEditButton from '@/app/components/VoiceEditButton';
 import Image from 'next/image';
+import { BottomNav } from '@/components/BottomNav';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -1279,6 +1280,9 @@ export default function IdeasBoard() {
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

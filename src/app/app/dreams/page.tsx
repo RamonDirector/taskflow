@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { BottomNav } from '@/components/BottomNav';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -537,6 +538,9 @@ export default function DreamsPage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }
