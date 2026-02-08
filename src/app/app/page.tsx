@@ -864,22 +864,24 @@ export default function PandaHub() {
       
       {/* Main content */}
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
-        {/* Daily Affirmation - above panda */}
+        {/* Daily Affirmation - fixed at top below header */}
         {!showConfirmation && !inputFocused && dailyAffirmation && (
-          <div className="mb-16 max-w-sm text-center -mt-8">
-            {/* Decorative line */}
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#6b8f71]/40" />
-              <svg className="w-4 h-4 text-[#6b8f71]/60" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/>
-              </svg>
-              <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#6b8f71]/40" />
+          <div className="absolute top-20 left-0 right-0 px-6">
+            <div className="max-w-sm mx-auto text-center">
+              {/* Decorative line */}
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#6b8f71]/40" />
+                <svg className="w-4 h-4 text-[#6b8f71]/60" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/>
+                </svg>
+                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#6b8f71]/40" />
+              </div>
+              
+              {/* Affirmation text */}
+              <p className="text-base font-medium text-[var(--foreground)] leading-snug tracking-tight">
+                {dailyAffirmation}
+              </p>
             </div>
-            
-            {/* Affirmation text */}
-            <p className="text-base font-medium text-[var(--foreground)] leading-snug tracking-tight">
-              {dailyAffirmation}
-            </p>
           </div>
         )}
 
