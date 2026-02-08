@@ -413,12 +413,16 @@ export default function DreamsPage() {
 
         {dreams.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-300 dark:text-gray-600 mb-4 flex justify-center">
-              {Icons.moon}
-            </div>
-            <p className="text-gray-500 dark:text-gray-400">Aún no tienes sueños</p>
+            <Image 
+              src="/images/panda-sleeping.jpg" 
+              alt="Panda durmiendo" 
+              width={160} 
+              height={160} 
+              className="mx-auto mb-4"
+            />
+            <p className="text-gray-500 dark:text-gray-400 font-medium">Tu diario de sueños está vacío</p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              Captura tus sueños con "Soñé que..."
+              Di "Soñé que..." para empezar
             </p>
           </div>
         )}

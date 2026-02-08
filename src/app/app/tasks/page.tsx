@@ -843,12 +843,18 @@ export default function TasksPage() {
 
         {filteredTasks.length === 0 && (
           <div className="text-center py-12">
-            <span className="text-4xl mb-3 block">✓</span>
-            <p className="text-gray-500 dark:text-gray-400">
-              {filter === 'pending' ? 'No hay tareas pendientes' : filter === 'completed' ? 'No hay tareas completadas' : 'No hay tareas'}
+            <Image 
+              src="/images/panda-laptop.jpg" 
+              alt="Panda con laptop" 
+              width={160} 
+              height={160} 
+              className="mx-auto mb-4"
+            />
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              {filter === 'pending' ? '¡Sin tareas pendientes!' : filter === 'completed' ? 'Aún no has completado ninguna' : '¡Sin tareas pendientes!'}
             </p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              Usa la vista principal para capturar tareas por voz
+              Pulsa el micrófono para capturar una
             </p>
           </div>
         )}
