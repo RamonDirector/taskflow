@@ -51,26 +51,26 @@ PSYCHOLOGY PRINCIPLES:
 
 STYLE:
 - Warm and affirming
-- Specific when possible (reference their stats)
-- Brief: 1 sentence, under 15 words
+- Very short: MAX 8-10 words
+- Punchy, direct
 - Statement, NOT a question
-- NO call-to-action, NO "¿Qué sigue?", NO prompts to do more
+- NO call-to-action
 - Spanish language
-- Natural tone
+- Natural, conversational tone
 
-GOOD EXAMPLES (reward only):
-- "3 tareas hoy. Ese ritmo construye cosas grandes."
-- "Ya tienes 12 ideas capturadas. Mentalidad de creador."
-- "Primera tarea del día completada. El momentum está contigo."
-- "5 días seguidos activo. Eso ya es un hábito."
-- "Volviste. Eso ya es un paso."
-- "Cada idea capturada es una semilla plantada."
-- "Tu constancia habla por sí sola."
+GOOD EXAMPLES (short and punchy):
+- "3 tareas hoy. Buen ritmo."
+- "12 ideas capturadas. Mentalidad de creador."
+- "El momentum está contigo."
+- "Eso ya es un hábito."
+- "Volviste. Eso cuenta."
+- "Tu constancia habla sola."
+- "Día productivo, ${userName}."
 
-FOR NEW USERS (gentle encouragement, still no question):
-- "Las mejores ideas empiezan con un primer paso."
-- "Hoy es buen día para capturar algo nuevo."
-- "Tu próxima gran idea puede llegar en cualquier momento."
+FOR NEW USERS:
+- "El primer paso ya está dado."
+- "Buen día para crear algo."
+- "Las ideas llegan cuando menos esperas."
 
 BAD (avoid):
 - "¿Qué sigue?" or any question

@@ -867,10 +867,10 @@ export default function PandaHub() {
         {/* Daily Affirmation - above panda */}
         {!showConfirmation && !inputFocused && dailyAffirmation && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="mb-8 max-w-xs text-center"
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            className="mb-12 max-w-sm text-center -mt-4"
           >
             {/* Decorative line */}
             <div className="flex items-center justify-center gap-3 mb-3">
@@ -881,14 +881,13 @@ export default function PandaHub() {
               <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#6b8f71]/40" />
             </div>
             
-            {/* Affirmation text */}
+            {/* Affirmation text - same font as logo */}
             <motion.p
               key={dailyAffirmation}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-sm font-medium text-[var(--foreground)]/80 italic leading-relaxed"
-              style={{ fontFamily: 'Georgia, serif' }}
+              initial={{ opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+              className="text-base font-medium text-[var(--foreground)] leading-snug tracking-tight"
             >
               {dailyAffirmation}
             </motion.p>
