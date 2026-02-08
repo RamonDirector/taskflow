@@ -870,6 +870,74 @@ export default function PandaHub() {
               d="M0,140 Q60,100 120,125 T240,110 T360,130 T400,115 L400,200 L0,200 Z" 
               fill="url(#hillGradient1)"
             />
+            
+            {/* Flowers - appear based on progress */}
+            {/* First flower - appears at 10% progress */}
+            {bambooProgress >= 0.1 && (
+              <g transform="translate(60, 135)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                <circle cx="0" cy="0" r="4" fill="#f8b4d9" />
+                <circle cx="-3" cy="-2" r="3" fill="#f9a8d4" />
+                <circle cx="3" cy="-2" r="3" fill="#f9a8d4" />
+                <circle cx="-2" cy="3" r="3" fill="#f9a8d4" />
+                <circle cx="2" cy="3" r="3" fill="#f9a8d4" />
+                <circle cx="0" cy="0" r="2" fill="#fcd34d" />
+              </g>
+            )}
+            {/* Second flower - appears at 25% */}
+            {bambooProgress >= 0.25 && (
+              <g transform="translate(320, 125)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                <circle cx="0" cy="0" r="4" fill="#fda4af" />
+                <circle cx="-3" cy="-2" r="3" fill="#fb7185" />
+                <circle cx="3" cy="-2" r="3" fill="#fb7185" />
+                <circle cx="-2" cy="3" r="3" fill="#fb7185" />
+                <circle cx="2" cy="3" r="3" fill="#fb7185" />
+                <circle cx="0" cy="0" r="2" fill="#fcd34d" />
+              </g>
+            )}
+            {/* Third flower - appears at 40% */}
+            {bambooProgress >= 0.4 && (
+              <g transform="translate(150, 115)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                <circle cx="0" cy="0" r="5" fill="#c4b5fd" />
+                <circle cx="-4" cy="-2" r="3.5" fill="#a78bfa" />
+                <circle cx="4" cy="-2" r="3.5" fill="#a78bfa" />
+                <circle cx="-3" cy="3" r="3.5" fill="#a78bfa" />
+                <circle cx="3" cy="3" r="3.5" fill="#a78bfa" />
+                <circle cx="0" cy="0" r="2.5" fill="#fcd34d" />
+              </g>
+            )}
+            {/* Fourth flower - appears at 60% */}
+            {bambooProgress >= 0.6 && (
+              <g transform="translate(250, 108)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                <circle cx="0" cy="0" r="4" fill="#fdba74" />
+                <circle cx="-3" cy="-2" r="3" fill="#fb923c" />
+                <circle cx="3" cy="-2" r="3" fill="#fb923c" />
+                <circle cx="-2" cy="3" r="3" fill="#fb923c" />
+                <circle cx="2" cy="3" r="3" fill="#fb923c" />
+                <circle cx="0" cy="0" r="2" fill="#fcd34d" />
+              </g>
+            )}
+            {/* Fifth flower - appears at 80% */}
+            {bambooProgress >= 0.8 && (
+              <g transform="translate(100, 120)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                <circle cx="0" cy="0" r="5" fill="#86efac" />
+                <circle cx="-4" cy="-2" r="3.5" fill="#4ade80" />
+                <circle cx="4" cy="-2" r="3.5" fill="#4ade80" />
+                <circle cx="-3" cy="3" r="3.5" fill="#4ade80" />
+                <circle cx="3" cy="3" r="3.5" fill="#4ade80" />
+                <circle cx="0" cy="0" r="2.5" fill="#fcd34d" />
+              </g>
+            )}
+            {/* Sixth flower - appears at 100% */}
+            {bambooProgress >= 1 && (
+              <g transform="translate(200, 100)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                <circle cx="0" cy="0" r="6" fill="#fef08a" />
+                <circle cx="-5" cy="-3" r="4" fill="#fde047" />
+                <circle cx="5" cy="-3" r="4" fill="#fde047" />
+                <circle cx="-4" cy="4" r="4" fill="#fde047" />
+                <circle cx="4" cy="4" r="4" fill="#fde047" />
+                <circle cx="0" cy="0" r="3" fill="#f97316" />
+              </g>
+            )}
           </svg>
         </div>
       )}
@@ -1288,6 +1356,11 @@ export default function PandaHub() {
         @keyframes auraPulse {
           0%, 100% { opacity: 0.4; transform: scale(1.4); }
           50% { opacity: 0.6; transform: scale(1.6); }
+        }
+        @keyframes flowerPop {
+          0% { opacity: 0; transform: scale(0); }
+          50% { transform: scale(1.2); }
+          100% { opacity: 1; transform: scale(1); }
         }
         @keyframes dotFade {
           0%, 20% { opacity: 0; }
