@@ -835,7 +835,7 @@ export default function PandaHub() {
       
       {/* Matcha Hills - Ground for bamboo */}
       {!showConfirmation && (
-        <div className="fixed bottom-16 left-0 right-0 z-[5] pointer-events-none" style={{ height: '35vh' }}>
+        <div className="fixed bottom-16 left-0 right-0 z-[5] pointer-events-none" style={{ height: '38vh' }}>
           <svg 
             viewBox="0 0 400 200" 
             className="w-full h-full"
