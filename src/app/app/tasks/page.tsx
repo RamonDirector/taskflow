@@ -844,7 +844,7 @@ export default function TasksPage() {
         {filteredTasks.length === 0 && (
           <div className="text-center py-12">
             <Image 
-              src="/images/panda-laptop.jpg" 
+              src="/images/panda-laptop.png" 
               alt="Panda con laptop" 
               width={160} 
               height={160} 

@@ -414,7 +414,7 @@ export default function DreamsPage() {
         {dreams.length === 0 && (
           <div className="text-center py-12">
             <Image 
-              src="/images/panda-sleeping.jpg" 
+              src="/images/panda-sleeping.png" 
               alt="Panda durmiendo" 
               width={160} 
               height={160} 
