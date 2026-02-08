@@ -867,7 +867,10 @@ export default function PandaHub() {
       )}
       
       {/* Main content */}
-      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
+      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'pb-40'}`}>
+        {/* Spacer to push panda down */}
+        {!showConfirmation && !inputFocused && <div className="flex-grow" />}
+        
         {/* Daily Affirmation - fixed at top below header */}
         {!showConfirmation && !inputFocused && dailyAffirmation && (
           <div className="absolute top-20 left-0 right-0 px-6">
@@ -898,8 +901,8 @@ export default function PandaHub() {
             scale: isProcessing ? 0.95 : 1,
             width: inputFocused ? 80 : 160,
             height: inputFocused ? 80 : 160,
-            marginBottom: inputFocused ? 8 : 16,
-            marginTop: inputFocused ? 8 : 40,
+            marginBottom: inputFocused ? 8 : 8,
+            marginTop: inputFocused ? 8 : 0,
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 200 }}
           style={{ 
