@@ -835,11 +835,11 @@ export default function PandaHub() {
       
       {/* Matcha Hills - Ground for bamboo */}
       {!showConfirmation && (
-        <div className="fixed bottom-16 left-0 right-0 z-[5] pointer-events-none">
+        <div className="fixed bottom-16 left-0 right-0 z-[5] pointer-events-none" style={{ height: '45vh' }}>
           <svg 
-            viewBox="0 0 400 120" 
-            className="w-full h-auto"
-            preserveAspectRatio="none"
+            viewBox="0 0 400 200" 
+            className="w-full h-full"
+            preserveAspectRatio="xMidYMax slice"
           >
             <defs>
               <linearGradient id="hillGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -857,17 +857,17 @@ export default function PandaHub() {
             </defs>
             {/* Back hill - lighter, more distant */}
             <path 
-              d="M0,80 Q50,40 100,60 T200,50 T300,65 T400,55 L400,120 L0,120 Z" 
+              d="M0,100 Q50,50 100,70 T200,55 T300,75 T400,60 L400,200 L0,200 Z" 
               fill="url(#hillGradient3)"
             />
             {/* Middle hill */}
             <path 
-              d="M0,90 Q80,55 150,75 T280,60 T400,70 L400,120 L0,120 Z" 
+              d="M0,120 Q80,70 150,95 T280,75 T400,90 L400,200 L0,200 Z" 
               fill="url(#hillGradient2)"
             />
             {/* Front hill - darker, closer */}
             <path 
-              d="M0,100 Q60,75 120,90 T240,80 T360,95 T400,85 L400,120 L0,120 Z" 
+              d="M0,140 Q60,100 120,125 T240,110 T360,130 T400,115 L400,200 L0,200 Z" 
               fill="url(#hillGradient1)"
             />
           </svg>
@@ -1174,7 +1174,7 @@ export default function PandaHub() {
 
       {/* Input bar - fixed at bottom */}
       {!showConfirmation && (
-        <div className="fixed bottom-20 left-0 right-0 px-6 pb-4">
+        <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 z-20">
           <div 
             className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden shadow-lg"
           >
