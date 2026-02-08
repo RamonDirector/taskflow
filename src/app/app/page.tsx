@@ -867,7 +867,7 @@ export default function PandaHub() {
       )}
       
       {/* Main content */}
-      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'pb-40'}`}>
+      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'pb-28'}`}>
         {/* Spacer to push panda down (flex-[0.6] = panda sits around 40% from top) */}
         {!showConfirmation && !inputFocused && <div className="flex-[0.6]" />}
         
@@ -959,11 +959,8 @@ export default function PandaHub() {
 
         {/* Greeting */}
         {!showConfirmation && !isRecording && !isProcessing && !inputFocused && userName && (
-          <p className="text-[var(--gray-4)] text-sm mb-8">Hola, {userName}</p>
+          <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
         )}
-        
-        {/* Spacer to push text up from input */}
-        {!showConfirmation && !inputFocused && <div className="flex-[0.4]" />}
       </div>
 
       {/* Bottom Sheet for confirmation */}
