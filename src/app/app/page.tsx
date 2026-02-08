@@ -838,8 +838,8 @@ export default function PandaHub() {
         <div 
           className="fixed left-3 z-10 pointer-events-none"
           style={{ 
-            top: '50%',
-            transform: 'translateY(-30%)',
+            top: '55%',
+            transform: 'translateY(-20%)',
           }}
         >
           <BambooGrowth 
@@ -854,8 +854,8 @@ export default function PandaHub() {
         <div 
           className="fixed right-3 z-10 pointer-events-none"
           style={{ 
-            top: '50%',
-            transform: 'translateY(-30%)',
+            top: '55%',
+            transform: 'translateY(-20%)',
           }}
         >
           <BambooGrowth 
