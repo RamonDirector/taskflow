@@ -120,7 +120,7 @@ export default function PandaHub() {
   const [pandaMessage, setPandaMessage] = useState('');
   
   // Daily affirmation state
-  const [dailyAffirmation, setDailyAffirmation] = useState('');
+  const [dailyAffirmation, setDailyAffirmation] = useState('El camino se hace al andar.');
   
   // Input state
   const [inputText, setInputText] = useState('');
@@ -867,7 +867,7 @@ export default function PandaHub() {
       )}
       
       {/* Main content */}
-      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'pb-12'}`}>
+      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 relative ${inputFocused ? 'justify-start pb-4' : 'pb-12'}`}>
         {/* Spacer to push panda down (flex-[0.6] = panda sits around 40% from top) */}
         {!showConfirmation && !inputFocused && <div className="flex-[0.6]" />}
         
