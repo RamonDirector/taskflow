@@ -866,12 +866,7 @@ export default function PandaHub() {
       <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 ${inputFocused ? 'justify-start pb-4' : 'justify-center pb-32'}`}>
         {/* Daily Affirmation - above panda */}
         {!showConfirmation && !inputFocused && dailyAffirmation && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            className="mb-12 max-w-sm text-center -mt-4"
-          >
+          <div className="mb-16 max-w-sm text-center -mt-8">
             {/* Decorative line */}
             <div className="flex items-center justify-center gap-3 mb-3">
               <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#6b8f71]/40" />
@@ -881,17 +876,11 @@ export default function PandaHub() {
               <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#6b8f71]/40" />
             </div>
             
-            {/* Affirmation text - same font as logo */}
-            <motion.p
-              key={dailyAffirmation}
-              initial={{ opacity: 0, y: 3 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-              className="text-base font-medium text-[var(--foreground)] leading-snug tracking-tight"
-            >
+            {/* Affirmation text */}
+            <p className="text-base font-medium text-[var(--foreground)] leading-snug tracking-tight">
               {dailyAffirmation}
-            </motion.p>
-          </motion.div>
+            </p>
+          </div>
         )}
 
         {/* Panda - animates to top when sheet opens */}
