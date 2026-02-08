@@ -10,6 +10,7 @@ import { StreakBadge, MilestoneToast } from '@/components/StreakBadge';
 import { BottomNav } from '@/components/BottomNav';
 import { BambooGrowth } from '@/components/BambooGrowth';
 import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type StreakData, type MilestoneData } from '@/lib/gamification/streak';
+import { haptic } from '@/lib/haptics';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -420,6 +421,7 @@ export default function PandaHub() {
 
   // Recording functions
   const startRecording = async () => {
+    haptic.medium();
     try {
       let stream = streamRef.current;
       if (!stream || !stream.active) {
@@ -457,6 +459,7 @@ export default function PandaHub() {
   };
 
   const stopRecording = () => {
+    haptic.medium();
     if (mediaRecorderRef.current?.state !== 'inactive') {
       mediaRecorderRef.current?.stop();
     }
@@ -603,6 +606,7 @@ export default function PandaHub() {
 
   // Save captured items
   const saveItems = async () => {
+    haptic.strong();
     if (!user || capturedItems.length === 0) return;
 
     // Calculate due date based on selection

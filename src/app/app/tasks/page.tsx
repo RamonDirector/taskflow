@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VoiceEditButton from '@/app/components/VoiceEditButton';
 import Image from 'next/image';
 import { BottomNav } from '@/components/BottomNav';
+import { haptic } from '@/lib/haptics';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -209,6 +210,12 @@ export default function TasksPage() {
   const toggleTask = async (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
+    // Strong haptic when completing, light when uncompleting
+    if (!task.completed) {
+      haptic.strong();
+    } else {
+      haptic.light();
+    }
     await supabase.from('tasks').update({ completed: !task.completed }).eq('id', id);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };

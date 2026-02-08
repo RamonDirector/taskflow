@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { haptic } from '@/lib/haptics';
 
 const Icons = {
   home: (
@@ -103,6 +104,7 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
           <button
             key={item.id}
             onClick={() => {
+              haptic.light();
               if (item.id !== 'home' && onClearNew) {
                 onClearNew(item.id as 'ideas' | 'tasks' | 'dreams');
               }
