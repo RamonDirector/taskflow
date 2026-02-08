@@ -829,7 +829,7 @@ export default function PandaHub() {
         }}
       />
       
-      {/* Bamboo Growth - Fixed on left side, aligned with panda */}
+      {/* Bamboo Growth - Left side (grows first) */}
       {!showConfirmation && (
         <div 
           className="fixed left-3 z-10 pointer-events-none"
@@ -839,8 +839,25 @@ export default function PandaHub() {
           }}
         >
           <BambooGrowth 
-            progress={bambooProgress} 
+            progress={Math.min(1, bambooProgress * 2)} 
             size={160}
+          />
+        </div>
+      )}
+      
+      {/* Bamboo Growth - Right side (grows after left is complete) */}
+      {!showConfirmation && (
+        <div 
+          className="fixed right-3 z-10 pointer-events-none"
+          style={{ 
+            top: '50%',
+            transform: 'translateY(-30%)',
+          }}
+        >
+          <BambooGrowth 
+            progress={Math.max(0, (bambooProgress - 0.5) * 2)} 
+            size={160}
+            mirror
           />
         </div>
       )}
