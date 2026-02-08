@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { haptic } from '@/lib/haptics';
 
-const Icons = {
+// Outline icons (inactive state)
+const IconsOutline = {
   home: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -23,6 +24,32 @@ const Icons = {
   dreams: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+    </svg>
+  ),
+};
+
+// Filled icons (active/selected state)
+const IconsFilled = {
+  home: (
+    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
+      <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
+    </svg>
+  ),
+  ideas: (
+    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 .75a8.25 8.25 0 00-4.135 15.39c.686.398 1.115 1.008 1.134 1.623a.75.75 0 00.577.706c.352.083.71.148 1.074.195.323.041.6-.218.6-.544v-4.661a6.714 6.714 0 01-.937-.171.75.75 0 11.374-1.453 5.261 5.261 0 002.626 0 .75.75 0 11.374 1.452 6.712 6.712 0 01-.937.172v4.66c0 .327.277.586.6.545.364-.047.722-.112 1.074-.195a.75.75 0 00.577-.706c.02-.615.448-1.225 1.134-1.623A8.25 8.25 0 0012 .75z" />
+      <path fillRule="evenodd" d="M9.013 19.9a.75.75 0 01.877-.597 11.319 11.319 0 004.22 0 .75.75 0 11.28 1.473 12.819 12.819 0 01-4.78 0 .75.75 0 01-.597-.876zM9.754 22.344a.75.75 0 01.824-.668 13.682 13.682 0 002.844 0 .75.75 0 11.156 1.492 15.156 15.156 0 01-3.156 0 .75.75 0 01-.668-.824z" clipRule="evenodd" />
+    </svg>
+  ),
+  tasks: (
+    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+      <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+    </svg>
+  ),
+  dreams: (
+    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
     </svg>
   ),
 };
@@ -83,10 +110,10 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
   }, []);
 
   const navItems = [
-    { id: 'home', icon: Icons.home, label: 'Home', path: '/app' },
-    { id: 'ideas', icon: Icons.ideas, label: 'Ideas', path: '/app/ideas' },
-    { id: 'tasks', icon: Icons.tasks, label: 'Tasks', path: '/app/tasks' },
-    { id: 'dreams', icon: Icons.dreams, label: 'Dreams', path: '/app/dreams' },
+    { id: 'home', iconOutline: IconsOutline.home, iconFilled: IconsFilled.home, label: 'Home', path: '/app' },
+    { id: 'ideas', iconOutline: IconsOutline.ideas, iconFilled: IconsFilled.ideas, label: 'Ideas', path: '/app/ideas' },
+    { id: 'tasks', iconOutline: IconsOutline.tasks, iconFilled: IconsFilled.tasks, label: 'Tasks', path: '/app/tasks' },
+    { id: 'dreams', iconOutline: IconsOutline.dreams, iconFilled: IconsFilled.dreams, label: 'Dreams', path: '/app/dreams' },
   ];
 
   return (
@@ -115,7 +142,7 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
             }`}
           >
             <span className="w-6 h-6 relative">
-              {item.icon}
+              {isActive ? item.iconFilled : item.iconOutline}
               {hasNewIndicator && !isActive && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#6b8f71]" />
               )}
