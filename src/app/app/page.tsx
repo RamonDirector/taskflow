@@ -871,71 +871,89 @@ export default function PandaHub() {
               fill="url(#hillGradient1)"
             />
             
-            {/* Flowers - appear based on progress */}
+            {/* Flowers - appear based on progress, integrated with hills */}
             {/* First flower - appears at 10% progress */}
             {bambooProgress >= 0.1 && (
-              <g transform="translate(60, 135)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
-                <circle cx="0" cy="0" r="4" fill="#f8b4d9" />
-                <circle cx="-3" cy="-2" r="3" fill="#f9a8d4" />
-                <circle cx="3" cy="-2" r="3" fill="#f9a8d4" />
-                <circle cx="-2" cy="3" r="3" fill="#f9a8d4" />
-                <circle cx="2" cy="3" r="3" fill="#f9a8d4" />
-                <circle cx="0" cy="0" r="2" fill="#fcd34d" />
+              <g transform="translate(55, 145)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                {/* Stem */}
+                <path d="M0,8 Q-1,4 0,0" stroke="#5a7d60" strokeWidth="2" fill="none" />
+                <ellipse cx="-3" cy="6" rx="3" ry="2" fill="#6b8f71" opacity="0.8" />
+                {/* Flower */}
+                <circle cx="0" cy="-2" r="4" fill="#f8b4d9" />
+                <circle cx="-3" cy="-4" r="2.5" fill="#f9a8d4" />
+                <circle cx="3" cy="-4" r="2.5" fill="#f9a8d4" />
+                <circle cx="0" cy="-2" r="1.5" fill="#fcd34d" />
               </g>
             )}
             {/* Second flower - appears at 25% */}
             {bambooProgress >= 0.25 && (
-              <g transform="translate(320, 125)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
-                <circle cx="0" cy="0" r="4" fill="#fda4af" />
-                <circle cx="-3" cy="-2" r="3" fill="#fb7185" />
-                <circle cx="3" cy="-2" r="3" fill="#fb7185" />
-                <circle cx="-2" cy="3" r="3" fill="#fb7185" />
-                <circle cx="2" cy="3" r="3" fill="#fb7185" />
-                <circle cx="0" cy="0" r="2" fill="#fcd34d" />
+              <g transform="translate(340, 120)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                {/* Stem */}
+                <path d="M0,10 Q2,5 0,0" stroke="#5a7d60" strokeWidth="2" fill="none" />
+                <ellipse cx="3" cy="7" rx="3" ry="2" fill="#6b8f71" opacity="0.8" />
+                {/* Flower */}
+                <circle cx="0" cy="-3" r="4.5" fill="#fda4af" />
+                <circle cx="-3" cy="-5" r="3" fill="#fb7185" />
+                <circle cx="3" cy="-5" r="3" fill="#fb7185" />
+                <circle cx="0" cy="-3" r="2" fill="#fcd34d" />
               </g>
             )}
             {/* Third flower - appears at 40% */}
             {bambooProgress >= 0.4 && (
-              <g transform="translate(150, 115)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
-                <circle cx="0" cy="0" r="5" fill="#c4b5fd" />
-                <circle cx="-4" cy="-2" r="3.5" fill="#a78bfa" />
-                <circle cx="4" cy="-2" r="3.5" fill="#a78bfa" />
-                <circle cx="-3" cy="3" r="3.5" fill="#a78bfa" />
-                <circle cx="3" cy="3" r="3.5" fill="#a78bfa" />
-                <circle cx="0" cy="0" r="2.5" fill="#fcd34d" />
+              <g transform="translate(130, 130)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                {/* Stem */}
+                <path d="M0,12 Q-2,6 0,0" stroke="#5a7d60" strokeWidth="2.5" fill="none" />
+                <ellipse cx="-4" cy="8" rx="4" ry="2.5" fill="#6b8f71" opacity="0.8" />
+                <ellipse cx="3" cy="10" rx="3" ry="2" fill="#7da383" opacity="0.7" />
+                {/* Flower */}
+                <circle cx="0" cy="-3" r="5" fill="#c4b5fd" />
+                <circle cx="-4" cy="-5" r="3" fill="#a78bfa" />
+                <circle cx="4" cy="-5" r="3" fill="#a78bfa" />
+                <circle cx="0" cy="-3" r="2.5" fill="#fcd34d" />
               </g>
             )}
             {/* Fourth flower - appears at 60% */}
             {bambooProgress >= 0.6 && (
-              <g transform="translate(250, 108)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
-                <circle cx="0" cy="0" r="4" fill="#fdba74" />
-                <circle cx="-3" cy="-2" r="3" fill="#fb923c" />
-                <circle cx="3" cy="-2" r="3" fill="#fb923c" />
-                <circle cx="-2" cy="3" r="3" fill="#fb923c" />
-                <circle cx="2" cy="3" r="3" fill="#fb923c" />
-                <circle cx="0" cy="0" r="2" fill="#fcd34d" />
+              <g transform="translate(280, 115)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                {/* Stem */}
+                <path d="M0,10 Q1,5 0,0" stroke="#5a7d60" strokeWidth="2" fill="none" />
+                <ellipse cx="2" cy="7" rx="3" ry="2" fill="#6b8f71" opacity="0.8" />
+                {/* Flower */}
+                <circle cx="0" cy="-3" r="4" fill="#fdba74" />
+                <circle cx="-3" cy="-5" r="2.5" fill="#fb923c" />
+                <circle cx="3" cy="-5" r="2.5" fill="#fb923c" />
+                <circle cx="0" cy="-3" r="1.5" fill="#fcd34d" />
               </g>
             )}
             {/* Fifth flower - appears at 80% */}
             {bambooProgress >= 0.8 && (
-              <g transform="translate(100, 120)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
-                <circle cx="0" cy="0" r="5" fill="#86efac" />
-                <circle cx="-4" cy="-2" r="3.5" fill="#4ade80" />
-                <circle cx="4" cy="-2" r="3.5" fill="#4ade80" />
-                <circle cx="-3" cy="3" r="3.5" fill="#4ade80" />
-                <circle cx="3" cy="3" r="3.5" fill="#4ade80" />
-                <circle cx="0" cy="0" r="2.5" fill="#fcd34d" />
+              <g transform="translate(90, 125)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                {/* Stem */}
+                <path d="M0,12 Q-1,6 0,0" stroke="#4a6b50" strokeWidth="2.5" fill="none" />
+                <ellipse cx="-3" cy="9" rx="4" ry="2.5" fill="#6b8f71" opacity="0.9" />
+                {/* Flower - white/cream color */}
+                <circle cx="0" cy="-3" r="5" fill="#fef9c3" />
+                <circle cx="-4" cy="-5" r="3" fill="#fef3c7" />
+                <circle cx="4" cy="-5" r="3" fill="#fef3c7" />
+                <circle cx="-2" cy="0" r="3" fill="#fef3c7" />
+                <circle cx="2" cy="0" r="3" fill="#fef3c7" />
+                <circle cx="0" cy="-3" r="2" fill="#f59e0b" />
               </g>
             )}
-            {/* Sixth flower - appears at 100% */}
+            {/* Sixth flower - appears at 100% - special golden flower */}
             {bambooProgress >= 1 && (
-              <g transform="translate(200, 100)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
-                <circle cx="0" cy="0" r="6" fill="#fef08a" />
-                <circle cx="-5" cy="-3" r="4" fill="#fde047" />
-                <circle cx="5" cy="-3" r="4" fill="#fde047" />
-                <circle cx="-4" cy="4" r="4" fill="#fde047" />
-                <circle cx="4" cy="4" r="4" fill="#fde047" />
-                <circle cx="0" cy="0" r="3" fill="#f97316" />
+              <g transform="translate(200, 105)" style={{ animation: 'flowerPop 0.5s ease-out' }}>
+                {/* Stem */}
+                <path d="M0,15 Q-2,8 0,0" stroke="#4a6b50" strokeWidth="3" fill="none" />
+                <ellipse cx="-4" cy="11" rx="5" ry="3" fill="#6b8f71" opacity="0.9" />
+                <ellipse cx="4" cy="13" rx="4" ry="2.5" fill="#7da383" opacity="0.8" />
+                {/* Golden flower */}
+                <circle cx="0" cy="-4" r="6" fill="#fef08a" />
+                <circle cx="-5" cy="-6" r="4" fill="#fde047" />
+                <circle cx="5" cy="-6" r="4" fill="#fde047" />
+                <circle cx="-4" cy="1" r="4" fill="#fde047" />
+                <circle cx="4" cy="1" r="4" fill="#fde047" />
+                <circle cx="0" cy="-4" r="3" fill="#f97316" />
               </g>
             )}
           </svg>
