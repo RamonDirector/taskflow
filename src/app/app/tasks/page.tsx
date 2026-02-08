@@ -533,7 +533,7 @@ export default function TasksPage() {
             </button>
             <Image src="/icon-192-transparent.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Tareas</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#6b8f71]/15 dark:bg-[#6b8f71]/20 text-[#6b8f71] dark:text-[#8fb396]">
               {completedCount}/{tasks.length}
             </span>
           </div>
@@ -767,7 +767,7 @@ export default function TasksPage() {
                     isSelected
                       ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02] bg-white dark:bg-[#2c2c2e]'
                       : task.completed
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                        ? 'bg-[#6b8f71]/10 dark:bg-[#6b8f71]/15 border-[#6b8f71]/30 dark:border-[#6b8f71]/40'
                         : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700 active:scale-[0.98]'
                   }`}
                 >
@@ -776,8 +776,8 @@ export default function TasksPage() {
                       onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
                       className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                         task.completed
-                          ? 'bg-emerald-500 border-emerald-500 text-white'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
+                          ? 'bg-[#6b8f71] border-[#6b8f71] text-white'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-[#6b8f71]/60'
                       }`}
                     >
                       {task.completed && Icons.check}
