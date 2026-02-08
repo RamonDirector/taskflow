@@ -829,17 +829,18 @@ export default function PandaHub() {
         }}
       />
       
-      {/* Bamboo Growth - Fixed on left side */}
+      {/* Bamboo Growth - Fixed on left side, aligned with panda */}
       {!showConfirmation && (
         <div 
-          className="fixed left-2 bottom-24 z-10 pointer-events-none"
+          className="fixed left-3 z-10 pointer-events-none"
           style={{ 
-            transform: 'translateY(0)',
+            top: '50%',
+            transform: 'translateY(-30%)',
           }}
         >
           <BambooGrowth 
             progress={bambooProgress} 
-            size={180}
+            size={160}
           />
         </div>
       )}
