@@ -908,7 +908,7 @@ export default function PandaHub() {
       )}
       
       {/* Main content */}
-      <div className={`flex-1 flex flex-col items-center justify-center px-6 transition-all duration-300 relative ${inputFocused ? 'pt-16 pb-4' : 'pt-16 pb-44'}`}>
+      <div className={`flex-1 flex flex-col items-center justify-center px-6 transition-all duration-300 relative ${inputFocused ? 'pt-16 pb-4' : 'pt-16 pb-56'}`}>
         
         {/* Daily Affirmation - fixed at top below header */}
         {!showConfirmation && !inputFocused && dailyAffirmation && (
