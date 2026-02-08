@@ -867,13 +867,11 @@ export default function PandaHub() {
       )}
       
       {/* Main content */}
-      <div className={`flex-1 flex flex-col items-center px-6 pt-16 transition-all duration-300 relative ${inputFocused ? 'justify-start pb-4' : 'pb-12'}`}>
-        {/* Spacer to push panda down (flex-[0.6] = panda sits around 40% from top) */}
-        {!showConfirmation && !inputFocused && <div className="flex-[0.6]" />}
+      <div className={`flex-1 flex flex-col items-center justify-center px-6 transition-all duration-300 relative ${inputFocused ? 'pt-16 pb-4' : 'pt-16 pb-32'}`}>
         
         {/* Daily Affirmation - fixed at top below header */}
         {!showConfirmation && !inputFocused && dailyAffirmation && (
-          <div className="absolute top-20 left-0 right-0 px-6">
+          <div className="fixed top-20 left-0 right-0 px-6 z-10">
             <div className="max-w-sm mx-auto text-center">
               {/* Decorative line */}
               <div className="flex items-center justify-center gap-3 mb-2">
