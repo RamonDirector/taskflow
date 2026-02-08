@@ -833,6 +833,47 @@ export default function PandaHub() {
         }}
       />
       
+      {/* Matcha Hills - Ground for bamboo */}
+      {!showConfirmation && (
+        <div className="fixed bottom-16 left-0 right-0 z-[5] pointer-events-none">
+          <svg 
+            viewBox="0 0 400 120" 
+            className="w-full h-auto"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="hillGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#8fb396" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#6b8f71" stopOpacity="0.95" />
+              </linearGradient>
+              <linearGradient id="hillGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#7da383" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#5a7d60" stopOpacity="0.9" />
+              </linearGradient>
+              <linearGradient id="hillGradient3" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#6b8f71" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#4a6b50" stopOpacity="0.85" />
+              </linearGradient>
+            </defs>
+            {/* Back hill - lighter, more distant */}
+            <path 
+              d="M0,80 Q50,40 100,60 T200,50 T300,65 T400,55 L400,120 L0,120 Z" 
+              fill="url(#hillGradient3)"
+            />
+            {/* Middle hill */}
+            <path 
+              d="M0,90 Q80,55 150,75 T280,60 T400,70 L400,120 L0,120 Z" 
+              fill="url(#hillGradient2)"
+            />
+            {/* Front hill - darker, closer */}
+            <path 
+              d="M0,100 Q60,75 120,90 T240,80 T360,95 T400,85 L400,120 L0,120 Z" 
+              fill="url(#hillGradient1)"
+            />
+          </svg>
+        </div>
+      )}
+
       {/* Bamboo Growth - Left side (grows first) */}
       {!showConfirmation && (
         <div 
