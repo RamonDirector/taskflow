@@ -981,7 +981,7 @@ export default function PandaHub() {
         <div 
           className="fixed right-3 z-10 pointer-events-none"
           style={{ 
-            top: '55%',
+            top: '62%',
             transform: 'translateY(-20%)',
           }}
         >
