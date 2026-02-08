@@ -845,8 +845,8 @@ export default function PandaHub() {
         </div>
       )}
       
-      {/* Bamboo Growth - Right side (grows after left is complete) */}
-      {!showConfirmation && (
+      {/* Bamboo Growth - Right side (only shows after left is complete at 50%+) */}
+      {!showConfirmation && bambooProgress > 0.5 && (
         <div 
           className="fixed right-3 z-10 pointer-events-none"
           style={{ 
@@ -855,7 +855,7 @@ export default function PandaHub() {
           }}
         >
           <BambooGrowth 
-            progress={Math.max(0, (bambooProgress - 0.5) * 2)} 
+            progress={(bambooProgress - 0.5) * 2} 
             size={160}
             mirror
           />
@@ -898,20 +898,29 @@ export default function PandaHub() {
             marginTop: inputFocused ? 8 : 0,
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-          style={{ willChange: 'transform' }}
+          style={{ 
+            willChange: 'transform',
+            backfaceVisibility: 'hidden',
+            transform: 'translateZ(0)',
+          }}
         >
           {/* Matcha aura glow */}
           <div 
             className="absolute inset-0 rounded-full blur-2xl scale-150"
             style={{ 
               backgroundColor: `${THEME_COLOR}50`,
-              animation: 'auraPulse 3s ease-in-out infinite' 
+              animation: 'auraPulse 3s ease-in-out infinite',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
             }}
           />
           {/* Shadow */}
           <div 
             className="absolute bottom-0 left-1/2 w-20 h-4 rounded-full bg-black/10 blur-sm -translate-x-1/2"
-            style={{ animation: 'shadowPulse 3s ease-in-out infinite' }}
+            style={{ 
+              animation: 'shadowPulse 3s ease-in-out infinite',
+              backfaceVisibility: 'hidden',
+            }}
           />
           <Image
             src={pandaImage}
@@ -920,7 +929,9 @@ export default function PandaHub() {
             className="object-contain relative z-10"
             style={{ 
               animation: isProcessing ? 'none' : 'float 3s ease-in-out infinite', 
-              filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))' 
+              filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
             }}
             priority
           />
