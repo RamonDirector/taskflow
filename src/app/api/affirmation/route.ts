@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +23,8 @@ export async function POST(request: Request) {
       totalTasks,
       completedToday,
       streak,
-      lastAction, // 'idea_created' | 'task_completed' | 'plan_created' | 'first_idea' | 'first_task' | 'returned' | null
-      lastItemTitle, // title of the last idea/task if relevant
+      lastAction,
+      lastItemTitle,
       daysSinceLastActivity,
     } = context;
 
@@ -44,7 +42,7 @@ export async function POST(request: Request) {
       contextParts.push(`Days since last activity: ${daysSinceLastActivity}`);
     }
 
-    const systemPrompt = `You are a friendly panda mascot inviting the user to speak or type their thoughts.
+    const prompt = `You are a friendly panda mascot inviting the user to speak or type their thoughts.
 
 Your job is to generate a SHORT, INFORMAL prompt that encourages the user to tap the microphone.
 
@@ -71,21 +69,14 @@ GOOD examples (informal, only final ?):
 BAD examples (avoid):
 - "¿Qué tienes en mente?" (has opening ¿)
 - "¡Sigue así!" (motivational)
-- Any stats or achievements`;
+- Any stats or achievements
 
-    const userPrompt = `Generate a short invitation prompt in Spanish for the user to speak or type what's on their mind. Just the prompt, nothing else.`;
+Generate a short invitation prompt in Spanish for the user to speak or type what's on their mind. Just the prompt, nothing else.`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      max_tokens: 50,
-      temperature: 0.8,
-    });
-
-    const affirmation = completion.choices[0]?.message?.content?.trim() || 'Qué tienes en mente?';
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const affirmation = response.text()?.trim() || 'Qué tienes en mente?';
 
     // Increment usage counter
     if (access.userId) {
@@ -95,6 +86,6 @@ BAD examples (avoid):
     return NextResponse.json({ affirmation });
   } catch (error) {
     console.error('Affirmation generation error:', error);
-    return NextResponse.json({ affirmation: '¿Qué tienes en mente?' });
+    return NextResponse.json({ affirmation: 'Qué tienes en mente?' });
   }
 }

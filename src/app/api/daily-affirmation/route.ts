@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
@@ -21,8 +19,8 @@ export async function POST(request: Request) {
     
     const {
       userName,
-      currentHour, // 0-23
-      dayOfWeek, // 0-6 (Sunday = 0)
+      currentHour,
+      dayOfWeek,
       totalTasks,
       totalIdeas,
       completedToday,
@@ -38,7 +36,20 @@ export async function POST(request: Request) {
     const isMonday = dayOfWeek === 1;
     const isFriday = dayOfWeek === 5;
 
-    const systemPrompt = `You generate REWARD-ONLY affirmations using positive psychology. NO call-to-action.
+    const contextParts = [];
+    if (timeContext) contextParts.push(`Time of day: ${timeContext}`);
+    if (isWeekend) contextParts.push('It\'s the weekend');
+    if (isMonday) contextParts.push('It\'s Monday - fresh start');
+    if (isFriday) contextParts.push('It\'s Friday - week wrapping up');
+    if (userName) contextParts.push(`User name: ${userName}`);
+    
+    if (completedToday > 0) contextParts.push(`✓ Completed ${completedToday} task(s) today - REWARD THIS`);
+    if (totalIdeas > 0) contextParts.push(`Has ${totalIdeas} ideas captured total`);
+    if (totalTasks > 0) contextParts.push(`Has ${totalTasks} tasks total`);
+    if (totalIdeas > 10) contextParts.push('Active idea collector - acknowledge creativity');
+    if (totalTasks === 0 && totalIdeas === 0) contextParts.push('NEW USER - no activity yet, focus on gentle encouragement');
+
+    const prompt = `You generate REWARD-ONLY affirmations using positive psychology. NO call-to-action.
 
 PURPOSE: Make the user feel good about what they've done. Build confidence and positive identity.
 DO NOT include questions or action prompts - another element handles that.
@@ -65,7 +76,7 @@ GOOD EXAMPLES (short and punchy):
 - "Eso ya es un hábito."
 - "Volviste. Eso cuenta."
 - "Tu constancia habla sola."
-- "Día productivo, ${userName}."
+- "Día productivo."
 
 FOR NEW USERS:
 - "El primer paso ya está dado."
@@ -76,37 +87,19 @@ BAD (avoid):
 - "¿Qué sigue?" or any question
 - "¿Qué capturamos hoy?" or action prompts
 - Generic "¡Eres increíble!" without specifics
-- Anything that sounds like a command or invitation`;
+- Anything that sounds like a command or invitation
 
-    const contextParts = [];
-    if (timeContext) contextParts.push(`Time of day: ${timeContext}`);
-    if (isWeekend) contextParts.push('It\'s the weekend');
-    if (isMonday) contextParts.push('It\'s Monday - fresh start');
-    if (isFriday) contextParts.push('It\'s Friday - week wrapping up');
-    if (userName) contextParts.push(`User name: ${userName}`);
-    
-    // Activity stats for rewarding
-    if (completedToday > 0) contextParts.push(`✓ Completed ${completedToday} task(s) today - REWARD THIS`);
-    if (totalIdeas > 0) contextParts.push(`Has ${totalIdeas} ideas captured total`);
-    if (totalTasks > 0) contextParts.push(`Has ${totalTasks} tasks total`);
-    if (totalIdeas > 10) contextParts.push('Active idea collector - acknowledge creativity');
-    if (totalTasks === 0 && totalIdeas === 0) contextParts.push('NEW USER - no activity yet, focus on gentle encouragement');
+Context:
+${contextParts.join('\n')}
 
-    const userPrompt = `Context:\n${contextParts.join('\n')}\n\nGenerate a REWARD-ONLY affirmation in Spanish. Acknowledge their progress or encourage gently. 
+Generate a REWARD-ONLY affirmation in Spanish. Acknowledge their progress or encourage gently. 
 NO questions. NO call-to-action. Just a warm statement.
-No quotes around the response.`;
+No quotes around the response. Just the affirmation text.`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      max_tokens: 60,
-      temperature: 0.9,
-    });
-
-    let affirmation = completion.choices[0]?.message?.content?.trim() || 'El camino se hace al andar.';
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let affirmation = response.text()?.trim() || 'El camino se hace al andar.';
     
     // Remove quotes if the AI added them
     affirmation = affirmation.replace(/^[""]|[""]$/g, '').trim();
