@@ -64,20 +64,21 @@ export default function LandingPage() {
           {/* Features mini */}
           <div className="flex flex-wrap gap-4 mb-8 justify-center lg:justify-start">
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <svg className="w-5 h-5 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              <svg className="w-5 h-5 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
               </svg>
               Voz a texto
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <svg className="w-5 h-5 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              <svg className="w-5 h-5 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
               </svg>
               Clasifica automático
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <svg className="w-5 h-5 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              <svg className="w-5 h-5 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Planes de acción
             </div>
@@ -89,7 +90,7 @@ export default function LandingPage() {
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#6b8f71] hover:bg-[#5a7d60] text-white font-medium rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#6b8f71]/25"
           >
             Ser beta tester
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
           </Link>
@@ -141,8 +142,8 @@ export default function LandingPage() {
             <div className="absolute -right-12 bottom-1/3 hidden lg:block">
               <div className="bg-white rounded-2xl shadow-xl p-3 flex items-center gap-3 animate-float-delayed">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
