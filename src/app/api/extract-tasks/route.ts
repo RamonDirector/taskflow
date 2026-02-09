@@ -126,12 +126,17 @@ Map these phrases to actual dates:
    - "enviar propuesta al cliente" → category: work
    - "comprar regalo" → category: errands or personal
 
-5. **DISTINGUISH task vs idea vs dream**:
+5. **DISTINGUISH task vs idea vs dream** (VERY IMPORTANT):
    - TASK = Actionable with clear next step ("llamar", "comprar", "enviar", "ir a", "tengo que")
    - IDEA = Concept, thought, possibility ("sería bueno...", "podríamos...", "qué tal si...", "se me ocurrió")
-   - DREAM = Sleep dreams narrated ("soñé que", "anoche soñé", "tuve un sueño", "en mi sueño", "pesadilla")
+   - DREAM = ONLY the sleep dream narration itself ("soñé que X" - X is the dream content)
    
-   **CRITICAL**: If someone says "soñé que X" and THEN talks about ideas or tasks, SEPARATE THEM into different items. The dream is only the dream narration part.
+   ⚠️ **CRITICAL - DO NOT CLASSIFY EVERYTHING AS DREAM**: 
+   - If input starts with "soñé que X" but THEN mentions tasks or ideas, you MUST separate them!
+   - The word "soñé" at the start does NOT make everything a dream
+   - Only the actual dream NARRATIVE is type "dream"
+   - Everything else (tasks, ideas mentioned after) keeps its own type
+   - ALWAYS analyze the FULL transcript and extract EACH distinct item separately
 
 6. **TITLE RULES (CRITICAL)**:
    - TASKS: 3-6 words (verb + object, actionable)
@@ -176,12 +181,28 @@ Return ONLY valid JSON, no markdown:
   ]
 }
 
-## MIXED INPUT EXAMPLE
+## MIXED INPUT EXAMPLES (STUDY THESE CAREFULLY)
+
+**Example 1:**
 Input: "Soñé que volaba sobre el mar. Ah y también tengo que llamar al dentista. Se me ocurrió una app para compartir sueños."
-Output:
-- Dream: "Volaba sobre el mar" (type: dream)
-- Task: "Llamar al dentista" (type: task)
-- Idea: "App para compartir sueños" (type: idea)
+Correct Output: 3 SEPARATE items:
+- { "title": "Volaba sobre el mar", "type": "dream" }
+- { "title": "Llamar al dentista", "type": "task" }
+- { "title": "App para compartir sueños", "type": "idea" }
+WRONG: Putting everything as one dream item ❌
+
+**Example 2:**
+Input: "Anoche soñé con mi ex. Por cierto, tengo que comprar leche."
+Correct Output: 2 SEPARATE items:
+- { "title": "Soñé con mi ex", "type": "dream" }
+- { "title": "Comprar leche", "type": "task" }
+WRONG: Making both items dreams ❌
+
+**Example 3:**
+Input: "Soñé algo raro pero no me acuerdo. Quiero empezar a meditar."
+Correct Output: 2 SEPARATE items:
+- { "title": "Sueño raro que no recuerdo", "type": "dream" }
+- { "title": "Empezar a meditar", "type": "idea" }
 
 ## TRANSCRIPT TO ANALYZE:
 ${text}`;
