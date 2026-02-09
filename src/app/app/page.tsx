@@ -520,25 +520,7 @@ export default function PandaHub() {
         return;
       }
 
-      // Check for navigation commands
       const lowerText = transcribedText.toLowerCase();
-      if (lowerText.includes('ir a') || lowerText.includes('muéstrame') || lowerText.includes('abrir')) {
-        if (lowerText.includes('idea') || lowerText.includes('ideas')) {
-          setPandaMessage('¡Vamos al Idea Board!');
-          router.push('/app/ideas');
-          return;
-        }
-        if (lowerText.includes('tarea') || lowerText.includes('tareas')) {
-          setPandaMessage('¡Vamos a tus tareas!');
-          router.push('/app/tasks');
-          return;
-        }
-        if (lowerText.includes('sueño') || lowerText.includes('sueños')) {
-          setPandaMessage('¡Vamos a tus sueños!');
-          router.push('/app/dreams');
-          return;
-        }
-      }
 
       // Extract and classify
       const extractRes = await fetch('/api/extract-tasks', {
