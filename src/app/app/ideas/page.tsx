@@ -795,20 +795,30 @@ export default function IdeasBoard() {
             </span>
           </div>
 
-          {/* Voice button for new idea */}
+          {/* Voice button for new idea - Press and hold */}
           <div className="flex items-center gap-2">
             {isRecording && isRecordingNewIdea && (
               <span className="text-xs text-[#6b8f71] font-medium animate-pulse">Grabando...</span>
             )}
             <button
-              onClick={() => {
-                if (isRecording && isRecordingNewIdea) {
-                  stopRecordingNewIdea();
-                } else {
-                  startRecordingForNewIdea();
-                }
+              onTouchStart={(e) => {
+                e.preventDefault();
+                if (!isRecording) startRecordingForNewIdea();
               }}
-              className="w-11 h-11 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-[#6b8f71]"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                if (isRecording && isRecordingNewIdea) stopRecordingNewIdea();
+              }}
+              onMouseDown={() => {
+                if (!isRecording) startRecordingForNewIdea();
+              }}
+              onMouseUp={() => {
+                if (isRecording && isRecordingNewIdea) stopRecordingNewIdea();
+              }}
+              onMouseLeave={() => {
+                if (isRecording && isRecordingNewIdea) stopRecordingNewIdea();
+              }}
+              className="w-11 h-11 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-[#6b8f71] select-none touch-none"
             >
               {/* Pulsing ring when recording */}
               {isRecording && isRecordingNewIdea && (
@@ -960,17 +970,32 @@ export default function IdeasBoard() {
                       >
                         {selectedIdea.title}
                       </h2>
-                      {/* Voice edit for title */}
+                      {/* Voice edit for title - Press and hold */}
                       <button
-                        onClick={() => {
-                          if (isRecording && isEditingIdeaTitle) {
-                            stopRecording();
-                          } else {
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          if (!isRecording) {
                             setIsEditingIdeaTitle(true);
                             startRecordingForTitle();
                           }
                         }}
-                        className={`p-2 rounded-full transition-all flex-shrink-0 ${
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          if (isRecording && isEditingIdeaTitle) stopRecording();
+                        }}
+                        onMouseDown={() => {
+                          if (!isRecording) {
+                            setIsEditingIdeaTitle(true);
+                            startRecordingForTitle();
+                          }
+                        }}
+                        onMouseUp={() => {
+                          if (isRecording && isEditingIdeaTitle) stopRecording();
+                        }}
+                        onMouseLeave={() => {
+                          if (isRecording && isEditingIdeaTitle) stopRecording();
+                        }}
+                        className={`p-2 rounded-full transition-all flex-shrink-0 select-none touch-none ${
                           isRecording && isEditingIdeaTitle
                             ? 'bg-[#6b8f71] text-white'
                             : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-[#6b8f71]'
@@ -1183,19 +1208,37 @@ export default function IdeasBoard() {
                                 </button>
                               )}
 
-                              {/* Mic button when selected */}
+                              {/* Mic button when selected - Press and hold */}
                               {isSelected && (
                                 <button
-                                  onClick={(e) => {
+                                  onTouchStart={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
-                                    if (isRecording && editingStepIndex === index) {
-                                      stopRecording();
-                                    } else {
+                                    if (!isRecording) {
                                       setEditingStepIndex(index);
                                       startRecording(index);
                                     }
                                   }}
-                                  className={`p-2.5 rounded-full transition-all relative ${
+                                  onTouchEnd={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (isRecording && editingStepIndex === index) stopRecording();
+                                  }}
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    if (!isRecording) {
+                                      setEditingStepIndex(index);
+                                      startRecording(index);
+                                    }
+                                  }}
+                                  onMouseUp={(e) => {
+                                    e.stopPropagation();
+                                    if (isRecording && editingStepIndex === index) stopRecording();
+                                  }}
+                                  onMouseLeave={() => {
+                                    if (isRecording && editingStepIndex === index) stopRecording();
+                                  }}
+                                  className={`p-2.5 rounded-full transition-all relative select-none touch-none ${
                                     isRecording && editingStepIndex === index
                                       ? 'bg-[#6b8f71] text-white'
                                       : 'bg-[#6b8f71] text-white hover:bg-[#5a7d60]'

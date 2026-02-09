@@ -538,21 +538,34 @@ export default function TasksPage() {
             </span>
           </div>
           
-          {/* Voice button for new task */}
+          {/* Voice button for new task - Press and hold */}
           <div className="flex items-center gap-2">
             {isRecording && isRecordingNewTask && (
               <span className="text-xs text-[#6b8f71] font-medium animate-pulse">Grabando...</span>
             )}
             <button
-              onClick={(e) => {
+              onTouchStart={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                if (isRecording && isRecordingNewTask) {
-                  stopRecordingNewTask();
-                } else {
-                  startRecordingForNewTask();
-                }
+                if (!isRecording) startRecordingForNewTask();
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-[#6b8f71]"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isRecording && isRecordingNewTask) stopRecordingNewTask();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                if (!isRecording) startRecordingForNewTask();
+              }}
+              onMouseUp={(e) => {
+                e.stopPropagation();
+                if (isRecording && isRecordingNewTask) stopRecordingNewTask();
+              }}
+              onMouseLeave={() => {
+                if (isRecording && isRecordingNewTask) stopRecordingNewTask();
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-[#6b8f71] select-none touch-none"
             >
               {isRecording && isRecordingNewTask && (
                 <div className="absolute inset-0 rounded-full bg-[#6b8f71] animate-ping opacity-30" />

@@ -1311,11 +1311,27 @@ export default function PandaHub() {
               )}
             </div>
 
-            {/* Mic/Check button */}
+            {/* Mic button - Press and hold to record */}
             <button
-              onClick={isRecording ? stopRecording : startRecording}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                if (!isProcessing && !isRecording) startRecording();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                if (isRecording) stopRecording();
+              }}
+              onMouseDown={() => {
+                if (!isProcessing && !isRecording) startRecording();
+              }}
+              onMouseUp={() => {
+                if (isRecording) stopRecording();
+              }}
+              onMouseLeave={() => {
+                if (isRecording) stopRecording();
+              }}
               disabled={isProcessing}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10 disabled:opacity-50"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10 disabled:opacity-50 select-none touch-none"
               style={{ backgroundColor: THEME_COLOR }}
             >
               <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
