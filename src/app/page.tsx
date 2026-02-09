@@ -51,9 +51,9 @@ export default function LandingPage() {
 
           {/* Headline */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-gray-900 leading-[1.1] tracking-tight mb-4">
-            Habla. Claridad.
+            De la idea a la acción.
             <br />
-            <span className="text-[#6b8f71]">Cero fricción.</span>
+            <span className="text-[#6b8f71]">En segundos, con tu voz.</span>
           </h1>
 
           {/* Subheadline */}
