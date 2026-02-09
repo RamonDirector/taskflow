@@ -589,7 +589,16 @@ export default function PandaHub() {
   // Save captured items
   const saveItems = async () => {
     haptic.strong();
-    if (!user || capturedItems.length === 0) return;
+    
+    // Save any pending edit before saving all items
+    let itemsToSave = [...capturedItems];
+    if (editingIndex !== null && editText.trim()) {
+      itemsToSave[editingIndex] = { ...itemsToSave[editingIndex], title: editText.trim() };
+      setEditingIndex(null);
+      setEditText('');
+    }
+    
+    if (!user || itemsToSave.length === 0) return;
 
     // Calculate due date based on selection
     const getDueDate = () => {
@@ -602,7 +611,7 @@ export default function PandaHub() {
 
     const dueDate = getDueDate();
 
-    const rows = capturedItems.map(item => ({
+    const rows = itemsToSave.map(item => ({
       user_id: user.id,
       title: item.title,
       category: item.category,
@@ -616,7 +625,7 @@ export default function PandaHub() {
 
     // Mark new items for nav indicators
     const newIndicators = { ideas: false, tasks: false, dreams: false };
-    capturedItems.forEach(item => {
+    itemsToSave.forEach(item => {
       if (item.type === 'idea') newIndicators.ideas = true;
       else if (item.type === 'task') newIndicators.tasks = true;
       else if (item.type === 'dream') newIndicators.dreams = true;
