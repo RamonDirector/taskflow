@@ -112,6 +112,10 @@ export default function TasksPage() {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const LONG_PRESS_DELAY = 650; // Increased to prevent accidental triggers during scroll
   
+  // Double tap for inline edit
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const DOUBLE_TAP_DELAY = 300;
+  
   // Scroll state for header transparency
   const [scrolled, setScrolled] = useState(false);
   
@@ -312,10 +316,27 @@ export default function TasksPage() {
     }
   };
 
-  // Tap to select (show mic)
+  // Tap to select (show mic) / Double tap to edit
   const handleTaskTap = (task: Task) => {
     if (inlineEditId) return; // Don't change selection while editing
     if (touchMoved.current) return; // Don't select if user was scrolling
+    
+    const now = Date.now();
+    const lastTap = lastTapRef.current;
+    
+    // Check for double tap
+    if (lastTap && lastTap.id === task.id && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
+      // Double tap → inline edit
+      lastTapRef.current = null;
+      setSelectedTaskId(null);
+      setInlineEditId(task.id);
+      setInlineEditValue(task.title);
+      if (navigator.vibrate) navigator.vibrate(50);
+      return;
+    }
+    
+    // Single tap → select/deselect
+    lastTapRef.current = { id: task.id, time: now };
     if (selectedTaskId === task.id) {
       setSelectedTaskId(null);
     } else {

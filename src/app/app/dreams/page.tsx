@@ -109,6 +109,12 @@ export default function DreamsPage() {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const touchStartX = useRef(0);
   
+  // Inline text edit (double-tap)
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const DOUBLE_TAP_DELAY = 300;
+  
   const router = useRouter();
   const supabase = createClient();
 
@@ -177,6 +183,50 @@ export default function DreamsPage() {
     }
 
     setIsInterpreting(false);
+  };
+
+  // Update dream title
+  const updateDreamTitle = async (id: string, newTitle: string) => {
+    await supabase.from('tasks').update({ title: newTitle }).eq('id', id);
+    setDreams(prev => prev.map(d => d.id === id ? { ...d, title: newTitle } : d));
+    if (selectedDream?.id === id) {
+      setSelectedDream(prev => prev ? { ...prev, title: newTitle } : null);
+    }
+  };
+
+  // Double tap to edit
+  const handleDreamTap = (dream: Dream) => {
+    if (inlineEditId) return; // Don't change while editing
+    
+    const now = Date.now();
+    const lastTap = lastTapRef.current;
+    
+    // Check for double tap
+    if (lastTap && lastTap.id === dream.id && (now - lastTap.time) < DOUBLE_TAP_DELAY) {
+      // Double tap → inline edit
+      lastTapRef.current = null;
+      setInlineEditId(dream.id);
+      setInlineEditValue(dream.title);
+      if (navigator.vibrate) navigator.vibrate(50);
+      return;
+    }
+    
+    // Single tap → open drawer
+    lastTapRef.current = { id: dream.id, time: now };
+    // Delay to allow double-tap detection
+    setTimeout(() => {
+      if (lastTapRef.current?.id === dream.id) {
+        openDrawer(dream);
+      }
+    }, DOUBLE_TAP_DELAY);
+  };
+
+  // Save inline edit
+  const saveInlineEdit = async () => {
+    if (!inlineEditId || !inlineEditValue.trim()) return;
+    await updateDreamTitle(inlineEditId, inlineEditValue.trim());
+    setInlineEditId(null);
+    setInlineEditValue('');
   };
 
   // Swipe handlers
@@ -321,14 +371,24 @@ export default function DreamsPage() {
               <span className="text-xs text-purple-600 font-medium animate-pulse">Grabando...</span>
             )}
             <button
-              onClick={() => {
-                if (isRecording && isRecordingNewDream) {
-                  stopRecordingNewDream();
-                } else {
-                  startRecordingForNewDream();
-                }
+              onTouchStart={(e) => {
+                e.preventDefault();
+                if (!isRecording) startRecordingForNewDream();
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-purple-600"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                if (isRecording && isRecordingNewDream) stopRecordingNewDream();
+              }}
+              onMouseDown={() => {
+                if (!isRecording) startRecordingForNewDream();
+              }}
+              onMouseUp={() => {
+                if (isRecording && isRecordingNewDream) stopRecordingNewDream();
+              }}
+              onMouseLeave={() => {
+                if (isRecording && isRecordingNewDream) stopRecordingNewDream();
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative bg-purple-600 select-none touch-none"
             >
               {isRecording && isRecordingNewDream && (
                 <div className="absolute inset-0 rounded-full bg-purple-600 animate-ping opacity-30" />
@@ -379,20 +439,93 @@ export default function DreamsPage() {
                     transform: isSwiping ? `translateX(${swipeOffset}px)` : 'translateX(0)',
                     transition: isSwiping ? 'none' : 'transform 0.3s ease-out',
                   }}
-                  onTouchStart={(e) => handleTouchStart(e, dream.id)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={() => handleTouchEnd(dream)}
-                  onClick={() => openDrawer(dream)}
-                  className="relative p-4 rounded-2xl bg-white dark:bg-[#2c2c2e] border-2 border-purple-200 dark:border-purple-800/50 shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+                  onTouchStart={(e) => {
+                    if (inlineEditId) return;
+                    handleTouchStart(e, dream.id);
+                  }}
+                  onTouchMove={(e) => {
+                    if (inlineEditId) return;
+                    handleTouchMove(e);
+                  }}
+                  onTouchEnd={() => {
+                    if (inlineEditId) return;
+                    handleTouchEnd(dream);
+                  }}
+                  onClick={() => {
+                    if (Math.abs(swipeOffset) < 10) {
+                      handleDreamTap(dream);
+                    }
+                  }}
+                  className={`relative p-4 rounded-2xl bg-white dark:bg-[#2c2c2e] border-2 shadow-sm transition-all ${
+                    inlineEditId === dream.id 
+                      ? 'border-purple-500 ring-2 ring-purple-500/30' 
+                      : 'border-purple-200 dark:border-purple-800/50 cursor-pointer active:scale-[0.98]'
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
                       {Icons.moonSmall}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {dream.title}
-                      </p>
+                      {inlineEditId === dream.id ? (
+                        <div className="flex flex-col gap-2">
+                          <textarea
+                            value={inlineEditValue}
+                            onChange={(e) => {
+                              setInlineEditValue(e.target.value);
+                              e.target.style.height = 'auto';
+                              e.target.style.height = e.target.scrollHeight + 'px';
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                saveInlineEdit();
+                              }
+                              if (e.key === 'Escape') {
+                                setInlineEditId(null);
+                                setInlineEditValue('');
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
+                            className="w-full text-sm font-medium text-gray-900 dark:text-white bg-transparent border-none outline-none resize-none"
+                            style={{ minHeight: '24px' }}
+                            ref={(el) => {
+                              if (el) {
+                                el.style.height = 'auto';
+                                el.style.height = el.scrollHeight + 'px';
+                                el.focus();
+                                el.setSelectionRange(el.value.length, el.value.length);
+                              }
+                            }}
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInlineEditId(null);
+                                setInlineEditValue('');
+                              }}
+                              className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                saveInlineEdit();
+                              }}
+                              className="px-3 py-1 text-xs text-white bg-purple-600 rounded-lg"
+                            >
+                              Guardar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {dream.title}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         {dream.interpretation && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500 text-white">
