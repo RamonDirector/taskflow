@@ -88,7 +88,7 @@ export default function LandingPage() {
             href="/login"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#6b8f71] hover:bg-[#5a7d60] text-white font-medium rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#6b8f71]/25"
           >
-            Unirme a la waitlist
+            Ser beta tester
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
