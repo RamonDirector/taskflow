@@ -885,10 +885,10 @@ export default function TasksPage() {
               className="mx-auto mb-4"
             />
             <p className="text-gray-500 dark:text-gray-400 font-medium">
-              {filter === 'pending' ? '¡Sin tareas pendientes!' : filter === 'completed' ? 'Aún no has completado ninguna' : '¡Sin tareas pendientes!'}
+              {filter === 'pending' ? '¡Todo al día!' : filter === 'completed' ? 'Aún no has completado ninguna' : '¡Todo al día!'}
             </p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              Pulsa el micrófono para capturar una
+              Cuéntale a Kai tu próxima tarea
             </p>
           </div>
         )}

@@ -1355,7 +1355,7 @@ export default function IdeasBoard() {
               height={160} 
               className="mx-auto mb-4"
             />
-            <p className="text-gray-400 dark:text-gray-500 text-lg font-medium">Tu canvas está vacío</p>
+            <p className="text-gray-400 dark:text-gray-500 text-lg font-medium">Kai espera tu primera idea</p>
             <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">Di "Tengo una idea..." para empezar</p>
           </div>
         </div>

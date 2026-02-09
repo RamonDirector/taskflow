@@ -61,13 +61,13 @@ const STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
     panda: '/panda/new-wave.png',
-    title: '¡Hola!',
-    subtitle: 'Soy tu compañero para capturar ideas',
+    title: '¡Hola! Soy Kai',
+    subtitle: 'Tu compañero para capturar ideas',
   },
   {
     id: 'name',
     panda: '/panda/new-neutral.png',
-    title: '¿Cómo te llamas?',
+    title: '¿Y tú, cómo te llamas?',
   },
   {
     id: 'what-capture',

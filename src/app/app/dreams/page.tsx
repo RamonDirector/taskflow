@@ -553,7 +553,7 @@ export default function DreamsPage() {
               height={160} 
               className="mx-auto mb-4"
             />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">Tu diario de sueños está vacío</p>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">Kai guarda tus sueños</p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
               Di "Soñé que..." para empezar
             </p>
