@@ -96,7 +96,7 @@ export default function LandingPage() {
           </Link>
 
           <p className="text-xs text-gray-400 mt-4">
-Solo 47 plazas disponibles
+Solo 15 plazas disponibles
           </p>
         </div>
 
