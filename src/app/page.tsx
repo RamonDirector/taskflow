@@ -95,7 +95,7 @@ export default function LandingPage() {
           </Link>
 
           <p className="text-xs text-gray-400 mt-4">
-            Sin tarjeta de crédito · Gratis para siempre
+            Sin tarjeta de crédito
           </p>
         </div>
 
