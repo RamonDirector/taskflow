@@ -131,13 +131,15 @@ Map these phrases to actual dates:
    - IDEA = Concept, thought, possibility ("sería bueno...", "podríamos...", "qué tal si...")
 
 6. **TITLE RULES (CRITICAL)**:
-   - 3-6 words MAXIMUM
-   - Verb + object for tasks
-   - Noun phrase for ideas
-   - NO filler, NO context - just the essence
+   - TASKS: 3-6 words (verb + object, actionable)
+   - IDEAS: 10-20 words (capture the full concept, keep important context)
+   - NO filler words, but IDEAS should have enough detail to understand later
    
-   GOOD: "Llamar al dentista"
-   BAD: "Tengo que acordarme de llamar al dentista porque me duele la muela"
+   TASK GOOD: "Llamar al dentista"
+   TASK BAD: "Tengo que acordarme de llamar al dentista porque me duele la muela"
+   
+   IDEA GOOD: "App que conecta vecinos para compartir herramientas y reducir consumo"
+   IDEA BAD: "App de vecinos" (too short, loses the essence)
 
 7. **PRIORITY inference**:
    - high: "urgente", "antes de", "hoy", deadline próximo, palabras de estrés
