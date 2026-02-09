@@ -17,7 +17,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <main className="h-screen w-screen overflow-hidden bg-gradient-to-br from-[#f8faf8] via-white to-[#f0f5f0] flex flex-col">
+    <main className="min-h-screen w-full overflow-auto bg-gradient-to-br from-[#f8faf8] via-white to-[#f0f5f0] flex flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 md:px-12 lg:px-20">
         <div className="flex items-center gap-2">
