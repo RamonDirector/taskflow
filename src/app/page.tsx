@@ -46,7 +46,7 @@ export default function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#6b8f71]/10 border border-[#6b8f71]/20 mb-6">
             <span className="w-2 h-2 rounded-full bg-[#6b8f71] animate-pulse" />
-            <span className="text-xs font-medium text-[#6b8f71]">Beta disponible</span>
+            <span className="text-xs font-medium text-[#6b8f71]">Acceso anticipado</span>
           </div>
 
           {/* Headline */}
@@ -85,17 +85,17 @@ export default function LandingPage() {
 
           {/* CTA */}
           <Link
-            href="/app"
+            href="/login"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#6b8f71] hover:bg-[#5a7d60] text-white font-medium rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#6b8f71]/25"
           >
-            Empezar gratis
+            Unirme a la waitlist
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
           </Link>
 
           <p className="text-xs text-gray-400 mt-4">
-            Sin tarjeta de crédito
+            🔥 Solo 47 plazas disponibles
           </p>
         </div>
 
