@@ -540,8 +540,15 @@ export default function PandaHub() {
       // Combine tasks and ideas, classify dreams based on keywords
       const items: CapturedItem[] = [];
       
-      // Check if it's a dream (aspirational language)
-      const dreamKeywords = ['algún día', 'sueño', 'quiero ser', 'me gustaría', 'ojalá', 'en el futuro', 'cuando sea'];
+      // Check if it's a dream (sleep dreams OR aspirational dreams)
+      const dreamKeywords = [
+        // Sleep dreams (sueños nocturnos)
+        'soñé', 'soñe', 'tuve un sueño', 'anoche soñé', 'en mi sueño', 'mientras dormía',
+        'pesadilla', 'sueño raro', 'sueño extraño', 'desperté', 'soñando',
+        // Aspirational dreams (metas/deseos)
+        'algún día', 'quiero ser', 'me gustaría', 'ojalá', 'en el futuro', 'cuando sea',
+        'mi sueño es', 'sueño con'
+      ];
       const isDream = dreamKeywords.some(k => lowerText.includes(k));
       
       if (isDream) {
