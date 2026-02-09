@@ -51,14 +51,14 @@ export default function LandingPage() {
 
           {/* Headline */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-gray-900 leading-[1.1] tracking-tight mb-4">
-            Captura ideas
+            Habla. Claridad.
             <br />
-            <span className="text-[#6b8f71]">en 3 segundos</span>
+            <span className="text-[#6b8f71]">Cero fricción.</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-gray-500 mb-8 max-w-md">
-            Habla. La IA organiza tus ideas, tareas y sueños. Tú solo ejecutas.
+            Para mentes que no paran.
           </p>
 
           {/* Features mini */}
