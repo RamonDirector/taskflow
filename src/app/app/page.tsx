@@ -100,6 +100,7 @@ interface CapturedItem {
   category: string;
   priority: 'high' | 'medium' | 'low';
   due_date?: string; // ISO date string
+  context?: string; // Original context or AI-extracted context
 }
 
 // Deadline options
@@ -548,6 +549,7 @@ export default function PandaHub() {
           type: item.type === 'dream' ? 'dream' : item.type === 'idea' ? 'idea' : 'task',
           category: item.category || 'personal',
           priority: item.priority || 'medium',
+          context: item.context || null,
         })));
       } else {
         // Fallback: Add tasks and ideas separately (backward compatibility)
@@ -566,7 +568,13 @@ export default function PandaHub() {
           type: 'idea',
           category: 'personal',
           priority: 'medium',
+          context: transcribedText.length > 50 ? transcribedText : undefined,
         });
+      }
+      
+      // If single item and no context, use original transcription as context if different from title
+      if (items.length === 1 && !items[0].context && transcribedText !== items[0].title) {
+        items[0].context = transcribedText;
       }
 
       setCapturedItems(items);
@@ -1186,12 +1194,20 @@ export default function PandaHub() {
                           ) : (
                             <div 
                               onClick={() => startEditing(i)}
-                              className={`flex items-center gap-3 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)] cursor-pointer active:scale-[0.98] transition-transform`}
+                              className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)] cursor-pointer active:scale-[0.98] transition-transform`}
                             >
-                              <span className={config.color}>{config.icon}</span>
+                              <span className={`${config.color} mt-0.5`}>{config.icon}</span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[var(--foreground)] line-clamp-1">{item.title}</p>
-                                <p className="text-[10px] text-[var(--gray-4)]">{config.label}</p>
+                                <p className="text-sm font-medium text-[var(--foreground)]">{item.title}</p>
+                                {item.context && (
+                                  <p className="text-xs text-[var(--gray-4)] mt-1 line-clamp-2 italic">"{item.context}"</p>
+                                )}
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] text-[var(--gray-4)]">{config.label}</span>
+                                  {item.category && item.category !== 'personal' && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--gray-2)] text-[var(--gray-4)]">{item.category}</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
