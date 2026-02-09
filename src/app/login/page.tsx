@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -62,31 +63,28 @@ export default function LoginPage() {
   // Success state after magic link sent
   if (magicLinkSent) {
     return (
-      <main className="min-h-screen bg-[#0a0a0a] text-[#e8e8e8] selection:bg-[#3d5a45]/40 flex flex-col">
-        {/* Subtle grain texture overlay */}
-        <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")'}} />
-
-        <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-8 pb-20">
+      <main className="min-h-screen bg-gradient-to-br from-[#f8faf8] via-white to-[#f0f5f0] flex flex-col">
+        <section className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
           <div className="w-full max-w-sm text-center">
             {/* Email icon */}
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-              <svg className="w-8 h-8 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#6b8f71]/10 flex items-center justify-center">
+              <svg className="w-10 h-10 text-[#6b8f71]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
             </div>
             
-            <h1 className="text-2xl font-light mb-3 text-[#f0f0f0]">
+            <h1 className="text-2xl font-semibold mb-3 text-gray-900">
               Revisa tu email
             </h1>
             
-            <p className="text-[#666] text-sm mb-2">
+            <p className="text-gray-500 text-sm mb-2">
               Hemos enviado un enlace mágico a
             </p>
             <p className="text-[#6b8f71] font-medium mb-8">
               {email}
             </p>
             
-            <p className="text-[#444] text-xs mb-8">
+            <p className="text-gray-400 text-xs mb-8">
               Haz clic en el enlace del email para entrar.<br />
               Puede tardar unos segundos en llegar.
             </p>
@@ -96,7 +94,7 @@ export default function LoginPage() {
                 setMagicLinkSent(false);
                 setEmail('');
               }}
-              className="text-sm text-[#666] hover:text-[#888] transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               ← Usar otro método
             </button>
@@ -107,45 +105,49 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-[#e8e8e8] selection:bg-[#3d5a45]/40 flex flex-col">
+    <main className="min-h-screen bg-gradient-to-br from-[#f8faf8] via-white to-[#f0f5f0] flex flex-col">
       
-      {/* Subtle grain texture overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")'}} />
-
       {/* Nav */}
-      <nav className="relative z-10 px-8 py-6 flex items-center justify-between max-w-5xl mx-auto w-full">
-        <Link href="/" className="text-lg font-medium tracking-wide text-[#c8c8c8] hover:text-[#e8e8e8] transition-colors duration-300">
-          hansei
+      <nav className="px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/icon-192-transparent.png"
+            alt="Hansei"
+            width={32}
+            height={32}
+            className="rounded-xl"
+          />
+          <span className="text-lg font-medium text-gray-800">hansei</span>
         </Link>
         <Link 
           href="/"
-          className="text-sm text-[#888] hover:text-[#c8c8c8] transition-colors duration-300"
+          className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
         >
-          ← Back
+          ← Volver
         </Link>
       </nav>
 
       {/* Login Card */}
-      <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-8 pb-20">
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
         <div className="w-full max-w-sm">
           
           {/* Headline */}
-          <h1 className="text-3xl sm:text-4xl font-light leading-tight mb-4 tracking-[-0.02em] text-[#f0f0f0] text-center">
-            Welcome back
+          <h1 className="text-3xl font-semibold leading-tight mb-2 text-gray-900 text-center">
+            Bienvenido
           </h1>
           
-          <p className="text-center text-[#666] mb-10 text-sm font-light">
-            Pick up where you left off.
+          <p className="text-center text-gray-500 mb-8 text-sm">
+            Entra para continuar
           </p>
 
           {/* Google Sign-In Button */}
           <button
             onClick={handleGoogleSignIn}
             disabled={loading || emailLoading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg font-medium text-[#e8e8e8] bg-[#111] border border-[#222] hover:border-[#3d5a45] hover:bg-[#151515] active:bg-[#1a1a1a] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-medium text-gray-700 bg-white border border-gray-200 hover:border-[#6b8f71] hover:shadow-md active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-[#333] border-t-[#6b8f71] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-gray-300 border-t-[#6b8f71] rounded-full animate-spin" />
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -166,14 +168,14 @@ export default function LoginPage() {
                 />
               </svg>
             )}
-            <span className="text-sm">{loading ? 'Signing in...' : 'Continue with Google'}</span>
+            <span className="text-sm">{loading ? 'Entrando...' : 'Continuar con Google'}</span>
           </button>
 
           {/* Divider */}
           <div className="my-6 flex items-center gap-4">
-            <div className="flex-1 h-px bg-[#222]" />
-            <span className="text-xs text-[#444]">o</span>
-            <div className="flex-1 h-px bg-[#222]" />
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">o</span>
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
 
           {/* Magic Link Form */}
@@ -184,17 +186,17 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
               disabled={loading || emailLoading}
-              className="w-full px-4 py-4 rounded-lg bg-[#111] border border-[#222] text-[#e8e8e8] placeholder:text-[#444] focus:outline-none focus:border-[#3d5a45] transition-colors duration-300 text-sm disabled:opacity-50"
+              className="w-full px-4 py-4 rounded-2xl bg-white border border-gray-200 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/20 focus:border-[#6b8f71] transition-all text-sm disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={loading || emailLoading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg font-medium text-[#e8e8e8] bg-[#111] border border-[#222] hover:border-[#3d5a45] hover:bg-[#151515] active:bg-[#1a1a1a] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-medium text-white bg-[#6b8f71] hover:bg-[#5a7d60] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#6b8f71]/25"
             >
               {emailLoading ? (
-                <div className="w-5 h-5 border-2 border-[#333] border-t-[#6b8f71] rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <svg className="w-5 h-5 text-[#888]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               )}
@@ -203,23 +205,18 @@ export default function LoginPage() {
           </form>
 
           {error && (
-            <p className="text-red-400 text-sm text-center mt-6">{error}</p>
+            <p className="text-red-500 text-sm text-center mt-6">{error}</p>
           )}
 
-          {/* Divider */}
-          <div className="my-8">
-            <div className="h-px bg-gradient-to-r from-transparent via-[#222] to-transparent" />
-          </div>
-
-          <p className="text-center text-xs text-[#444] leading-relaxed">
+          <p className="text-center text-xs text-gray-400 leading-relaxed mt-8">
             Al entrar, aceptas que Hansei<br />acceda a tu micrófono para captura de voz.
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 px-8 py-6 border-t border-[#181818]">
-        <div className="max-w-5xl mx-auto flex items-center justify-center text-xs text-[#444]">
+      <footer className="px-6 py-4">
+        <div className="text-center text-xs text-gray-400">
           <span>© 2025 hansei</span>
         </div>
       </footer>
