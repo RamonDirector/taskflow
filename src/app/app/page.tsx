@@ -540,30 +540,20 @@ export default function PandaHub() {
       // Combine tasks and ideas, classify dreams based on keywords
       const items: CapturedItem[] = [];
       
-      // Check if it's a dream (sleep dreams OR aspirational dreams)
-      const dreamKeywords = [
-        // Sleep dreams (sueños nocturnos)
-        'soñé', 'soñe', 'tuve un sueño', 'anoche soñé', 'en mi sueño', 'mientras dormía',
-        'pesadilla', 'sueño raro', 'sueño extraño', 'desperté', 'soñando',
-        // Aspirational dreams (metas/deseos)
-        'algún día', 'quiero ser', 'me gustaría', 'ojalá', 'en el futuro', 'cuando sea',
-        'mi sueño es', 'sueño con'
-      ];
-      const isDream = dreamKeywords.some(k => lowerText.includes(k));
-      
-      if (isDream) {
-        items.push({
-          title: transcribedText,
-          type: 'dream',
-          category: 'personal',
-          priority: 'medium',
-        });
+      // Use API classification for all types (task, idea, dream)
+      // The API now intelligently separates mixed content
+      if (extractData.items && extractData.items.length > 0) {
+        items.push(...extractData.items.map((item: any) => ({
+          title: item.title,
+          type: item.type === 'dream' ? 'dream' : item.type === 'idea' ? 'idea' : 'task',
+          category: item.category || 'personal',
+          priority: item.priority || 'medium',
+        })));
       } else {
-        // Add tasks
+        // Fallback: Add tasks and ideas separately (backward compatibility)
         if (extractData.tasks) {
           items.push(...extractData.tasks.map((t: any) => ({ ...t, type: 'task' as const })));
         }
-        // Add ideas
         if (extractData.ideas) {
           items.push(...extractData.ideas.map((i: any) => ({ ...i, type: 'idea' as const })));
         }

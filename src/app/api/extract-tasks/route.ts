@@ -126,9 +126,12 @@ Map these phrases to actual dates:
    - "enviar propuesta al cliente" → category: work
    - "comprar regalo" → category: errands or personal
 
-5. **DISTINGUISH task vs idea**:
-   - TASK = Actionable with clear next step ("llamar", "comprar", "enviar", "ir a")
-   - IDEA = Concept, thought, possibility ("sería bueno...", "podríamos...", "qué tal si...")
+5. **DISTINGUISH task vs idea vs dream**:
+   - TASK = Actionable with clear next step ("llamar", "comprar", "enviar", "ir a", "tengo que")
+   - IDEA = Concept, thought, possibility ("sería bueno...", "podríamos...", "qué tal si...", "se me ocurrió")
+   - DREAM = Sleep dreams narrated ("soñé que", "anoche soñé", "tuve un sueño", "en mi sueño", "pesadilla")
+   
+   **CRITICAL**: If someone says "soñé que X" and THEN talks about ideas or tasks, SEPARATE THEM into different items. The dream is only the dream narration part.
 
 6. **TITLE RULES (CRITICAL)**:
    - TASKS: 3-6 words (verb + object, actionable)
@@ -163,15 +166,22 @@ Return ONLY valid JSON, no markdown:
 {
   "items": [
     {
-      "title": "Short 3-6 word title",
-      "type": "task" | "idea",
-      "category": "category",
+      "title": "Short 3-6 word title (for dreams: capture the key imagery/narrative)",
+      "type": "task" | "idea" | "dream",
+      "category": "category (for dreams use: dreams)",
       "due_date": "YYYY-MM-DD" | null,
       "priority": "high" | "medium" | "low",
-      "context": "Brief context if relevant (optional)"
+      "context": "Brief context if relevant (optional, for dreams: fuller narrative)"
     }
   ]
 }
+
+## MIXED INPUT EXAMPLE
+Input: "Soñé que volaba sobre el mar. Ah y también tengo que llamar al dentista. Se me ocurrió una app para compartir sueños."
+Output:
+- Dream: "Volaba sobre el mar" (type: dream)
+- Task: "Llamar al dentista" (type: task)
+- Idea: "App para compartir sueños" (type: idea)
 
 ## TRANSCRIPT TO ANALYZE:
 ${text}`;
@@ -194,21 +204,23 @@ ${text}`;
       // Post-process: ensure all items have required fields
       const processedItems = items.map((item: any) => ({
         title: item.title || 'Sin título',
-        type: item.type === 'idea' ? 'idea' : 'task',
-        category: item.category || 'personal',
+        type: ['task', 'idea', 'dream'].includes(item.type) ? item.type : 'idea',
+        category: item.category || (item.type === 'dream' ? 'dreams' : 'personal'),
         due_date: item.due_date || null,
         priority: ['high', 'medium', 'low'].includes(item.priority) ? item.priority : 'medium',
+        context: item.context || null,
       }));
       
       const tasks = processedItems.filter((item: { type: string }) => item.type === 'task');
       const ideas = processedItems.filter((item: { type: string }) => item.type === 'idea');
+      const dreams = processedItems.filter((item: { type: string }) => item.type === 'dream');
 
       // Increment usage counter
       if (access.userId) {
         await incrementAIUsage(access.userId);
       }
 
-      return NextResponse.json({ items: processedItems, tasks, ideas });
+      return NextResponse.json({ items: processedItems, tasks, ideas, dreams });
     } catch (parseError) {
       console.error('JSON parse error:', parseError, 'Content:', cleanContent);
       return NextResponse.json({ error: 'Failed to parse extraction result' }, { status: 500 });
