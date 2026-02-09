@@ -903,21 +903,54 @@ export default function IdeasBoard() {
                 {/* Title with voice edit */}
                 <div>
                   {editingTitle ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
+                    <div className="flex flex-col gap-2">
+                      <textarea
                         value={editedTitle}
-                        onChange={(e) => setEditedTitle(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && updateIdeaTitle()}
-                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/50"
+                        onChange={(e) => {
+                          setEditedTitle(e.target.value);
+                          // Auto-resize textarea
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            updateIdeaTitle();
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingTitle(false);
+                            setEditedTitle(selectedIdea?.title || '');
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/50 resize-none overflow-hidden"
+                        style={{ minHeight: '60px' }}
                         autoFocus
+                        ref={(el) => {
+                          if (el) {
+                            el.style.height = 'auto';
+                            el.style.height = el.scrollHeight + 'px';
+                            el.focus();
+                            el.setSelectionRange(el.value.length, el.value.length);
+                          }
+                        }}
                       />
-                      <button
-                        onClick={updateIdeaTitle}
-                        className="px-3 py-2 rounded-xl bg-[#6b8f71] text-white"
-                      >
-                        {Icons.check}
-                      </button>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => {
+                            setEditingTitle(false);
+                            setEditedTitle(selectedIdea?.title || '');
+                          }}
+                          className="px-3 py-1.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={updateIdeaTitle}
+                          className="px-4 py-1.5 rounded-xl bg-[#6b8f71] text-white text-sm font-medium"
+                        >
+                          Guardar
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex items-start gap-3">

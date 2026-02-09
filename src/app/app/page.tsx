@@ -134,6 +134,7 @@ export default function PandaHub() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [selectedDeadline, setSelectedDeadline] = useState('today'); // Default to today
+  const [originalVoiceContext, setOriginalVoiceContext] = useState<string | null>(null); // Store original voice input
   
   // Dark mode
   const [darkMode, setDarkMode] = useState(false);
@@ -520,6 +521,9 @@ export default function PandaHub() {
         return;
       }
 
+      // Store original voice context for ideas (rich context like IdeaBoard)
+      setOriginalVoiceContext(transcribedText.trim());
+
       const lowerText = transcribedText.toLowerCase();
 
       // Extract and classify
@@ -619,6 +623,7 @@ export default function PandaHub() {
       completed: false,
       type: item.type === 'dream' ? 'dream' : item.type,
       due_date: item.type === 'task' ? dueDate : null, // Only tasks get due dates
+      voice_context: item.type === 'idea' ? originalVoiceContext : null, // Store rich context for ideas (like IdeaBoard)
     }));
 
     await supabase.from('tasks').insert(rows);
@@ -640,6 +645,7 @@ export default function PandaHub() {
     setCapturedItems([]);
     setShowConfirmation(false);
     setSelectedDeadline('today'); // Reset to default
+    setOriginalVoiceContext(null); // Clear voice context
     setPandaImage('/panda/new-celebrate.png');
     setPandaMessage('¡Guardado! ¿Algo más?');
     
@@ -653,6 +659,7 @@ export default function PandaHub() {
     setShowConfirmation(false);
     setEditingIndex(null);
     setSelectedDeadline('today'); // Reset to default
+    setOriginalVoiceContext(null); // Clear voice context
     setPandaImage('/panda/new-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
