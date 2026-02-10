@@ -1647,36 +1647,9 @@ export default function PandaHub() {
 
                 {/* Items - grouped by type in brain dump, flat otherwise */}
                 <div className="space-y-2">
-                  {isBrainDump ? (
-                    // Grouped by type
-                    (['task', 'idea', 'dream'] as const).map(type => {
-                      const items = capturedItems.filter(i => i.type === type);
-                      if (items.length === 0) return null;
-                      const cfg = typeConfig[type];
-                      return (
-                        <div key={type} className="mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={cfg.color}>{cfg.icon}</span>
-                            <span className="text-xs font-medium text-[var(--gray-5)]">
-                              {type === 'task' ? 'Tareas' : type === 'idea' ? 'Ideas' : 'Sueños'} ({items.length})
-                            </span>
-                          </div>
-                          <div className="space-y-2">
-                            <AnimatePresence mode="popLayout">
-                              {items.map(item => {
-                                const i = capturedItems.indexOf(item);
-                                return renderItem(item, i);
-                              })}
-                            </AnimatePresence>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
                   <AnimatePresence mode="popLayout">
-                    {capturedItems.map((item, i) => renderItem(item, i))}
-                  </AnimatePresence>
-                  )}
+                  {capturedItems.map((item, i) => renderItem(item, i))}
+                </AnimatePresence>
                 </div>
                 {/* (moved item rendering to renderItem function) */}
 
