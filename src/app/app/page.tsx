@@ -919,7 +919,8 @@ export default function PandaHub() {
           </div>
         ) : (
           <div 
-            onClick={() => batchMode ? toggleBatchSelect(i) : startEditing(i)}
+            onClick={() => { if (batchMode) toggleBatchSelect(i); }}
+            onDoubleClick={() => { if (!batchMode) startEditing(i); }}
             onContextMenu={(e) => { e.preventDefault(); setBatchMode(true); toggleBatchSelect(i); }}
             className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border ${batchSelected.has(i) ? 'border-[#6b8f71] ring-1 ring-[#6b8f71]/30' : 'border-[var(--gray-2)]'} cursor-pointer active:scale-[0.98] transition-all`}
           >
@@ -1456,7 +1457,7 @@ export default function PandaHub() {
 
                 {/* Hint */}
                 <p className="text-[10px] text-center text-[var(--gray-4)] mt-2 mb-3">
-                  Toca icono = cambiar tipo · Toca = editar · Mantén = selección múltiple
+                  Toca icono = cambiar tipo · Doble tap = editar · Mantén = seleccionar
                 </p>
 
                 {/* Deadline picker */}
