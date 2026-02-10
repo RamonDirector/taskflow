@@ -47,6 +47,7 @@ interface Task {
   voice_context?: string;
   type?: string;
   completed?: boolean;
+  completed_at?: string; // ISO timestamp when completed
   parent_idea_id?: string;
   origin_idea_id?: string;
   origin_idea_title?: string; // Populated from join
@@ -220,8 +221,13 @@ export default function TasksPage() {
     } else {
       haptic.light();
     }
-    await supabase.from('tasks').update({ completed: !task.completed }).eq('id', id);
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    const nowCompleted = !task.completed;
+    const updates: Record<string, unknown> = { 
+      completed: nowCompleted,
+      completed_at: nowCompleted ? new Date().toISOString() : null,
+    };
+    await supabase.from('tasks').update(updates).eq('id', id);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: nowCompleted, completed_at: nowCompleted ? new Date().toISOString() : undefined } : t));
   };
 
   const deleteTask = async (id: string) => {
@@ -499,11 +505,21 @@ export default function TasksPage() {
   
   const focusTaskIds = new Set(focusTasks.map(t => t.id));
 
+  // Auto-hide completed tasks after 24h (except in "Completadas" view)
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
   const filteredTasks = tasks
     .filter(t => {
       // Status filter
       if (filter === 'pending' && t.completed) return false;
       if (filter === 'completed' && !t.completed) return false;
+      
+      // In "all" view, hide tasks completed >24h ago
+      if (filter === 'all' && t.completed && t.completed_at) {
+        const completedTime = new Date(t.completed_at).getTime();
+        if (now - completedTime > TWENTY_FOUR_HOURS) return false;
+      }
       
       // Origin filter
       if (originFilter === 'independent' && t.origin_idea_id) return false;
@@ -801,7 +817,7 @@ export default function TasksPage() {
                     isSelected
                       ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 scale-[1.02] bg-white dark:bg-[#2c2c2e]'
                       : task.completed
-                        ? 'bg-[#6b8f71]/10 dark:bg-[#6b8f71]/15 border-[#6b8f71]/30 dark:border-[#6b8f71]/40'
+                        ? 'bg-[#6b8f71]/10 dark:bg-[#6b8f71]/15 border-[#6b8f71]/30 dark:border-[#6b8f71]/40 opacity-60'
                         : 'bg-white dark:bg-[#2c2c2e] border-gray-200 dark:border-gray-700 active:scale-[0.98]'
                   }`}
                 >
