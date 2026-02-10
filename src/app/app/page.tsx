@@ -1535,11 +1535,6 @@ export default function PandaHub() {
           </div>
         )}
 
-        {/* Greeting */}
-        {!showConfirmation && !isRecording && !isProcessing && !inputFocused && userName && (
-          <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
-        )}
-
         {/* Proactive suggestion - stale item nudge */}
         <AnimatePresence>
           {staleSuggestion && !showConfirmation && !isRecording && !isProcessing && !inputFocused && (
