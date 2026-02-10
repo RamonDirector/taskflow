@@ -1551,38 +1551,59 @@ export default function PandaHub() {
               )}
             </div>
 
-            {/* Mic button with swipe-up lock indicator */}
-            <div className="relative z-10">
-              {/* Lock indicator - appears above mic when swiping up */}
+            {/* Mic button with swipe-up lock for Brain Dump */}
+            <div 
+              className="relative z-10"
+              onTouchStart={handleMicTouchStart}
+              onTouchMove={handleMicTouchMove}
+              onTouchEnd={handleMicTouchEnd}
+              style={{ touchAction: 'none' }}
+            >
+              {/* Lock track - appears above mic when recording */}
               <AnimatePresence>
-                {isRecording && !brainDumpTriggeredRef.current && swipeProgress > 0 && (
+                {isRecording && !brainDumpTriggeredRef.current && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: swipeProgress, scale: 0.7 + swipeProgress * 0.3, y: -50 - swipeProgress * 10 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 pointer-events-none"
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    exit={{ opacity: 0, scaleY: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col items-center origin-bottom"
                   >
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: swipeProgress >= 0.9 ? THEME_COLOR : 'var(--gray-3)' }}
+                    {/* Lock icon */}
+                    <motion.div
+                      animate={{ 
+                        y: swipeProgress > 0 ? -swipeProgress * 8 : 0,
+                        scale: 0.8 + swipeProgress * 0.2,
+                      }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center mb-1 transition-colors duration-150"
+                      style={{ backgroundColor: swipeProgress >= 0.85 ? THEME_COLOR : 'var(--gray-3)' }}
                     >
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        {swipeProgress >= 0.9 ? (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        {swipeProgress >= 0.85 ? (
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                         ) : (
                           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                         )}
                       </svg>
+                    </motion.div>
+                    {/* Track line */}
+                    <div className="w-[2px] h-10 rounded-full bg-[var(--gray-3)] relative overflow-hidden">
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 rounded-full"
+                        animate={{ height: `${swipeProgress * 100}%` }}
+                        style={{ backgroundColor: THEME_COLOR }}
+                      />
                     </div>
+                    {/* Chevron up hint */}
+                    <svg className="w-4 h-4 text-[var(--gray-4)] mt-0.5 animate-bounce" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                    </svg>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Mic button */}
               <button
-                onTouchStart={handleMicTouchStart}
-                onTouchMove={handleMicTouchMove}
-                onTouchEnd={handleMicTouchEnd}
                 onMouseDown={handleMicMouseDown}
                 onMouseUp={handleMicMouseUp}
                 onMouseLeave={() => {
@@ -1590,7 +1611,7 @@ export default function PandaHub() {
                   if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
                 }}
                 disabled={isProcessing}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative disabled:opacity-50 select-none touch-none"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative disabled:opacity-50 select-none"
                 style={{ backgroundColor: THEME_COLOR }}
               >
                 <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
