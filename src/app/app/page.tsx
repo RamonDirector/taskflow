@@ -99,8 +99,9 @@ interface CapturedItem {
   type: 'task' | 'idea' | 'dream';
   category: string;
   priority: 'high' | 'medium' | 'low';
-  due_date?: string; // ISO date string
-  context?: string; // Original context or AI-extracted context
+  due_date?: string;
+  context?: string;
+  _fromIdeaTitle?: string; // Track which idea generated this task (for linking)
 }
 
 // Deadline options
@@ -749,18 +750,58 @@ export default function PandaHub() {
 
     const dueDate = getDueDate();
 
-    const rows = itemsToSave.map(item => ({
-      user_id: user.id,
-      title: item.title,
-      category: item.category,
-      priority: item.priority,
-      completed: false,
-      type: item.type === 'dream' ? 'dream' : item.type,
-      due_date: item.type === 'task' ? dueDate : null, // Only tasks get due dates
-      voice_context: item.type === 'idea' ? originalVoiceContext : null, // Store rich context for ideas (like IdeaBoard)
-    }));
-
-    await supabase.from('tasks').insert(rows);
+    // Separate ideas (and non-linked items) from linked tasks
+    const linkedTasks = itemsToSave.filter(item => item._fromIdeaTitle);
+    const nonLinkedItems = itemsToSave.filter(item => !item._fromIdeaTitle);
+    
+    // 1. Insert non-linked items first (ideas, standalone tasks, dreams)
+    if (nonLinkedItems.length > 0) {
+      const rows = nonLinkedItems.map(item => ({
+        user_id: user.id,
+        title: item.title,
+        category: item.category,
+        priority: item.priority,
+        completed: false,
+        type: item.type === 'dream' ? 'dream' : item.type,
+        due_date: item.type === 'task' ? dueDate : null,
+        voice_context: item.type === 'idea' ? originalVoiceContext : null,
+      }));
+      await supabase.from('tasks').insert(rows);
+    }
+    
+    // 2. If there are linked tasks, find their parent idea IDs and insert with parent_idea_id
+    if (linkedTasks.length > 0) {
+      // Get the IDs of ideas we just inserted (by title match)
+      const ideaTitles = [...new Set(linkedTasks.map(t => t._fromIdeaTitle!))];
+      const { data: insertedIdeas } = await supabase
+        .from('tasks')
+        .select('id, title')
+        .eq('user_id', user.id)
+        .eq('type', 'idea')
+        .in('title', ideaTitles)
+        .order('created_at', { ascending: false })
+        .limit(ideaTitles.length);
+      
+      // Build title → id map
+      const ideaIdMap: Record<string, string> = {};
+      if (insertedIdeas) {
+        for (const idea of insertedIdeas) {
+          if (!ideaIdMap[idea.title]) ideaIdMap[idea.title] = idea.id;
+        }
+      }
+      
+      const linkedRows = linkedTasks.map(item => ({
+        user_id: user.id,
+        title: item.title,
+        category: item.category,
+        priority: item.priority,
+        completed: false,
+        type: 'task',
+        due_date: dueDate,
+        parent_idea_id: ideaIdMap[item._fromIdeaTitle!] || null,
+      }));
+      await supabase.from('tasks').insert(linkedRows);
+    }
 
     // Mark new items for nav indicators
     const newIndicators = { ideas: false, tasks: false, dreams: false };
@@ -798,6 +839,8 @@ export default function PandaHub() {
     setOriginalVoiceContext(null);
     setBatchMode(false);
     setBatchSelected(new Set());
+    setActionPlans({});
+    setExpandedPlans(new Set());
     setPandaImage('/panda/new-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
@@ -902,17 +945,19 @@ export default function PandaHub() {
     }
   };
 
-  // Add action plan steps as tasks
+  // Add action plan steps as tasks (linked to parent idea)
   const addActionPlanAsTasks = (index: number) => {
     const plan = actionPlans[index];
-    if (!plan || plan.points.length === 0) return;
+    const parentIdea = capturedItems[index];
+    if (!plan || plan.points.length === 0 || !parentIdea) return;
     
     haptic.medium();
     const newTasks: CapturedItem[] = plan.points.map(point => ({
       title: point.title,
       type: 'task',
-      category: point.category || 'personal',
+      category: point.category || parentIdea.category || 'personal',
       priority: 'medium',
+      _fromIdeaTitle: parentIdea.title, // Link to parent idea
     }));
     
     // Insert tasks right after the idea
