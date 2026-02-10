@@ -131,8 +131,8 @@ export default function PandaHub() {
   
   // Brain Dump state
   const [isBrainDump, setIsBrainDump] = useState(false);
-  const [brainDumpActive, setBrainDumpActive] = useState(false); // overlay visible
-  const [encouragementIndex, setEncouragementIndex] = useState(0);
+  const [brainDumpLocked, setBrainDumpLocked] = useState(false); // locked recording (hands-free)
+  const [brainDumpPaused, setBrainDumpPaused] = useState(false);
   const brainDumpTriggeredRef = useRef(false);
   const micTouchStartY = useRef<number | null>(null);
   const [swipeProgress, setSwipeProgress] = useState(0); // 0 to 1
@@ -430,23 +430,6 @@ export default function PandaHub() {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const brainDumpMessages = [
-    'Sigue, te escucho...',
-    'Suelta todo lo que tengas en mente',
-    'No te preocupes por el orden',
-    'Tómate tu tiempo',
-    'Cada idea cuenta',
-  ];
-
-  // Rotate encouragement messages every 8 seconds during brain dump
-  useEffect(() => {
-    if (!brainDumpActive) return;
-    const interval = setInterval(() => {
-      setEncouragementIndex(i => (i + 1) % brainDumpMessages.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [brainDumpActive]);
-
   // Brain dump swipe-up-to-lock handlers
   const handleMicTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
@@ -459,18 +442,17 @@ export default function PandaHub() {
 
   const handleMicTouchMove = (e: React.TouchEvent) => {
     if (!isRecording || brainDumpTriggeredRef.current || micTouchStartY.current === null) return;
-    const deltaY = micTouchStartY.current - e.touches[0].clientY; // positive = swiping up
+    const deltaY = micTouchStartY.current - e.touches[0].clientY;
     const progress = Math.min(1, Math.max(0, deltaY / SWIPE_THRESHOLD));
     setSwipeProgress(progress);
     
     if (deltaY >= SWIPE_THRESHOLD) {
-      // Lock activated!
       brainDumpTriggeredRef.current = true;
       haptic.strong();
       setSwipeProgress(0);
       setIsBrainDump(true);
-      setBrainDumpActive(true);
-      setEncouragementIndex(0);
+      setBrainDumpLocked(true);
+      setBrainDumpPaused(false);
       micTouchStartY.current = null;
     }
   };
@@ -481,7 +463,7 @@ export default function PandaHub() {
     setSwipeProgress(0);
     
     if (brainDumpTriggeredRef.current) {
-      return; // Recording continues in brain dump mode
+      return; // Recording continues in locked mode
     }
     
     if (isRecording) stopRecording();
@@ -500,14 +482,30 @@ export default function PandaHub() {
     if (isRecording) stopRecording();
   };
 
+  // Brain dump locked controls
+  const toggleBrainDumpPause = () => {
+    if (!mediaRecorderRef.current) return;
+    if (brainDumpPaused) {
+      mediaRecorderRef.current.resume();
+      setBrainDumpPaused(false);
+      haptic.light();
+    } else {
+      mediaRecorderRef.current.pause();
+      setBrainDumpPaused(true);
+      haptic.light();
+    }
+  };
+
   const stopBrainDump = () => {
-    setBrainDumpActive(false);
+    setBrainDumpLocked(false);
+    setBrainDumpPaused(false);
     setIsBrainDump(true); // Keep flag so review sheet knows it was brain dump
     stopRecording();
   };
 
   const cancelBrainDump = () => {
-    setBrainDumpActive(false);
+    setBrainDumpLocked(false);
+    setBrainDumpPaused(false);
     setIsBrainDump(false);
     cancelRecording();
   };
@@ -1251,93 +1249,6 @@ export default function PandaHub() {
         )}
       </div>
 
-      {/* Brain Dump Overlay */}
-      <AnimatePresence>
-        {brainDumpActive && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-between"
-            style={{
-              background: 'linear-gradient(180deg, var(--background) 0%, rgba(107,143,113,0.15) 50%, var(--background) 100%)',
-            }}
-          >
-            {/* Cancel button */}
-            <button
-              onClick={cancelBrainDump}
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-[var(--gray-1)] text-[var(--gray-5)] hover:bg-[var(--gray-2)] transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Panda */}
-            <div className="pt-16">
-              <div className="relative w-20 h-20">
-                <Image
-                  src="/panda/new-neutral.png"
-                  alt="Kai"
-                  fill
-                  className="object-contain"
-                  style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
-                />
-              </div>
-            </div>
-
-            {/* Center content */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
-              {/* Timer */}
-              <p className="text-5xl font-light text-[var(--foreground)] tabular-nums tracking-tight">
-                {formatTime(recordingTime)}
-              </p>
-
-              {/* Sound wave visualization */}
-              <div className="flex items-center justify-center gap-1 h-16">
-                {[...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-1 rounded-full"
-                    style={{
-                      backgroundColor: THEME_COLOR,
-                      opacity: 0.6 + Math.random() * 0.4,
-                      animation: `brainDumpBar ${0.8 + (i % 3) * 0.3}s ease-in-out ${i * 0.08}s infinite alternate`,
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Encouragement message */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={encouragementIndex}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.4 }}
-                  className="text-base text-[var(--gray-4)] text-center font-medium"
-                >
-                  {brainDumpMessages[encouragementIndex]}
-                </motion.p>
-              </AnimatePresence>
-            </div>
-
-            {/* Stop button */}
-            <div className="pb-12">
-              <button
-                onClick={stopBrainDump}
-                className="h-14 px-10 rounded-full text-white text-base font-medium active:scale-95 transition-transform"
-                style={{ backgroundColor: THEME_COLOR }}
-              >
-                Terminar
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Bottom Sheet for confirmation */}
       <AnimatePresence>
         {showConfirmation && capturedItems.length > 0 && (
@@ -1498,134 +1409,211 @@ export default function PandaHub() {
       {/* Input bar - fixed at bottom */}
       {!showConfirmation && (
         <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 z-20">
-          <div 
-            className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative shadow-lg"
-          >
-            {/* Clip only the recording overlay, not children */}
-            <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-              {/* Overlay when recording - matcha green in dark mode for contrast */}
-              <div 
-                className="absolute inset-0 bg-[#2d2d30] dark:bg-[#3d5a45] rounded-full transition-all"
-                style={{ 
-                  clipPath: isRecording 
-                    ? 'circle(150% at calc(100% - 36px) 50%)' 
-                    : 'circle(0% at calc(100% - 36px) 50%)',
-                  transitionDuration: '700ms',
-                  transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-              />
-            </div>
-            
-            {/* Cancel button */}
-            <div className={`relative z-10 transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
-              <button 
-                onClick={cancelRecording} 
-                className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10"
-              >
-                {Icons.x}
-              </button>
-            </div>
-
-            {/* Input / Recording content */}
-            <div className="flex-1 flex items-center gap-2 relative z-10">
-              {!isRecording ? (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  placeholder="Escribe o habla..."
-                  disabled={isProcessing}
-                  className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none font-medium tracking-tight disabled:opacity-50"
-                />
-              ) : (
-                <>
-                  <div className="flex-1 flex items-center">
-                    <span className="text-white text-sm font-medium">Escuchando</span>
-                    <span className="dots text-white">
-                      <span>.</span><span>.</span><span>.</span>
-                    </span>
-                  </div>
-                  <span className="text-white/50 text-xs tabular-nums">{formatTime(recordingTime)}</span>
-                </>
-              )}
-            </div>
-
-            {/* Mic button with swipe-up lock for Brain Dump */}
-            <div 
-              className="relative z-10"
-              onTouchStart={handleMicTouchStart}
-              onTouchMove={handleMicTouchMove}
-              onTouchEnd={handleMicTouchEnd}
-              style={{ touchAction: 'none' }}
+          {brainDumpLocked ? (
+            /* === BRAIN DUMP LOCKED STATE === */
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex items-center gap-3 h-14 px-4 rounded-full border border-[var(--gray-2)] relative shadow-lg"
+              style={{ backgroundColor: 'var(--gray-1)' }}
             >
-              {/* Lock track - appears above mic when recording */}
-              <AnimatePresence>
-                {isRecording && !brainDumpTriggeredRef.current && (
-                  <motion.div
-                    initial={{ opacity: 0, scaleY: 0 }}
-                    animate={{ opacity: 1, scaleY: 1 }}
-                    exit={{ opacity: 0, scaleY: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col items-center origin-bottom"
-                  >
-                    {/* Lock icon */}
-                    <motion.div
-                      animate={{ 
-                        y: swipeProgress > 0 ? -swipeProgress * 8 : 0,
-                        scale: 0.8 + swipeProgress * 0.2,
-                      }}
-                      className="w-9 h-9 rounded-full flex items-center justify-center mb-1 transition-colors duration-150"
-                      style={{ backgroundColor: swipeProgress >= 0.85 ? THEME_COLOR : 'var(--gray-3)' }}
-                    >
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                        {swipeProgress >= 0.85 ? (
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                        ) : (
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                        )}
-                      </svg>
-                    </motion.div>
-                    {/* Track line */}
-                    <div className="w-[2px] h-10 rounded-full bg-[var(--gray-3)] relative overflow-hidden">
-                      <motion.div
-                        className="absolute bottom-0 left-0 right-0 rounded-full"
-                        animate={{ height: `${swipeProgress * 100}%` }}
-                        style={{ backgroundColor: THEME_COLOR }}
-                      />
-                    </div>
-                    {/* Chevron up hint */}
-                    <svg className="w-4 h-4 text-[var(--gray-4)] mt-0.5 animate-bounce" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-                    </svg>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Mic button */}
+              {/* Delete / Cancel */}
               <button
-                onMouseDown={handleMicMouseDown}
-                onMouseUp={handleMicMouseUp}
-                onMouseLeave={() => {
-                  setSwipeProgress(0);
-                  if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
-                }}
-                disabled={isProcessing}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative disabled:opacity-50 select-none"
+                onClick={cancelBrainDump}
+                className="w-10 h-10 flex items-center justify-center rounded-full text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </button>
+
+              {/* Timer + wave bars */}
+              <div className="flex-1 flex items-center gap-3">
+                <span className={`text-sm font-medium tabular-nums ${brainDumpPaused ? 'text-[var(--gray-4)]' : 'text-[var(--foreground)]'}`}>
+                  {formatTime(recordingTime)}
+                </span>
+                {/* Mini wave bars */}
+                <div className="flex items-center gap-[3px] h-6 flex-1">
+                  {[...Array(20)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-full"
+                      style={{
+                        backgroundColor: THEME_COLOR,
+                        opacity: brainDumpPaused ? 0.3 : 0.4 + Math.random() * 0.4,
+                        height: brainDumpPaused ? '4px' : undefined,
+                        animation: brainDumpPaused ? 'none' : `brainDumpBar ${0.6 + (i % 4) * 0.2}s ease-in-out ${i * 0.05}s infinite alternate`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Pause / Resume */}
+              <button
+                onClick={toggleBrainDumpPause}
+                className="w-10 h-10 flex items-center justify-center rounded-full text-[var(--foreground)] hover:bg-[var(--gray-2)] transition-colors"
+              >
+                {brainDumpPaused ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5.14v14l11-7-11-7z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Stop / Send - mic with glow */}
+              <button
+                onClick={stopBrainDump}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white relative active:scale-95 transition-transform"
                 style={{ backgroundColor: THEME_COLOR }}
               >
-                <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
-                  {Icons.mic}
-                </div>
-                <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
-                  {Icons.check}
-                </div>
+                {/* Glow ring */}
+                <div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    boxShadow: brainDumpPaused ? 'none' : `0 0 12px 3px ${THEME_COLOR}60, 0 0 24px 6px ${THEME_COLOR}30`,
+                    animation: brainDumpPaused ? 'none' : 'micGlow 2s ease-in-out infinite',
+                  }}
+                />
+                <svg className="w-5 h-5 relative z-10" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+                </svg>
               </button>
+            </motion.div>
+          ) : (
+            /* === NORMAL INPUT BAR === */
+            <div 
+              className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative shadow-lg"
+            >
+              {/* Clip only the recording overlay */}
+              <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                <div 
+                  className="absolute inset-0 bg-[#2d2d30] dark:bg-[#3d5a45] rounded-full transition-all"
+                  style={{ 
+                    clipPath: isRecording 
+                      ? 'circle(150% at calc(100% - 36px) 50%)' 
+                      : 'circle(0% at calc(100% - 36px) 50%)',
+                    transitionDuration: '700ms',
+                    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                />
+              </div>
+              
+              {/* Cancel button */}
+              <div className={`relative z-10 transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
+                <button 
+                  onClick={cancelRecording} 
+                  className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white rounded-full hover:bg-white/10"
+                >
+                  {Icons.x}
+                </button>
+              </div>
+
+              {/* Input / Recording content */}
+              <div className="flex-1 flex items-center gap-2 relative z-10">
+                {!isRecording ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    placeholder="Escribe o habla..."
+                    disabled={isProcessing}
+                    className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none font-medium tracking-tight disabled:opacity-50"
+                  />
+                ) : (
+                  <>
+                    <div className="flex-1 flex items-center">
+                      <span className="text-white text-sm font-medium">Escuchando</span>
+                      <span className="dots text-white">
+                        <span>.</span><span>.</span><span>.</span>
+                      </span>
+                    </div>
+                    <span className="text-white/50 text-xs tabular-nums">{formatTime(recordingTime)}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Mic button with swipe-up lock for Brain Dump */}
+              <div 
+                className="relative z-10"
+                onTouchStart={handleMicTouchStart}
+                onTouchMove={handleMicTouchMove}
+                onTouchEnd={handleMicTouchEnd}
+                style={{ touchAction: 'none' }}
+              >
+                {/* Lock track - appears above mic when recording */}
+                <AnimatePresence>
+                  {isRecording && !brainDumpTriggeredRef.current && (
+                    <motion.div
+                      initial={{ opacity: 0, scaleY: 0 }}
+                      animate={{ opacity: 1, scaleY: 1 }}
+                      exit={{ opacity: 0, scaleY: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col items-center origin-bottom"
+                    >
+                      {/* Lock icon */}
+                      <motion.div
+                        animate={{ 
+                          y: swipeProgress > 0 ? -swipeProgress * 8 : 0,
+                          scale: 0.8 + swipeProgress * 0.2,
+                        }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center mb-1 transition-colors duration-150"
+                        style={{ backgroundColor: swipeProgress >= 0.85 ? THEME_COLOR : 'var(--gray-3)' }}
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                          {swipeProgress >= 0.85 ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                          )}
+                        </svg>
+                      </motion.div>
+                      {/* Track line */}
+                      <div className="w-[2px] h-10 rounded-full bg-[var(--gray-3)] relative overflow-hidden">
+                        <motion.div
+                          className="absolute bottom-0 left-0 right-0 rounded-full"
+                          animate={{ height: `${swipeProgress * 100}%` }}
+                          style={{ backgroundColor: THEME_COLOR }}
+                        />
+                      </div>
+                      {/* Chevron up hint */}
+                      <svg className="w-4 h-4 text-[var(--gray-4)] mt-0.5 animate-bounce" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                      </svg>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Mic button */}
+                <button
+                  onMouseDown={handleMicMouseDown}
+                  onMouseUp={handleMicMouseUp}
+                  onMouseLeave={() => {
+                    setSwipeProgress(0);
+                    if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
+                  }}
+                  disabled={isProcessing}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative disabled:opacity-50 select-none"
+                  style={{ backgroundColor: THEME_COLOR }}
+                >
+                  <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                    {Icons.mic}
+                  </div>
+                  <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                    {Icons.check}
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -1673,8 +1661,12 @@ export default function PandaHub() {
           50% { opacity: 0.6; transform: scale(1.6); }
         }
         @keyframes brainDumpBar {
-          0% { height: 8px; }
-          100% { height: 48px; }
+          0% { height: 4px; }
+          100% { height: 20px; }
+        }
+        @keyframes micGlow {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
         }
         @keyframes flowerPop {
           0% { opacity: 0; transform: scale(0); }
