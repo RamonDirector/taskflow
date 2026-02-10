@@ -1499,19 +1499,22 @@ export default function PandaHub() {
       {!showConfirmation && (
         <div className="fixed bottom-20 left-0 right-0 px-6 pb-4 z-20">
           <div 
-            className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden shadow-lg"
+            className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative shadow-lg"
           >
-            {/* Overlay when recording - matcha green in dark mode for contrast */}
-            <div 
-              className="absolute inset-0 bg-[#2d2d30] dark:bg-[#3d5a45] rounded-full transition-all"
-              style={{ 
-                clipPath: isRecording 
-                  ? 'circle(150% at calc(100% - 36px) 50%)' 
-                  : 'circle(0% at calc(100% - 36px) 50%)',
-                transitionDuration: '700ms',
-                transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
-              }}
-            />
+            {/* Clip only the recording overlay, not children */}
+            <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              {/* Overlay when recording - matcha green in dark mode for contrast */}
+              <div 
+                className="absolute inset-0 bg-[#2d2d30] dark:bg-[#3d5a45] rounded-full transition-all"
+                style={{ 
+                  clipPath: isRecording 
+                    ? 'circle(150% at calc(100% - 36px) 50%)' 
+                    : 'circle(0% at calc(100% - 36px) 50%)',
+                  transitionDuration: '700ms',
+                  transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              />
+            </div>
             
             {/* Cancel button */}
             <div className={`relative z-10 transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
