@@ -1029,7 +1029,7 @@ export default function PandaHub() {
             width: inputFocused ? 80 : 160,
             height: inputFocused ? 80 : 160,
             marginBottom: inputFocused ? 8 : 8,
-            marginTop: inputFocused ? 8 : 0,
+            marginTop: inputFocused ? 8 : 40,
           }}
           transition={{ type: 'spring', damping: 30, stiffness: 200 }}
           style={{ 
