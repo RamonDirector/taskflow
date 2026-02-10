@@ -129,6 +129,13 @@ export default function PandaHub() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Brain Dump state
+  const [isBrainDump, setIsBrainDump] = useState(false);
+  const [brainDumpActive, setBrainDumpActive] = useState(false); // overlay visible
+  const [encouragementIndex, setEncouragementIndex] = useState(0);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const brainDumpTriggeredRef = useRef(false);
+  
   // Captured items (for confirmation)
   const [capturedItems, setCapturedItems] = useState<CapturedItem[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -421,6 +428,69 @@ export default function PandaHub() {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const brainDumpMessages = [
+    'Sigue, te escucho...',
+    'Suelta todo lo que tengas en mente',
+    'No te preocupes por el orden',
+    'Tómate tu tiempo',
+    'Cada idea cuenta',
+  ];
+
+  // Rotate encouragement messages every 8 seconds during brain dump
+  useEffect(() => {
+    if (!brainDumpActive) return;
+    const interval = setInterval(() => {
+      setEncouragementIndex(i => (i + 1) % brainDumpMessages.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [brainDumpActive]);
+
+  // Brain dump long-press handlers
+  const handleMicDown = () => {
+    if (isProcessing || isRecording) return;
+    brainDumpTriggeredRef.current = false;
+    
+    // Start normal recording immediately
+    startRecording();
+    
+    // Set up long-press timer for brain dump
+    longPressTimerRef.current = setTimeout(() => {
+      brainDumpTriggeredRef.current = true;
+      haptic.strong();
+      setIsBrainDump(true);
+      setBrainDumpActive(true);
+      setEncouragementIndex(0);
+    }, 500);
+  };
+
+  const handleMicUp = () => {
+    // Clear long-press timer
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // If brain dump was triggered, DON'T stop recording on release
+    if (brainDumpTriggeredRef.current) {
+      return; // Recording continues in brain dump mode
+    }
+    
+    // Normal mode: stop recording on release
+    if (isRecording) stopRecording();
+  };
+
+  const stopBrainDump = () => {
+    setBrainDumpActive(false);
+    setIsBrainDump(true); // Keep flag so review sheet knows it was brain dump
+    stopRecording();
+  };
+
+  const cancelBrainDump = () => {
+    setBrainDumpActive(false);
+    setIsBrainDump(false);
+    cancelRecording();
+  };
+
   // Recording functions
   const startRecording = async () => {
     haptic.medium();
@@ -649,6 +719,7 @@ export default function PandaHub() {
     // Reset
     setCapturedItems([]);
     setShowConfirmation(false);
+    setIsBrainDump(false);
     setSelectedDeadline('today'); // Reset to default
     setOriginalVoiceContext(null); // Clear voice context
     setPandaImage('/panda/new-celebrate.png');
@@ -662,6 +733,7 @@ export default function PandaHub() {
   const discardItems = () => {
     setCapturedItems([]);
     setShowConfirmation(false);
+    setIsBrainDump(false);
     setEditingIndex(null);
     setSelectedDeadline('today'); // Reset to default
     setOriginalVoiceContext(null); // Clear voice context
@@ -699,6 +771,74 @@ export default function PandaHub() {
   const cancelEdit = () => {
     setEditingIndex(null);
     setEditText('');
+  };
+
+  // Render a single captured item (shared between flat and grouped views)
+  const renderItem = (item: CapturedItem, i: number) => {
+    const config = typeConfig[item.type];
+    const isEditing = editingIndex === i;
+    
+    return (
+      <motion.div
+        key={`${item.title}-${i}`}
+        layout
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 0.5, right: 0 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.x < -80) {
+            removeItem(i);
+          }
+        }}
+        className="relative touch-pan-y"
+      >
+        {isEditing ? (
+          <div className={`flex flex-col gap-2 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)]`}>
+            <input
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                if (e.key === 'Escape') cancelEdit();
+              }}
+              autoFocus
+              className="w-full bg-transparent text-sm font-medium text-[var(--foreground)] focus:outline-none"
+            />
+            <div className="flex gap-2 justify-end">
+              <button onClick={cancelEdit} className="px-3 py-1 text-xs text-[var(--gray-4)]">
+                Cancelar
+              </button>
+              <button onClick={saveEdit} className="px-3 py-1 text-xs text-white rounded-full" style={{ backgroundColor: THEME_COLOR }}>
+                OK
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div 
+            onClick={() => startEditing(i)}
+            className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)] cursor-pointer active:scale-[0.98] transition-transform`}
+          >
+            <span className={`${config.color} mt-0.5`}>{config.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--foreground)]">{item.title}</p>
+              {item.context && (
+                <p className="text-xs text-[var(--gray-4)] mt-1 line-clamp-2 italic">"{item.context}"</p>
+              )}
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] text-[var(--gray-4)]">{config.label}</span>
+                {item.category && item.category !== 'personal' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--gray-2)] text-[var(--gray-4)]">{item.category}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
   };
 
   if (loading) {
@@ -1090,6 +1230,93 @@ export default function PandaHub() {
         )}
       </div>
 
+      {/* Brain Dump Overlay */}
+      <AnimatePresence>
+        {brainDumpActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-between"
+            style={{
+              background: 'linear-gradient(180deg, var(--background) 0%, rgba(107,143,113,0.15) 50%, var(--background) 100%)',
+            }}
+          >
+            {/* Cancel button */}
+            <button
+              onClick={cancelBrainDump}
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-[var(--gray-1)] text-[var(--gray-5)] hover:bg-[var(--gray-2)] transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Panda */}
+            <div className="pt-16">
+              <div className="relative w-20 h-20">
+                <Image
+                  src="/panda/new-neutral.png"
+                  alt="Kai"
+                  fill
+                  className="object-contain"
+                  style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
+                />
+              </div>
+            </div>
+
+            {/* Center content */}
+            <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
+              {/* Timer */}
+              <p className="text-5xl font-light text-[var(--foreground)] tabular-nums tracking-tight">
+                {formatTime(recordingTime)}
+              </p>
+
+              {/* Sound wave visualization */}
+              <div className="flex items-center justify-center gap-1 h-16">
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 rounded-full"
+                    style={{
+                      backgroundColor: THEME_COLOR,
+                      opacity: 0.6 + Math.random() * 0.4,
+                      animation: `brainDumpBar ${0.8 + (i % 3) * 0.3}s ease-in-out ${i * 0.08}s infinite alternate`,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Encouragement message */}
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={encouragementIndex}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-base text-[var(--gray-4)] text-center font-medium"
+                >
+                  {brainDumpMessages[encouragementIndex]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+
+            {/* Stop button */}
+            <div className="pb-12">
+              <button
+                onClick={stopBrainDump}
+                className="h-14 px-10 rounded-full text-white text-base font-medium active:scale-95 transition-transform"
+                style={{ backgroundColor: THEME_COLOR }}
+              >
+                Terminar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom Sheet for confirmation */}
       <AnimatePresence>
         {showConfirmation && capturedItems.length > 0 && (
@@ -1107,7 +1334,7 @@ export default function PandaHub() {
             <motion.div
               layoutId="panda-mascot"
               className="fixed left-1/2 -translate-x-1/2 z-[55]"
-              style={{ bottom: 'calc(70vh - 30px)' }}
+              style={{ bottom: isBrainDump ? 'calc(90vh - 30px)' : 'calc(70vh - 30px)' }}
               transition={{ type: 'spring', damping: 30, stiffness: 200 }}
             >
               <div className="relative w-24 h-24">
@@ -1135,7 +1362,7 @@ export default function PandaHub() {
                   discardItems();
                 }
               }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--background)] rounded-t-3xl shadow-2xl max-h-[70vh] flex flex-col"
+              className={`fixed bottom-0 left-0 right-0 z-50 bg-[var(--background)] rounded-t-3xl shadow-2xl flex flex-col ${isBrainDump ? 'max-h-[90vh]' : 'max-h-[70vh]'}`}
               style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
             >
               {/* Handle */}
@@ -1145,77 +1372,56 @@ export default function PandaHub() {
 
               {/* Sheet content */}
               <div className="flex-1 overflow-y-auto px-5 pb-4">
-                {/* Items */}
+                {/* Brain dump summary header */}
+                {isBrainDump && (() => {
+                  const taskCount = capturedItems.filter(i => i.type === 'task').length;
+                  const ideaCount = capturedItems.filter(i => i.type === 'idea').length;
+                  const dreamCount = capturedItems.filter(i => i.type === 'dream').length;
+                  const parts = [];
+                  if (taskCount > 0) parts.push(`${taskCount} tarea${taskCount > 1 ? 's' : ''}`);
+                  if (ideaCount > 0) parts.push(`${ideaCount} idea${ideaCount > 1 ? 's' : ''}`);
+                  if (dreamCount > 0) parts.push(`${dreamCount} sueño${dreamCount > 1 ? 's' : ''}`);
+                  return (
+                    <p className="text-sm font-medium text-[var(--foreground)] mb-4">
+                      Capté {parts.join(', ')}
+                    </p>
+                  );
+                })()}
+
+                {/* Items - grouped by type in brain dump, flat otherwise */}
                 <div className="space-y-2">
-                  <AnimatePresence mode="popLayout">
-                    {capturedItems.map((item, i) => {
-                      const config = typeConfig[item.type];
-                      const isEditing = editingIndex === i;
-                      
+                  {isBrainDump ? (
+                    // Grouped by type
+                    (['task', 'idea', 'dream'] as const).map(type => {
+                      const items = capturedItems.filter(i => i.type === type);
+                      if (items.length === 0) return null;
+                      const cfg = typeConfig[type];
                       return (
-                        <motion.div
-                          key={`${item.title}-${i}`}
-                          layout
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
-                          drag="x"
-                          dragConstraints={{ left: 0, right: 0 }}
-                          dragElastic={{ left: 0.5, right: 0 }}
-                          onDragEnd={(_, info) => {
-                            if (info.offset.x < -80) {
-                              removeItem(i);
-                            }
-                          }}
-                          className="relative touch-pan-y"
-                        >
-                          {isEditing ? (
-                            <div className={`flex flex-col gap-2 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)]`}>
-                              <input
-                                type="text"
-                                value={editText}
-                                onChange={(e) => setEditText(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') saveEdit();
-                                  if (e.key === 'Escape') cancelEdit();
-                                }}
-                                autoFocus
-                                className="w-full bg-transparent text-sm font-medium text-[var(--foreground)] focus:outline-none"
-                              />
-                              <div className="flex gap-2 justify-end">
-                                <button onClick={cancelEdit} className="px-3 py-1 text-xs text-[var(--gray-4)]">
-                                  Cancelar
-                                </button>
-                                <button onClick={saveEdit} className="px-3 py-1 text-xs text-white rounded-full" style={{ backgroundColor: THEME_COLOR }}>
-                                  OK
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div 
-                              onClick={() => startEditing(i)}
-                              className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)] cursor-pointer active:scale-[0.98] transition-transform`}
-                            >
-                              <span className={`${config.color} mt-0.5`}>{config.icon}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[var(--foreground)]">{item.title}</p>
-                                {item.context && (
-                                  <p className="text-xs text-[var(--gray-4)] mt-1 line-clamp-2 italic">"{item.context}"</p>
-                                )}
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-[10px] text-[var(--gray-4)]">{config.label}</span>
-                                  {item.category && item.category !== 'personal' && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--gray-2)] text-[var(--gray-4)]">{item.category}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </motion.div>
+                        <div key={type} className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={cfg.color}>{cfg.icon}</span>
+                            <span className="text-xs font-medium text-[var(--gray-5)]">
+                              {type === 'task' ? 'Tareas' : type === 'idea' ? 'Ideas' : 'Sueños'} ({items.length})
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            <AnimatePresence mode="popLayout">
+                              {items.map(item => {
+                                const i = capturedItems.indexOf(item);
+                                return renderItem(item, i);
+                              })}
+                            </AnimatePresence>
+                          </div>
+                        </div>
                       );
-                    })}
+                    })
+                  ) : (
+                  <AnimatePresence mode="popLayout">
+                    {capturedItems.map((item, i) => renderItem(item, i))}
                   </AnimatePresence>
+                  )}
                 </div>
+                {/* (moved item rendering to renderItem function) */}
 
                 {/* Hint */}
                 <p className="text-[10px] text-center text-[var(--gray-4)] mt-2 mb-3">
@@ -1324,24 +1530,28 @@ export default function PandaHub() {
               )}
             </div>
 
-            {/* Mic button - Press and hold to record */}
+            {/* Mic button - Press and hold to record, long-press for Brain Dump */}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
-                if (!isProcessing && !isRecording) startRecording();
+                handleMicDown();
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
-                if (isRecording) stopRecording();
+                handleMicUp();
               }}
               onMouseDown={() => {
-                if (!isProcessing && !isRecording) startRecording();
+                handleMicDown();
               }}
               onMouseUp={() => {
-                if (isRecording) stopRecording();
+                handleMicUp();
               }}
               onMouseLeave={() => {
-                if (isRecording) stopRecording();
+                if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
+                if (longPressTimerRef.current) {
+                  clearTimeout(longPressTimerRef.current);
+                  longPressTimerRef.current = null;
+                }
               }}
               disabled={isProcessing}
               className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10 disabled:opacity-50 select-none touch-none"
@@ -1400,6 +1610,10 @@ export default function PandaHub() {
         @keyframes auraPulse {
           0%, 100% { opacity: 0.4; transform: scale(1.4); }
           50% { opacity: 0.6; transform: scale(1.6); }
+        }
+        @keyframes brainDumpBar {
+          0% { height: 8px; }
+          100% { height: 48px; }
         }
         @keyframes flowerPop {
           0% { opacity: 0; transform: scale(0); }
