@@ -133,6 +133,7 @@ export default function PandaHub() {
   const [isBrainDump, setIsBrainDump] = useState(false);
   const [brainDumpLocked, setBrainDumpLocked] = useState(false); // locked recording (hands-free)
   const [brainDumpPaused, setBrainDumpPaused] = useState(false);
+  const [brainDumpPoseIndex, setBrainDumpPoseIndex] = useState(0);
   const brainDumpTriggeredRef = useRef(false);
   const micTouchStartY = useRef<number | null>(null);
   const [swipeProgress, setSwipeProgress] = useState(0); // 0 to 1
@@ -430,6 +431,27 @@ export default function PandaHub() {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+  // Kai pose rotation during brain dump locked recording
+  const brainDumpPoses = [
+    { image: '/panda/new-neutral.png', message: 'Te escucho...' },
+    { image: '/panda/new-thinking.png', message: 'Sigue, sigue...' },
+    { image: '/panda/new-neutral.png', message: 'Tómate tu tiempo' },
+    { image: '/panda/new-celebrate.png', message: 'Cada idea cuenta' },
+  ];
+
+  useEffect(() => {
+    if (!brainDumpLocked || brainDumpPaused) return;
+    const interval = setInterval(() => {
+      setBrainDumpPoseIndex(i => {
+        const next = (i + 1) % brainDumpPoses.length;
+        setPandaImage(brainDumpPoses[next].image);
+        setPandaMessage(brainDumpPoses[next].message);
+        return next;
+      });
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [brainDumpLocked, brainDumpPaused]);
+
   // Brain dump swipe-up-to-lock handlers
   const handleMicTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
@@ -453,6 +475,9 @@ export default function PandaHub() {
       setIsBrainDump(true);
       setBrainDumpLocked(true);
       setBrainDumpPaused(false);
+      setBrainDumpPoseIndex(0);
+      setPandaImage('/panda/new-neutral.png');
+      setPandaMessage('Te escucho...');
       micTouchStartY.current = null;
     }
   };
@@ -765,8 +790,10 @@ export default function PandaHub() {
     setShowConfirmation(false);
     setIsBrainDump(false);
     setEditingIndex(null);
-    setSelectedDeadline('today'); // Reset to default
-    setOriginalVoiceContext(null); // Clear voice context
+    setSelectedDeadline('today');
+    setOriginalVoiceContext(null);
+    setBatchMode(false);
+    setBatchSelected(new Set());
     setPandaImage('/panda/new-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
@@ -801,6 +828,49 @@ export default function PandaHub() {
   const cancelEdit = () => {
     setEditingIndex(null);
     setEditText('');
+  };
+
+  // Cycle item type: task → idea → dream → task
+  const cycleItemType = (index: number) => {
+    haptic.light();
+    const typeOrder: ('task' | 'idea' | 'dream')[] = ['task', 'idea', 'dream'];
+    const newItems = [...capturedItems];
+    const currentIdx = typeOrder.indexOf(newItems[index].type);
+    newItems[index] = { ...newItems[index], type: typeOrder[(currentIdx + 1) % 3] };
+    setCapturedItems(newItems);
+  };
+
+  // Batch selection
+  const [batchSelected, setBatchSelected] = useState<Set<number>>(new Set());
+  const [batchMode, setBatchMode] = useState(false);
+
+  const toggleBatchSelect = (index: number) => {
+    const newSet = new Set(batchSelected);
+    if (newSet.has(index)) newSet.delete(index);
+    else newSet.add(index);
+    setBatchSelected(newSet);
+    if (newSet.size === 0) setBatchMode(false);
+  };
+
+  const batchDelete = () => {
+    const newItems = capturedItems.filter((_, i) => !batchSelected.has(i));
+    if (newItems.length === 0) {
+      discardItems();
+    } else {
+      setCapturedItems(newItems);
+    }
+    setBatchSelected(new Set());
+    setBatchMode(false);
+  };
+
+  const batchReclassify = (type: 'task' | 'idea' | 'dream') => {
+    const newItems = capturedItems.map((item, i) => 
+      batchSelected.has(i) ? { ...item, type } : item
+    );
+    setCapturedItems(newItems);
+    setBatchSelected(new Set());
+    setBatchMode(false);
+    haptic.medium();
   };
 
   // Render a single captured item (shared between flat and grouped views)
@@ -849,17 +919,35 @@ export default function PandaHub() {
           </div>
         ) : (
           <div 
-            onClick={() => startEditing(i)}
-            className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border border-[var(--gray-2)] cursor-pointer active:scale-[0.98] transition-transform`}
+            onClick={() => batchMode ? toggleBatchSelect(i) : startEditing(i)}
+            onContextMenu={(e) => { e.preventDefault(); setBatchMode(true); toggleBatchSelect(i); }}
+            className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border ${batchSelected.has(i) ? 'border-[#6b8f71] ring-1 ring-[#6b8f71]/30' : 'border-[var(--gray-2)]'} cursor-pointer active:scale-[0.98] transition-all`}
           >
-            <span className={`${config.color} mt-0.5`}>{config.icon}</span>
+            {/* Batch checkbox or type icon (tappable to cycle) */}
+            {batchMode ? (
+              <div className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center transition-colors ${batchSelected.has(i) ? 'bg-[#6b8f71] border-[#6b8f71]' : 'border-[var(--gray-3)]'}`}>
+                {batchSelected.has(i) && (
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={(e) => { e.stopPropagation(); cycleItemType(i); }}
+                className={`${config.color} mt-0.5 active:scale-90 transition-transform`}
+                title="Cambiar tipo"
+              >
+                {config.icon}
+              </button>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-[var(--foreground)]">{item.title}</p>
               {item.context && (
                 <p className="text-xs text-[var(--gray-4)] mt-1 line-clamp-2 italic">"{item.context}"</p>
               )}
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] text-[var(--gray-4)]">{config.label}</span>
+                <span className={`text-[10px] ${config.color} font-medium`}>{config.label}</span>
                 {item.category && item.category !== 'personal' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--gray-2)] text-[var(--gray-4)]">{item.category}</span>
                 )}
@@ -1368,7 +1456,7 @@ export default function PandaHub() {
 
                 {/* Hint */}
                 <p className="text-[10px] text-center text-[var(--gray-4)] mt-2 mb-3">
-                  Desliza ← eliminar · Toca editar · Arrastra ↓ descartar
+                  Toca icono = cambiar tipo · Toca = editar · Mantén = selección múltiple
                 </p>
 
                 {/* Deadline picker */}
@@ -1396,21 +1484,71 @@ export default function PandaHub() {
 
               {/* Action buttons - always at bottom of sheet */}
               <div className="px-5 pb-4 pt-2 border-t border-[var(--gray-2)] bg-[var(--background)]">
-                <div className="flex gap-3">
-                  <button
-                    onClick={discardItems}
-                    className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium active:scale-[0.98]"
-                  >
-                    Descartar
-                  </button>
-                  <button
-                    onClick={saveItems}
-                    className="flex-1 h-12 rounded-full text-white text-sm font-medium active:scale-[0.98]"
-                    style={{ backgroundColor: THEME_COLOR }}
-                  >
-                    Guardar ({capturedItems.length})
-                  </button>
-                </div>
+                <AnimatePresence mode="wait">
+                  {batchMode && batchSelected.size > 0 ? (
+                    /* Batch action bar */
+                    <motion.div
+                      key="batch"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      className="space-y-2"
+                    >
+                      <p className="text-xs text-[var(--gray-4)] text-center">{batchSelected.size} seleccionados</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => batchReclassify('task')}
+                          className="flex-1 h-10 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 active:scale-[0.98]"
+                        >
+                          Tareas
+                        </button>
+                        <button
+                          onClick={() => batchReclassify('idea')}
+                          className="flex-1 h-10 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 active:scale-[0.98]"
+                        >
+                          Ideas
+                        </button>
+                        <button
+                          onClick={() => batchReclassify('dream')}
+                          className="flex-1 h-10 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 active:scale-[0.98]"
+                        >
+                          Sueños
+                        </button>
+                        <button
+                          onClick={batchDelete}
+                          className="h-10 w-10 rounded-full flex items-center justify-center bg-red-500/10 text-red-500 active:scale-[0.98]"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => { setBatchMode(false); setBatchSelected(new Set()); }}
+                        className="w-full text-xs text-[var(--gray-4)] py-1"
+                      >
+                        Cancelar selección
+                      </button>
+                    </motion.div>
+                  ) : (
+                    /* Normal action buttons */
+                    <motion.div key="normal" className="flex gap-3">
+                      <button
+                        onClick={discardItems}
+                        className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium active:scale-[0.98]"
+                      >
+                        Descartar
+                      </button>
+                      <button
+                        onClick={saveItems}
+                        className="flex-1 h-12 rounded-full text-white text-sm font-medium active:scale-[0.98]"
+                        style={{ backgroundColor: THEME_COLOR }}
+                      >
+                        Guardar ({capturedItems.length})
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </>
