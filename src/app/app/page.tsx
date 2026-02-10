@@ -143,6 +143,10 @@ export default function PandaHub() {
   const [capturedItems, setCapturedItems] = useState<CapturedItem[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  
+  // Action plan state
+  const [actionPlans, setActionPlans] = useState<Record<number, { loading: boolean; points: { title: string; time_estimate: string; category: string }[] }>>({});
+  const [expandedPlans, setExpandedPlans] = useState<Set<number>>(new Set());
   const [editText, setEditText] = useState('');
   const [selectedDeadline, setSelectedDeadline] = useState('today'); // Default to today
   const [originalVoiceContext, setOriginalVoiceContext] = useState<string | null>(null); // Store original voice input
@@ -873,6 +877,54 @@ export default function PandaHub() {
     haptic.medium();
   };
 
+  // Generate action plan for an idea
+  const generateActionPlan = async (index: number) => {
+    const item = capturedItems[index];
+    if (!item || item.type !== 'idea') return;
+    
+    haptic.light();
+    setActionPlans(prev => ({ ...prev, [index]: { loading: true, points: [] } }));
+    setExpandedPlans(prev => new Set(prev).add(index));
+    
+    try {
+      const res = await fetch('/api/action-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idea: item.title, voiceContext: item.context }),
+      });
+      
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      setActionPlans(prev => ({ ...prev, [index]: { loading: false, points: data.action_points || [] } }));
+    } catch (e) {
+      console.error('Action plan error:', e);
+      setActionPlans(prev => ({ ...prev, [index]: { loading: false, points: [] } }));
+    }
+  };
+
+  // Add action plan steps as tasks
+  const addActionPlanAsTasks = (index: number) => {
+    const plan = actionPlans[index];
+    if (!plan || plan.points.length === 0) return;
+    
+    haptic.medium();
+    const newTasks: CapturedItem[] = plan.points.map(point => ({
+      title: point.title,
+      type: 'task',
+      category: point.category || 'personal',
+      priority: 'medium',
+    }));
+    
+    // Insert tasks right after the idea
+    const newItems = [...capturedItems];
+    newItems.splice(index + 1, 0, ...newTasks);
+    setCapturedItems(newItems);
+    
+    // Clean up plan state
+    setExpandedPlans(prev => { const s = new Set(prev); s.delete(index); return s; });
+    setActionPlans(prev => { const p = { ...prev }; delete p[index]; return p; });
+  };
+
   // Render a single captured item (shared between flat and grouped views)
   const renderItem = (item: CapturedItem, i: number) => {
     const config = typeConfig[item.type];
@@ -953,7 +1005,59 @@ export default function PandaHub() {
                 {item.category && item.category !== 'personal' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--gray-2)] text-[var(--gray-4)]">{item.category}</span>
                 )}
+                {/* Action plan button for ideas */}
+                {item.type === 'idea' && !batchMode && !actionPlans[i]?.points.length && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); generateActionPlan(i); }}
+                    disabled={actionPlans[i]?.loading}
+                    className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors"
+                    style={{ 
+                      backgroundColor: `${THEME_COLOR}15`,
+                      color: THEME_COLOR,
+                    }}
+                  >
+                    {actionPlans[i]?.loading ? (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2.5 h-2.5 border border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
+                        Generando...
+                      </span>
+                    ) : (
+                      'Plan de acción'
+                    )}
+                  </button>
+                )}
               </div>
+              
+              {/* Action plan steps */}
+              <AnimatePresence>
+                {expandedPlans.has(i) && actionPlans[i] && !actionPlans[i].loading && actionPlans[i].points.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2 pt-2 border-t border-[var(--gray-2)]"
+                  >
+                    <div className="space-y-1.5">
+                      {actionPlans[i].points.map((point, pi) => (
+                        <div key={pi} className="flex items-start gap-2">
+                          <span className="text-[10px] text-[var(--gray-4)] mt-0.5 tabular-nums w-3 text-right">{pi + 1}.</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-[var(--foreground)]">{point.title}</p>
+                            <span className="text-[9px] text-[var(--gray-4)]">{point.time_estimate}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); addActionPlanAsTasks(i); }}
+                      className="mt-2 w-full h-8 rounded-full text-[11px] font-medium text-white active:scale-[0.98] transition-transform"
+                      style={{ backgroundColor: THEME_COLOR }}
+                    >
+                      Añadir como tareas ({actionPlans[i].points.length})
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         )}
