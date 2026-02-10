@@ -12,6 +12,7 @@ import { BambooGrowth } from '@/components/BambooGrowth';
 import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type StreakData, type MilestoneData } from '@/lib/gamification/streak';
 import { haptic } from '@/lib/haptics';
 import { logActivity } from '@/lib/activity';
+import { PixelBubble } from '@/components/PixelBubble';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -1527,16 +1528,11 @@ export default function PandaHub() {
         </motion.div>
         )}
 
-        {/* Panda message - hidden when sheet is open */}
-        {!showConfirmation && (
-        <motion.p 
-          className="text-xl font-medium text-[var(--foreground)] text-center mb-2"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          key={pandaMessage}
-        >
-          {pandaMessage}
-        </motion.p>
+        {/* Kai's pixel speech bubble - hidden when sheet is open */}
+        {!showConfirmation && pandaMessage && (
+          <div className="mb-2 max-w-xs mx-auto" key={pandaMessage}>
+            <PixelBubble message={pandaMessage} />
+          </div>
         )}
 
         {/* Greeting */}
