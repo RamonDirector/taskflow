@@ -11,6 +11,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { BambooGrowth } from '@/components/BambooGrowth';
 import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type StreakData, type MilestoneData } from '@/lib/gamification/streak';
 import { haptic } from '@/lib/haptics';
+import { logActivity } from '@/lib/activity';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -838,6 +839,14 @@ export default function PandaHub() {
       await supabase.from('tasks').insert(linkedRows);
     }
 
+    // Log activity for brain dump
+    if (user) {
+      logActivity({ supabase, userId: user.id, action: 'brain_dump', metadata: {
+        itemCount: itemsToSave.length,
+        types: { tasks: itemsToSave.filter(i => i.type === 'task').length, ideas: itemsToSave.filter(i => i.type === 'idea').length, dreams: itemsToSave.filter(i => i.type === 'dream').length },
+      }});
+    }
+
     // Mark new items for nav indicators
     const newIndicators = { ideas: false, tasks: false, dreams: false };
     itemsToSave.forEach(item => {
@@ -975,6 +984,7 @@ export default function PandaHub() {
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setActionPlans(prev => ({ ...prev, [index]: { loading: false, points: data.action_points || [] } }));
+      if (user) logActivity({ supabase, userId: user.id, action: 'action_plan_generated', entityType: 'idea', metadata: { ideaTitle: item.title, steps: (data.action_points || []).length } });
     } catch (e) {
       console.error('Action plan error:', e);
       setActionPlans(prev => ({ ...prev, [index]: { loading: false, points: [] } }));

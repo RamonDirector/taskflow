@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { logActivity } from '@/lib/activity';
 import { useRouter } from 'next/navigation';
 import {
   ReactFlow,
@@ -329,6 +330,7 @@ export default function IdeasBoard() {
     await supabase.from('tasks').delete().eq('id', id);
     setIdeas(prev => prev.filter(i => i.id !== id && i.parent_idea_id !== id));
     if (selectedIdea?.id === id) closeDrawer();
+    if (user) logActivity({ supabase, userId: user.id, action: 'idea_deleted', entityType: 'idea', entityId: id });
   };
 
   const deleteTask = async (id: string) => {

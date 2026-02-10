@@ -8,6 +8,7 @@ import VoiceEditButton from '@/app/components/VoiceEditButton';
 import Image from 'next/image';
 import { BottomNav } from '@/components/BottomNav';
 import { haptic } from '@/lib/haptics';
+import { logActivity } from '@/lib/activity';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -228,16 +229,19 @@ export default function TasksPage() {
     };
     await supabase.from('tasks').update(updates).eq('id', id);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: nowCompleted, completed_at: nowCompleted ? new Date().toISOString() : undefined } : t));
+    if (user) logActivity({ supabase, userId: user.id, action: nowCompleted ? 'task_completed' : 'task_uncompleted', entityType: 'task', entityId: id });
   };
 
   const deleteTask = async (id: string) => {
     await supabase.from('tasks').delete().eq('id', id);
     setTasks(prev => prev.filter(t => t.id !== id));
+    if (user) logActivity({ supabase, userId: user.id, action: 'task_deleted', entityType: 'task', entityId: id });
   };
 
   const updateTaskTitle = async (id: string, newTitle: string) => {
     await supabase.from('tasks').update({ title: newTitle }).eq('id', id);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, title: newTitle } : t));
+    if (user) logActivity({ supabase, userId: user.id, action: 'task_edited', entityType: 'task', entityId: id });
   };
 
   // Voice edit handler
@@ -481,6 +485,11 @@ export default function TasksPage() {
 
       if (!error && data) {
         setTasks(prev => [...data, ...prev]);
+        if (user) {
+          for (const t of data) {
+            logActivity({ supabase, userId: user.id, action: 'task_created', entityType: 'task', entityId: t.id });
+          }
+        }
       }
     } catch (e) {
       console.error('New task recording error:', e);

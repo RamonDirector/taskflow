@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { logActivity } from '@/lib/activity';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -148,6 +149,7 @@ export default function DreamsPage() {
     await supabase.from('tasks').delete().eq('id', id);
     setDreams(prev => prev.filter(d => d.id !== id));
     if (selectedDream?.id === id) setSelectedDream(null);
+    if (user) logActivity({ supabase, userId: user.id, action: 'dream_deleted', entityType: 'dream', entityId: id });
   };
 
   const interpretDream = async () => {
