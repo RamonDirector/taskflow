@@ -148,6 +148,9 @@ export default function PandaHub() {
   // Action plan state
   const [actionPlans, setActionPlans] = useState<Record<number, { loading: boolean; points: { title: string; time_estimate: string; category: string }[] }>>({});
   const [expandedPlans, setExpandedPlans] = useState<Set<number>>(new Set());
+  
+  // Connections between items
+  const [connections, setConnections] = useState<{ from: number; to: number; reason: string }[]>([]);
   const [editText, setEditText] = useState('');
   const [selectedDeadline, setSelectedDeadline] = useState('today'); // Default to today
   const [originalVoiceContext, setOriginalVoiceContext] = useState<string | null>(null); // Store original voice input
@@ -208,6 +211,9 @@ export default function PandaHub() {
       // Generate both affirmations
       generateDailyAffirmation(user.id, name);
       generateAffirmation(user.id, name);
+      
+      // Check for stale items (proactive suggestions)
+      checkStaleItems(user.id);
       
       // Load gamification data
       loadStreakData(user.id);
@@ -328,6 +334,51 @@ export default function PandaHub() {
       console.error('Affirmation error:', error);
       setPandaMessage('¿Qué tienes en mente?');
     }
+  };
+
+  // Proactive suggestions - check for stale/forgotten items
+  const [staleSuggestion, setStaleSuggestion] = useState<{ title: string; id: string; days: number; type: string } | null>(null);
+
+  const checkStaleItems = async (userId: string) => {
+    try {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      // Find incomplete tasks older than 3 days
+      const { data: staleTasks } = await supabase
+        .from('tasks')
+        .select('id, title, type, created_at')
+        .eq('user_id', userId)
+        .eq('completed', false)
+        .in('type', ['task', 'idea'])
+        .lt('created_at', threeDaysAgo.toISOString())
+        .order('created_at', { ascending: true })
+        .limit(1);
+      
+      if (staleTasks && staleTasks.length > 0) {
+        const stale = staleTasks[0];
+        const daysOld = Math.floor((Date.now() - new Date(stale.created_at).getTime()) / (1000 * 60 * 60 * 24));
+        setStaleSuggestion({ title: stale.title, id: stale.id, days: daysOld, type: stale.type });
+      }
+    } catch (e) {
+      console.error('Stale check error:', e);
+    }
+  };
+
+  const dismissStaleSuggestion = () => setStaleSuggestion(null);
+
+  const completeStaleItem = async () => {
+    if (!staleSuggestion) return;
+    await supabase.from('tasks').update({ completed: true }).eq('id', staleSuggestion.id);
+    haptic.medium();
+    setStaleSuggestion(null);
+  };
+
+  const deleteStaleItem = async () => {
+    if (!staleSuggestion) return;
+    await supabase.from('tasks').delete().eq('id', staleSuggestion.id);
+    haptic.light();
+    setStaleSuggestion(null);
   };
 
   // Load gamification data (streak + milestones)
@@ -695,6 +746,15 @@ export default function PandaHub() {
         });
       }
       
+      // Capture connections
+      if (extractData.connections && extractData.connections.length > 0) {
+        setConnections(extractData.connections.filter((c: any) => 
+          typeof c.from === 'number' && typeof c.to === 'number' && c.from < items.length && c.to < items.length
+        ));
+      } else {
+        setConnections([]);
+      }
+
       // If single item and no context, use original transcription as context if different from title
       if (items.length === 1 && !items[0].context && transcribedText !== items[0].title) {
         items[0].context = transcribedText;
@@ -841,6 +901,7 @@ export default function PandaHub() {
     setBatchSelected(new Set());
     setActionPlans({});
     setExpandedPlans(new Set());
+    setConnections([]);
     setPandaImage('/panda/new-wave.png');
     setPandaMessage('¿Qué tienes en mente?');
   };
@@ -1497,6 +1558,46 @@ export default function PandaHub() {
         {!showConfirmation && !isRecording && !isProcessing && !inputFocused && userName && (
           <p className="text-[var(--gray-4)] text-sm">Hola, {userName}</p>
         )}
+
+        {/* Proactive suggestion - stale item nudge */}
+        <AnimatePresence>
+          {staleSuggestion && !showConfirmation && !isRecording && !isProcessing && !inputFocused && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-4 mx-2 p-3 rounded-2xl bg-[var(--gray-1)] border border-[var(--gray-2)] max-w-sm"
+            >
+              <p className="text-xs text-[var(--gray-4)] mb-1">
+                Llevas {staleSuggestion.days} días sin mover esto:
+              </p>
+              <p className="text-sm font-medium text-[var(--foreground)] mb-2">
+                {staleSuggestion.title}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={completeStaleItem}
+                  className="flex-1 h-8 rounded-full text-[11px] font-medium text-white active:scale-[0.98]"
+                  style={{ backgroundColor: THEME_COLOR }}
+                >
+                  Completar
+                </button>
+                <button
+                  onClick={deleteStaleItem}
+                  className="h-8 px-3 rounded-full text-[11px] font-medium text-red-400 bg-red-500/10 active:scale-[0.98]"
+                >
+                  Eliminar
+                </button>
+                <button
+                  onClick={dismissStaleSuggestion}
+                  className="h-8 px-3 rounded-full text-[11px] text-[var(--gray-4)] bg-[var(--gray-2)] active:scale-[0.98]"
+                >
+                  Ahora no
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Bottom Sheet for confirmation */}
@@ -1608,6 +1709,34 @@ export default function PandaHub() {
                 <p className="text-[10px] text-center text-[var(--gray-4)] mt-2 mb-3">
                   Toca icono = cambiar tipo · Doble tap = editar · Mantén = seleccionar
                 </p>
+
+                {/* Connections between items */}
+                {connections.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-[var(--gray-2)]">
+                    <p className="text-[10px] text-[var(--gray-4)] mb-2 font-medium uppercase tracking-wider">Conexiones</p>
+                    <div className="space-y-1.5">
+                      {connections.map((conn, ci) => {
+                        const fromItem = capturedItems[conn.from];
+                        const toItem = capturedItems[conn.to];
+                        if (!fromItem || !toItem) return null;
+                        const fromConfig = typeConfig[fromItem.type];
+                        const toConfig = typeConfig[toItem.type];
+                        return (
+                          <div key={ci} className="flex items-center gap-2 text-[11px] px-2 py-1.5 rounded-lg bg-[var(--gray-1)]">
+                            <span className={fromConfig.color}>{fromConfig.icon}</span>
+                            <span className="text-[var(--foreground)] truncate max-w-[80px]">{fromItem.title}</span>
+                            <svg className="w-3 h-3 text-[var(--gray-4)] flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                            <span className={toConfig.color}>{toConfig.icon}</span>
+                            <span className="text-[var(--foreground)] truncate max-w-[80px]">{toItem.title}</span>
+                            <span className="text-[var(--gray-4)] text-[9px] ml-auto flex-shrink-0 italic">{conn.reason}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Deadline picker */}
                 {capturedItems.some(item => item.type === 'task') && (

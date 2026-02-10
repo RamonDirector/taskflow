@@ -178,8 +178,25 @@ Return ONLY valid JSON, no markdown:
       "priority": "high" | "medium" | "low",
       "context": "Brief context if relevant (optional, for dreams: fuller narrative)"
     }
+  ],
+  "connections": [
+    {
+      "from": 0,
+      "to": 1,
+      "reason": "Brief reason why they're related (same language as input)"
+    }
   ]
 }
+
+## CONNECTIONS RULES
+- "from" and "to" are INDEX numbers of items in the items array (0-based)
+- Only include connections when items are CLEARLY related (same topic, one enables the other, cause-effect)
+- DO NOT force connections — if items are unrelated, return empty connections array
+- Maximum 5 connections per brain dump
+- Examples of valid connections:
+  - Task "Preparar presentación" ↔ Idea "Aprender a hacer mejores slides" (same topic)
+  - Task "Ir al gimnasio" ↔ Task "Comprar ropa deportiva" (one enables the other)
+  - Idea "App de recetas" ↔ Task "Investigar APIs de nutrición" (research supports idea)
 
 ## MIXED INPUT EXAMPLES (STUDY THESE CAREFULLY)
 
