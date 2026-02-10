@@ -671,52 +671,38 @@ export default function PandaHub() {
     setPandaMessage('Déjame pensar...');
 
     try {
-      let transcribedText = text;
-
-      // Transcribe if audio
+      // Unified processing: send audio or text to single endpoint
+      const formData = new FormData();
       if (audioBlob) {
-        const formData = new FormData();
         formData.append('audio', audioBlob, 'recording.webm');
-        
-        const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
-        if (!transcribeRes.ok) {
-          const errData = await transcribeRes.json().catch(() => ({}));
-          console.error('Transcribe error:', transcribeRes.status, errData);
-          throw new Error(errData?.details || errData?.error || `Transcription failed (${transcribeRes.status})`);
-        }
-        
-        const data = await transcribeRes.json();
-        transcribedText = data.text;
+      }
+      if (text) {
+        formData.append('text', text);
       }
 
-      if (!transcribedText?.trim()) {
+      const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Process error:', res.status, errData);
+        throw new Error(errData?.details || errData?.error || `Processing failed (${res.status})`);
+      }
+
+      const extractData = await res.json();
+      const transcribedText = extractData.transcription || text || '';
+
+      if (!transcribedText?.trim() && (!extractData.items || extractData.items.length === 0)) {
         setPandaImage('/panda/new-wave.png');
         setPandaMessage('No te escuché, ¿puedes repetir?');
         setIsProcessing(false);
         return;
       }
 
-      // Store original voice context for ideas (rich context like IdeaBoard)
+      // Store original voice context
       setOriginalVoiceContext(transcribedText.trim());
 
-      const lowerText = transcribedText.toLowerCase();
-
-      // Extract and classify
-      const extractRes = await fetch('/api/extract-tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: transcribedText }),
-      });
-
-      if (!extractRes.ok) throw new Error('Extraction failed');
-      
-      const extractData = await extractRes.json();
-      
-      // Combine tasks and ideas, classify dreams based on keywords
+      // Build items from response
       const items: CapturedItem[] = [];
       
-      // Use API classification for all types (task, idea, dream)
-      // The API now intelligently separates mixed content
       if (extractData.items && extractData.items.length > 0) {
         items.push(...extractData.items.map((item: any) => ({
           title: item.title,
@@ -725,18 +711,9 @@ export default function PandaHub() {
           priority: item.priority || 'medium',
           context: item.context || null,
         })));
-      } else {
-        // Fallback: Add tasks and ideas separately (backward compatibility)
-        if (extractData.tasks) {
-          items.push(...extractData.tasks.map((t: any) => ({ ...t, type: 'task' as const })));
-        }
-        if (extractData.ideas) {
-          items.push(...extractData.ideas.map((i: any) => ({ ...i, type: 'idea' as const })));
-        }
       }
 
       if (items.length === 0) {
-        // Default to idea if nothing extracted
         items.push({
           title: transcribedText,
           type: 'idea',
@@ -748,14 +725,12 @@ export default function PandaHub() {
       
       // Capture connections
       if (extractData.connections && extractData.connections.length > 0) {
-        setConnections(extractData.connections.filter((c: any) => 
-          typeof c.from === 'number' && typeof c.to === 'number' && c.from < items.length && c.to < items.length
-        ));
+        setConnections(extractData.connections);
       } else {
         setConnections([]);
       }
 
-      // If single item and no context, use original transcription as context if different from title
+      // If single item and no context, use transcription as context
       if (items.length === 1 && !items[0].context && transcribedText !== items[0].title) {
         items[0].context = transcribedText;
       }
