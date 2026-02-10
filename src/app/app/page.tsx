@@ -1361,24 +1361,6 @@ export default function PandaHub() {
               onClick={discardItems}
             />
             
-            {/* Floating Panda above sheet */}
-            <motion.div
-              layoutId="panda-mascot"
-              className="fixed left-1/2 -translate-x-1/2 z-[55]"
-              style={{ bottom: isBrainDump ? 'calc(90vh - 30px)' : 'calc(70vh - 30px)' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-            >
-              <div className="relative w-24 h-24">
-                <Image
-                  src={pandaImage}
-                  alt="Panda"
-                  fill
-                  className="object-contain"
-                  style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.25))' }}
-                />
-              </div>
-            </motion.div>
-            
             {/* Sheet */}
             <motion.div
               initial={{ y: '100%' }}
@@ -1396,9 +1378,26 @@ export default function PandaHub() {
               className={`fixed bottom-0 left-0 right-0 z-50 bg-[var(--background)] rounded-t-3xl shadow-2xl flex flex-col ${isBrainDump ? 'max-h-[90vh]' : 'max-h-[70vh]'}`}
               style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
             >
-              {/* Handle */}
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-10 h-1 rounded-full bg-[var(--gray-3)]" />
+              {/* Handle + Kai */}
+              <div className="relative pt-3 pb-2">
+                <div className="flex justify-center">
+                  <div className="w-10 h-1 rounded-full bg-[var(--gray-3)]" />
+                </div>
+                {/* Kai - top right corner */}
+                <motion.div
+                  layoutId="panda-mascot"
+                  className="absolute -top-6 right-4"
+                  transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+                >
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[var(--gray-1)] border-2 border-[var(--background)] shadow-lg">
+                    <Image
+                      src={pandaImage}
+                      alt="Kai"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </motion.div>
               </div>
 
               {/* Sheet content */}
