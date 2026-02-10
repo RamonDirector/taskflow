@@ -934,8 +934,9 @@ export default function PandaHub() {
               </div>
             ) : (
               <button 
-                onClick={(e) => { e.stopPropagation(); cycleItemType(i); }}
-                className={`${config.color} mt-0.5 active:scale-90 transition-transform`}
+                onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); cycleItemType(i); }}
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                className={`${config.color} mt-0.5 p-1.5 -m-1.5 active:scale-90 transition-transform rounded-lg`}
                 title="Cambiar tipo"
               >
                 {config.icon}
