@@ -133,8 +133,10 @@ export default function PandaHub() {
   const [isBrainDump, setIsBrainDump] = useState(false);
   const [brainDumpActive, setBrainDumpActive] = useState(false); // overlay visible
   const [encouragementIndex, setEncouragementIndex] = useState(0);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brainDumpTriggeredRef = useRef(false);
+  const micTouchStartY = useRef<number | null>(null);
+  const [swipeProgress, setSwipeProgress] = useState(0); // 0 to 1
+  const SWIPE_THRESHOLD = 60; // px to trigger brain dump lock
   
   // Captured items (for confirmation)
   const [capturedItems, setCapturedItems] = useState<CapturedItem[]>([]);
@@ -445,37 +447,56 @@ export default function PandaHub() {
     return () => clearInterval(interval);
   }, [brainDumpActive]);
 
-  // Brain dump long-press handlers
-  const handleMicDown = () => {
+  // Brain dump swipe-up-to-lock handlers
+  const handleMicTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     if (isProcessing || isRecording) return;
     brainDumpTriggeredRef.current = false;
-    
-    // Start normal recording immediately
+    micTouchStartY.current = e.touches[0].clientY;
+    setSwipeProgress(0);
     startRecording();
+  };
+
+  const handleMicTouchMove = (e: React.TouchEvent) => {
+    if (!isRecording || brainDumpTriggeredRef.current || micTouchStartY.current === null) return;
+    const deltaY = micTouchStartY.current - e.touches[0].clientY; // positive = swiping up
+    const progress = Math.min(1, Math.max(0, deltaY / SWIPE_THRESHOLD));
+    setSwipeProgress(progress);
     
-    // Set up long-press timer for brain dump
-    longPressTimerRef.current = setTimeout(() => {
+    if (deltaY >= SWIPE_THRESHOLD) {
+      // Lock activated!
       brainDumpTriggeredRef.current = true;
       haptic.strong();
+      setSwipeProgress(0);
       setIsBrainDump(true);
       setBrainDumpActive(true);
       setEncouragementIndex(0);
-    }, 500);
+      micTouchStartY.current = null;
+    }
   };
 
-  const handleMicUp = () => {
-    // Clear long-press timer
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
+  const handleMicTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    micTouchStartY.current = null;
+    setSwipeProgress(0);
     
-    // If brain dump was triggered, DON'T stop recording on release
     if (brainDumpTriggeredRef.current) {
       return; // Recording continues in brain dump mode
     }
     
-    // Normal mode: stop recording on release
+    if (isRecording) stopRecording();
+  };
+
+  const handleMicMouseDown = () => {
+    if (isProcessing || isRecording) return;
+    brainDumpTriggeredRef.current = false;
+    setSwipeProgress(0);
+    startRecording();
+  };
+
+  const handleMicMouseUp = () => {
+    setSwipeProgress(0);
+    if (brainDumpTriggeredRef.current) return;
     if (isRecording) stopRecording();
   };
 
@@ -1530,40 +1551,56 @@ export default function PandaHub() {
               )}
             </div>
 
-            {/* Mic button - Press and hold to record, long-press for Brain Dump */}
-            <button
-              onTouchStart={(e) => {
-                e.preventDefault();
-                handleMicDown();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                handleMicUp();
-              }}
-              onMouseDown={() => {
-                handleMicDown();
-              }}
-              onMouseUp={() => {
-                handleMicUp();
-              }}
-              onMouseLeave={() => {
-                if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
-                if (longPressTimerRef.current) {
-                  clearTimeout(longPressTimerRef.current);
-                  longPressTimerRef.current = null;
-                }
-              }}
-              disabled={isProcessing}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10 disabled:opacity-50 select-none touch-none"
-              style={{ backgroundColor: THEME_COLOR }}
-            >
-              <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
-                {Icons.mic}
-              </div>
-              <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
-                {Icons.check}
-              </div>
-            </button>
+            {/* Mic button with swipe-up lock indicator */}
+            <div className="relative z-10">
+              {/* Lock indicator - appears above mic when swiping up */}
+              <AnimatePresence>
+                {isRecording && !brainDumpTriggeredRef.current && swipeProgress > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: swipeProgress, scale: 0.7 + swipeProgress * 0.3, y: -50 - swipeProgress * 10 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 pointer-events-none"
+                  >
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: swipeProgress >= 0.9 ? THEME_COLOR : 'var(--gray-3)' }}
+                    >
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        {swipeProgress >= 0.9 ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        )}
+                      </svg>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Mic button */}
+              <button
+                onTouchStart={handleMicTouchStart}
+                onTouchMove={handleMicTouchMove}
+                onTouchEnd={handleMicTouchEnd}
+                onMouseDown={handleMicMouseDown}
+                onMouseUp={handleMicMouseUp}
+                onMouseLeave={() => {
+                  setSwipeProgress(0);
+                  if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
+                }}
+                disabled={isProcessing}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative disabled:opacity-50 select-none touch-none"
+                style={{ backgroundColor: THEME_COLOR }}
+              >
+                <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                  {Icons.mic}
+                </div>
+                <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                  {Icons.check}
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}
