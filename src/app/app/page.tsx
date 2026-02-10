@@ -598,7 +598,11 @@ export default function PandaHub() {
         formData.append('audio', audioBlob, 'recording.webm');
         
         const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
-        if (!transcribeRes.ok) throw new Error('Transcription failed');
+        if (!transcribeRes.ok) {
+          const errData = await transcribeRes.json().catch(() => ({}));
+          console.error('Transcribe error:', transcribeRes.status, errData);
+          throw new Error(errData?.details || errData?.error || `Transcription failed (${transcribeRes.status})`);
+        }
         
         const data = await transcribeRes.json();
         transcribedText = data.text;
@@ -675,10 +679,17 @@ export default function PandaHub() {
       setPandaMessage(items.length === 1 ? '¡Listo! ¿Esto querías decir?' : '¡Listo! Esto es lo que capté:');
       setShowConfirmation(true);
 
-    } catch (e) {
+    } catch (e: any) {
       console.error('Processing error:', e);
       setPandaImage('/panda/new-neutral.png');
-      setPandaMessage('Hubo un error, ¿intentamos de nuevo?');
+      const msg = e?.message || '';
+      if (msg.includes('API key') || msg.includes('401')) {
+        setPandaMessage('Error de API key. Revisa la configuración.');
+      } else if (msg.includes('429') || msg.includes('Límite')) {
+        setPandaMessage('Límite de uso alcanzado. Inténtalo más tarde.');
+      } else {
+        setPandaMessage('Hubo un error, ¿intentamos de nuevo?');
+      }
     }
 
     setIsProcessing(false);
