@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     const dates = getRelativeDates();
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `You are a Brain Dump extraction expert. Your job is to analyze LONG, RAMBLING voice transcripts (2-5 minutes of continuous talking) and extract EVERY actionable task and idea.
 

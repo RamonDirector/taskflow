@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { idea, voiceContext } = await request.json();
     if (!idea) return NextResponse.json({ error: 'No idea provided' }, { status: 400 });
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Use voice context as primary input if available
     const contextSection = voiceContext 

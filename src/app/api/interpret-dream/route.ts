@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { dream, voiceContext } = await request.json();
     if (!dream) return NextResponse.json({ error: 'No dream provided' }, { status: 400 });
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const dreamText = voiceContext || dream;
 
