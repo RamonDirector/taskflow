@@ -217,6 +217,15 @@ export default function PandaHub() {
   // Bamboo growth progress (0-1 based on today's completed tasks)
   const [bambooProgress, setBambooProgress] = useState(0);
   
+  // App visibility (pause animations when minimized to prevent glitches)
+  const [appVisible, setAppVisible] = useState(true);
+  
+  useEffect(() => {
+    const handleVisibility = () => setAppVisible(!document.hidden);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   // Nav visibility (hide on scroll down)
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -1624,7 +1633,7 @@ export default function PandaHub() {
             className="absolute inset-0 rounded-full blur-2xl scale-150"
             style={{ 
               backgroundColor: `${THEME_COLOR}50`,
-              animation: 'auraPulse 3s ease-in-out infinite',
+              animation: appVisible ? 'auraPulse 3s ease-in-out infinite' : 'none',
               backfaceVisibility: 'hidden',
               transform: 'translateZ(0)',
             }}
@@ -1633,7 +1642,7 @@ export default function PandaHub() {
           <div 
             className="absolute bottom-0 left-1/2 w-20 h-4 rounded-full bg-black/10 blur-sm -translate-x-1/2"
             style={{ 
-              animation: 'shadowPulse 3s ease-in-out infinite',
+              animation: appVisible ? 'shadowPulse 3s ease-in-out infinite' : 'none',
               backfaceVisibility: 'hidden',
             }}
           />
@@ -1643,7 +1652,7 @@ export default function PandaHub() {
             fill
             className="object-contain relative z-10"
             style={{ 
-              animation: isProcessing ? 'none' : 'float 3s ease-in-out infinite', 
+              animation: (!appVisible || isProcessing) ? 'none' : 'float 3s ease-in-out infinite', 
               filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.12))',
               backfaceVisibility: 'hidden',
               transform: 'translateZ(0)',
