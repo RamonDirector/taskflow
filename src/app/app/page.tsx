@@ -708,6 +708,9 @@ export default function PandaHub() {
     
     // Try Kai conversation first
     try {
+      setPandaImage('/panda/new-thinking.png');
+      setPandaMessage('Déjame pensar...');
+      
       const kaiRes = await fetch('/api/kai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -724,7 +727,6 @@ export default function PandaHub() {
           
           // If Kai created/completed/deleted tasks, refresh
           if (kaiData.actions?.length > 0) {
-            // Trigger a lightweight refresh of task data
             loadBambooProgress(user!.id);
           }
           return;

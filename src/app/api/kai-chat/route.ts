@@ -19,8 +19,9 @@ function isConversation(text: string): boolean {
     'no sé por dónde', 'no se por donde', 'ayuda', 'ayúdame',
     'crea tarea', 'crea una tarea', 'nueva tarea',
     'qué tengo', 'que tengo', 'cuántas tareas', 'cuantas tareas',
+    'tareas pendientes', 'tareas tengo', 'pendientes',
     'qué opinas', 'que opinas', 'qué piensas', 'que piensas',
-    'borra', 'elimina', 'completa',
+    'borra', 'elimina', 'completa', 'mis tareas', 'mis ideas',
   ];
   
   for (const trigger of kaiTriggers) {
