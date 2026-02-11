@@ -1969,10 +1969,11 @@ export default function PandaHub() {
               {/* Mic button with swipe-up lock for Brain Dump */}
               <div 
                 className="relative z-10"
-                onTouchStart={handleMicTouchStart}
-                onTouchMove={handleMicTouchMove}
-                onTouchEnd={handleMicTouchEnd}
-                style={{ touchAction: 'none' }}
+                onTouchStart={inputText.trim() ? undefined : handleMicTouchStart}
+                onTouchMove={inputText.trim() ? undefined : handleMicTouchMove}
+                onTouchEnd={inputText.trim() ? undefined : handleMicTouchEnd}
+                onClick={inputText.trim() ? handleTextSubmit : undefined}
+                style={{ touchAction: inputText.trim() ? 'auto' : 'none' }}
               >
                 {/* Lock track - appears above mic when recording */}
                 <AnimatePresence>
@@ -2017,22 +2018,23 @@ export default function PandaHub() {
                   )}
                 </AnimatePresence>
 
-                {/* Mic button */}
+                {/* Mic / Send button — transforms to checkmark when text is entered */}
                 <button
-                  onMouseDown={handleMicMouseDown}
-                  onMouseUp={handleMicMouseUp}
+                  onMouseDown={inputText.trim() ? undefined : handleMicMouseDown}
+                  onMouseUp={inputText.trim() ? undefined : handleMicMouseUp}
                   onMouseLeave={() => {
                     setSwipeProgress(0);
                     if (isRecording && !brainDumpTriggeredRef.current) stopRecording();
                   }}
+                  onClick={inputText.trim() ? handleTextSubmit : undefined}
                   disabled={isProcessing}
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative disabled:opacity-50 select-none"
                   style={{ backgroundColor: THEME_COLOR }}
                 >
-                  <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
+                  <div className={`absolute transition-all ease-out ${isRecording || inputText.trim() ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`} style={{ transitionDuration: '850ms' }}>
                     {Icons.mic}
                   </div>
-                  <div className={`absolute transition-all ease-out ${isRecording ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
+                  <div className={`absolute transition-all ease-out ${isRecording || inputText.trim() ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`} style={{ transitionDuration: '850ms' }}>
                     {Icons.check}
                   </div>
                 </button>
