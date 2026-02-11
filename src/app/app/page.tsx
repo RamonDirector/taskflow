@@ -123,6 +123,47 @@ export default function PandaHub() {
   const [pandaImage, setPandaImage] = useState('/panda/new-wave.png');
   const [pandaMessage, setPandaMessage] = useState('');
   
+  // Easter egg — tap on Kai
+  const kaiTapCountRef = useRef(0);
+  const kaiTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  const KAI_TAP_PHRASES = [
+    { message: '¿Qué? Estoy pensando', image: '/panda/new-thinking.png' },
+    { message: 'No me toques que pierdo la concentración', image: '/panda/new-annoyed.png' },
+    { message: '¿Necesitas algo o solo me molestas?', image: '/panda/new-shrug.png' },
+    { message: 'Estaba meditando...', image: '/panda/new-sleeping.png' },
+    { message: 'Oye, que tengo sentimientos', image: '/panda/new-annoyed.png' },
+    { message: 'Vale, ya estoy aquí. Dime', image: '/panda/new-pointing.png' },
+    { message: 'Zzz... ah, perdona. ¿Decías?', image: '/panda/new-sleeping.png' },
+    { message: '¿Hm?', image: '/panda/new-thinking.png' },
+  ];
+  
+  const KAI_MULTI_TAP_PHRASES = [
+    { message: '¿En serio? ¿No tienes tareas que hacer?', image: '/panda/new-annoyed.png' },
+    { message: 'Esto cuenta como procrastinar', image: '/panda/new-pointing.png' },
+    { message: 'Para. De. Tocarme.', image: '/panda/new-annoyed.png' },
+    { message: 'Voy a empezar a cobrar por toque', image: '/panda/new-shrug.png' },
+  ];
+  
+  const handleKaiTap = () => {
+    if (isRecording || isProcessing || showConfirmation) return;
+    
+    kaiTapCountRef.current += 1;
+    const count = kaiTapCountRef.current;
+    
+    // Reset counter after 2s of no taps
+    if (kaiTapTimerRef.current) clearTimeout(kaiTapTimerRef.current);
+    kaiTapTimerRef.current = setTimeout(() => { kaiTapCountRef.current = 0; }, 2000);
+    
+    // Pick phrase based on tap count
+    const pool = count >= 3 ? KAI_MULTI_TAP_PHRASES : KAI_TAP_PHRASES;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    
+    setPandaImage(pick.image);
+    setPandaMessage(pick.message);
+    haptic.light();
+  };
+  
   // Daily affirmation state
   const [dailyAffirmation, setDailyAffirmation] = useState('El camino se hace al andar.');
   
@@ -1479,7 +1520,9 @@ export default function PandaHub() {
         {!showConfirmation && (
         <motion.div 
           layoutId="panda-mascot"
-          className="relative overflow-visible"
+          className="relative overflow-visible cursor-pointer"
+          onClick={handleKaiTap}
+          whileTap={{ scale: 0.9 }}
           animate={{ 
             scale: isProcessing ? 0.95 : 1,
             width: inputFocused ? 80 : 160,
