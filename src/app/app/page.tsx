@@ -1615,44 +1615,8 @@ export default function PandaHub() {
           </div>
         )}
 
-        {/* Proactive suggestion - stale item nudge */}
+        {/* Proactive suggestion - removed, Kai handles this conversationally now */}
         <AnimatePresence>
-          {staleSuggestion && !showConfirmation && !isRecording && !isProcessing && !inputFocused && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mt-4 mx-2 p-3 rounded-2xl bg-[var(--gray-1)] border border-[var(--gray-2)] max-w-sm"
-            >
-              <p className="text-xs text-[var(--gray-4)] mb-1">
-                Llevas {staleSuggestion.days} días sin mover esto:
-              </p>
-              <p className="text-sm font-medium text-[var(--foreground)] mb-2">
-                {staleSuggestion.title}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={completeStaleItem}
-                  className="flex-1 h-8 rounded-full text-[11px] font-medium text-white active:scale-[0.98]"
-                  style={{ backgroundColor: THEME_COLOR }}
-                >
-                  Completar
-                </button>
-                <button
-                  onClick={deleteStaleItem}
-                  className="h-8 px-3 rounded-full text-[11px] font-medium text-red-400 bg-red-500/10 active:scale-[0.98]"
-                >
-                  Eliminar
-                </button>
-                <button
-                  onClick={dismissStaleSuggestion}
-                  className="h-8 px-3 rounded-full text-[11px] text-[var(--gray-4)] bg-[var(--gray-2)] active:scale-[0.98]"
-                >
-                  Ahora no
-                </button>
-              </div>
-            </motion.div>
-          )}
         </AnimatePresence>
       </div>
 
