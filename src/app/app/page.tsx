@@ -703,8 +703,40 @@ export default function PandaHub() {
   // Process text input
   const handleTextSubmit = async () => {
     if (!inputText.trim()) return;
-    await processInput(null, inputText.trim());
+    const text = inputText.trim();
     setInputText('');
+    
+    // Try Kai conversation first
+    try {
+      const kaiRes = await fetch('/api/kai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, userId: user?.id }),
+      });
+      
+      if (kaiRes.ok) {
+        const kaiData = await kaiRes.json();
+        
+        if (kaiData.type === 'conversation') {
+          // Kai handled it
+          setPandaMessage(kaiData.message);
+          setPandaImage(kaiData.pose || '/panda/new-wave.png');
+          
+          // If Kai created/completed/deleted tasks, refresh
+          if (kaiData.actions?.length > 0) {
+            // Trigger a lightweight refresh of task data
+            loadBambooProgress(user!.id);
+          }
+          return;
+        }
+        // type === 'brain_dump' → fall through to normal flow
+      }
+    } catch (e) {
+      console.error('Kai chat error:', e);
+      // Fall through to brain dump
+    }
+    
+    await processInput(null, text);
   };
 
   // Unified processing
