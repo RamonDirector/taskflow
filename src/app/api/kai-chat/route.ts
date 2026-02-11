@@ -46,7 +46,7 @@ function isConversation(text: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, userId } = await request.json();
+    const { text, userId, accessToken } = await request.json();
     
     if (!text?.trim()) {
       return NextResponse.json({ error: 'No text provided' }, { status: 400 });
@@ -62,8 +62,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Anthropic API key not configured', debug: 'no_key' }, { status: 500 });
     }
     
-    // Fetch user context from Supabase
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Fetch user context from Supabase — use user's access token for RLS
+    const supabaseOptions = accessToken 
+      ? { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
+      : {};
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, supabaseOptions);
     
     // Parallel queries for context
     const [tasksRes, ideasRes, activityRes] = await Promise.all([

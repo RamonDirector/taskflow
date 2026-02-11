@@ -711,10 +711,11 @@ export default function PandaHub() {
       setPandaImage('/panda/new-thinking.png');
       setPandaMessage('Déjame pensar...');
       
+      const { data: { session } } = await supabase.auth.getSession();
       const kaiRes = await fetch('/api/kai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, userId: user?.id }),
+        body: JSON.stringify({ text, userId: user?.id, accessToken: session?.access_token }),
       });
       
       const kaiData = await kaiRes.json();
