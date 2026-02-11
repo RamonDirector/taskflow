@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI, { toFile } from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { checkAIAccess, incrementAIUsage } from '@/lib/ai/rate-limit';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
-    // Check AI access (rate limiting + enabled check)
     const access = await checkAIAccess();
     if (!access.allowed) {
       return NextResponse.json(
@@ -24,33 +21,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
     }
 
-    // Convert to buffer and create a proper file for OpenAI
     const buffer = Buffer.from(await audioFile.arrayBuffer());
-    
-    // Determine filename based on type
     const mimeType = audioFile.type || 'audio/webm';
-    const ext = mimeType.includes('webm') ? 'webm' : 
-                mimeType.includes('ogg') ? 'ogg' : 
-                mimeType.includes('mp4') ? 'mp4' : 
-                mimeType.includes('mpeg') ? 'mp3' : 'webm';
-    
-    const file = await toFile(buffer, `audio.${ext}`, { type: mimeType });
 
-    const transcription = await openai.audio.transcriptions.create({
-      file: file,
-      model: 'whisper-1',
-    });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    // Increment usage counter
+    const result = await model.generateContent([
+      { text: 'Transcribe this audio accurately. Return ONLY the transcription text, nothing else. Keep the original language.' },
+      {
+        inlineData: {
+          mimeType,
+          data: buffer.toString('base64'),
+        },
+      },
+    ]);
+
+    const response = await result.response;
+    const text = response.text()?.trim() || '';
+
     if (access.userId) {
       await incrementAIUsage(access.userId);
     }
 
-    return NextResponse.json({ text: transcription.text });
+    return NextResponse.json({ text });
   } catch (error: any) {
-    console.error('Transcription error:', error);
+    console.error('Transcribe error:', error);
     return NextResponse.json(
-      { error: 'Failed to transcribe audio', details: error?.message || String(error) },
+      { error: 'Transcription failed', details: error?.message || String(error) },
       { status: 500 }
     );
   }
