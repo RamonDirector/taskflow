@@ -761,27 +761,27 @@ export default function PandaHub() {
     setPandaMessage('Déjame pensar...');
 
     try {
-      // If audio, transcribe first then check if it's a conversation
-      let transcribedText = text || '';
+      // Single call to process-voice: transcribes + detects intent + classifies
+      const formData = new FormData();
+      if (audioBlob) {
+        formData.append('audio', audioBlob, 'recording.webm');
+      }
+      if (text) {
+        formData.append('text', text);
+      }
+
+      const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Process error:', res.status, errData);
+        throw new Error(errData?.details || errData?.error || `Processing failed (${res.status})`);
+      }
+
+      const extractData = await res.json();
+      const transcribedText = extractData.transcription || text || '';
       
-      if (audioBlob && !text) {
-        // Step 1: Transcribe audio
-        const transcribeForm = new FormData();
-        transcribeForm.append('audio', audioBlob, 'recording.webm');
-        const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: transcribeForm });
-        if (transcribeRes.ok) {
-          const { text: transcript } = await transcribeRes.json();
-          transcribedText = transcript || '';
-        }
-        
-        if (!transcribedText.trim()) {
-          setPandaImage('/panda/new-wave.png');
-          setPandaMessage('No te escuché, ¿puedes repetir?');
-          setIsProcessing(false);
-          return;
-        }
-        
-        // Step 2: Check if it's a conversation with Kai
+      // If Gemini detected conversation intent → send to Kai (Sonnet)
+      if (extractData.intent === 'conversation') {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           const kaiRes = await fetch('/api/kai-chat', {
@@ -801,28 +801,9 @@ export default function PandaHub() {
             }
           }
         } catch (e) {
-          console.error('Kai voice chat error:', e);
+          console.error('Kai chat error:', e);
         }
       }
-
-      // Step 3: Brain dump flow — send to process-voice with text (skip re-transcription if already transcribed)
-      const formData = new FormData();
-      if (audioBlob && !transcribedText) {
-        formData.append('audio', audioBlob, 'recording.webm');
-      } else {
-        // Already transcribed or text input — send as text to avoid double transcription
-        formData.append('text', transcribedText);
-      }
-
-      const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        console.error('Process error:', res.status, errData);
-        throw new Error(errData?.details || errData?.error || `Processing failed (${res.status})`);
-      }
-
-      const extractData = await res.json();
-      transcribedText = extractData.transcription || transcribedText || '';
 
       if (!transcribedText?.trim() && (!extractData.items || extractData.items.length === 0)) {
         setPandaImage('/panda/new-wave.png');

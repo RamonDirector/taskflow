@@ -61,12 +61,20 @@ export async function POST(request: NextRequest) {
     const dates = getRelativeDates();
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const prompt = `You are a Brain Dump extraction expert. ${audioFile ? 'Listen to this audio recording and' : 'Read this text and'} extract EVERY actionable task, idea, and dream.
+    const prompt = `You are Kai, an intelligent voice assistant. ${audioFile ? 'Listen to this audio recording.' : 'Read this text.'}
 
 ## STEP 1: TRANSCRIBE (if audio)
 First, transcribe the audio accurately. Include the transcription in your response.
 
-## STEP 2: EXTRACT & CLASSIFY
+## STEP 2: DETECT INTENT
+Determine if the user is:
+A) **conversation** — asking a question, requesting info about their tasks/ideas, chatting, greeting, or giving a command to the assistant (e.g. "qué tareas tengo", "organiza mis ideas", "cómo voy", "hola", "ayuda")
+B) **brain_dump** — listing tasks, ideas, or dreams to capture (e.g. "comprar leche, llamar dentista", "tengo que hacer X", "se me ocurrió que...", "soñé que...")
+
+Set "intent" to "conversation" or "brain_dump". If in doubt, choose "conversation".
+
+## STEP 3: EXTRACT & CLASSIFY (only if intent is brain_dump)
+If intent is "conversation", set items to empty array and skip extraction.
 
 ## DATE REFERENCE
 Today: ${dates.dayOfWeek} (${dates.dayOfWeekES}), ${dates.today}
@@ -109,6 +117,7 @@ Respond in THE SAME LANGUAGE as the input. ALL fields (title, context, everythin
 Return ONLY valid JSON, no markdown:
 {
   "transcription": "Full transcription of the audio (or echo of text input)",
+  "intent": "conversation" | "brain_dump",
   "items": [
     {
       "title": "Short title",
@@ -178,6 +187,7 @@ ${textInput ? `## TEXT TO ANALYZE:\n${textInput}` : '## AUDIO ATTACHED - Listen 
 
       return NextResponse.json({
         transcription: parsed.transcription || '',
+        intent: parsed.intent || 'brain_dump',
         items: processedItems,
         connections,
         tasks: processedItems.filter((i: any) => i.type === 'task'),
