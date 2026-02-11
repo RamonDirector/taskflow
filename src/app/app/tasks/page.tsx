@@ -901,7 +901,7 @@ export default function TasksPage() {
           })}
         </AnimatePresence>
 
-        {filteredTasks.length === 0 && (
+        {filteredTasks.length === 0 && focusTasks.length === 0 && (
           <div className="text-center py-12">
             <Image 
               src="/images/panda-laptop.png" 
