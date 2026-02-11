@@ -5,39 +5,43 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_AP
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
 
-// Intent detection: is this a conversation with Kai or a brain dump?
+// Intent detection: INVERTED — detect brain dumps, everything else goes to Kai
 function isConversation(text: string): boolean {
   const lower = text.toLowerCase().trim();
-  
-  // Questions
-  if (lower.includes('?') || lower.startsWith('¿')) return true;
-  
-  // Direct Kai commands
-  const kaiTriggers = [
-    'kai', 'qué debería', 'que deberia', 'qué hago', 'que hago',
-    'organiza', 'prioriza', 'cómo voy', 'como voy', 'resumen',
-    'no sé por dónde', 'no se por donde', 'ayuda', 'ayúdame',
-    'crea tarea', 'crea una tarea', 'nueva tarea',
-    'qué tengo', 'que tengo', 'cuántas tareas', 'cuantas tareas',
-    'tareas pendientes', 'tareas tengo', 'pendientes',
-    'qué opinas', 'que opinas', 'qué piensas', 'que piensas',
-    'borra', 'elimina', 'completa', 'mis tareas', 'mis ideas',
-  ];
-  
-  for (const trigger of kaiTriggers) {
-    if (lower.includes(trigger)) return true;
-  }
-  
-  // Short inputs that look conversational (< 5 words, not a list)
   const words = lower.split(/\s+/);
-  if (words.length <= 4 && !lower.includes(',') && !lower.includes('\n')) {
-    // Could be conversational, but also could be a single task
-    // Only treat as conversation if it has conversational markers
-    const conversationalWords = ['hola', 'oye', 'hey', 'dime', 'gracias', 'vale', 'ok', 'bien', 'mal', 'sí', 'no'];
-    if (conversationalWords.some(w => lower.includes(w))) return true;
-  }
   
-  return false;
+  // === BRAIN DUMP patterns (NOT conversation) ===
+  
+  // Lists with commas or "y" connecting items → brain dump
+  // "comprar leche, llamar dentista, enviar email"
+  const commaItems = lower.split(',').map(s => s.trim()).filter(Boolean);
+  if (commaItems.length >= 2) return false;
+  
+  // Multiple lines → brain dump
+  if (text.trim().split('\n').filter(Boolean).length >= 2) return false;
+  
+  // Starts with action verb + object (task-like) and is long enough
+  const taskVerbs = [
+    'comprar', 'llamar', 'enviar', 'escribir', 'preparar', 'hacer', 'terminar',
+    'revisar', 'leer', 'buscar', 'pagar', 'reservar', 'agendar', 'programar',
+    'cocinar', 'limpiar', 'arreglar', 'instalar', 'configurar', 'actualizar',
+    'mandar', 'recoger', 'devolver', 'cancelar', 'renovar', 'solicitar',
+    'buy', 'call', 'send', 'write', 'prepare', 'finish', 'review', 'read',
+  ];
+  const firstWord = words[0]?.replace(/[^a-záéíóúñü]/g, '');
+  if (taskVerbs.includes(firstWord) && words.length >= 2 && words.length <= 12) return false;
+  
+  // "Tengo que..." / "Necesito..." / "Hay que..." → task, not conversation
+  if (lower.startsWith('tengo que ') || lower.startsWith('necesito ') || lower.startsWith('hay que ')) return false;
+  
+  // "Se me ocurrió..." / "Una idea:" → idea, brain dump
+  if (lower.startsWith('se me ocurri') || lower.startsWith('una idea') || lower.startsWith('idea:')) return false;
+  
+  // "Soñé que..." → dream
+  if (lower.startsWith('soñé') || lower.startsWith('soñe') || lower.startsWith('anoche soñ')) return false;
+  
+  // === EVERYTHING ELSE → CONVERSATION with Kai ===
+  return true;
 }
 
 export async function POST(request: NextRequest) {
