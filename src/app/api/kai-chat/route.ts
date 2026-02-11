@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
     }
     
     if (!ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 });
+      console.error('Missing API key. ANTHROPIC_API_KEY:', !!process.env.ANTHROPIC_API_KEY, 'CLAUDE_API_KEY:', !!process.env.CLAUDE_API_KEY);
+      return NextResponse.json({ error: 'Anthropic API key not configured', debug: 'no_key' }, { status: 500 });
     }
     
     // Fetch user context from Supabase

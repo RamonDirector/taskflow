@@ -717,22 +717,25 @@ export default function PandaHub() {
         body: JSON.stringify({ text, userId: user?.id }),
       });
       
-      if (kaiRes.ok) {
-        const kaiData = await kaiRes.json();
+      const kaiData = await kaiRes.json();
+      console.log('Kai response:', kaiRes.status, kaiData);
+      
+      if (kaiRes.ok && kaiData.type === 'conversation') {
+        // Kai handled it
+        setPandaMessage(kaiData.message);
+        setPandaImage(kaiData.pose || '/panda/new-wave.png');
         
-        if (kaiData.type === 'conversation') {
-          // Kai handled it
-          setPandaMessage(kaiData.message);
-          setPandaImage(kaiData.pose || '/panda/new-wave.png');
-          
-          // If Kai created/completed/deleted tasks, refresh
-          if (kaiData.actions?.length > 0) {
-            loadBambooProgress(user!.id);
-          }
-          return;
+        // If Kai created/completed/deleted tasks, refresh
+        if (kaiData.actions?.length > 0) {
+          loadBambooProgress(user!.id);
         }
-        // type === 'brain_dump' → fall through to normal flow
+        return;
       }
+      
+      if (!kaiRes.ok) {
+        console.error('Kai API error:', kaiData);
+      }
+      // type === 'brain_dump' or error → fall through to normal flow
     } catch (e) {
       console.error('Kai chat error:', e);
       // Fall through to brain dump
