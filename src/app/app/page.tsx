@@ -752,13 +752,57 @@ export default function PandaHub() {
     setPandaMessage('Déjame pensar...');
 
     try {
-      // Unified processing: send audio or text to single endpoint
-      const formData = new FormData();
-      if (audioBlob) {
-        formData.append('audio', audioBlob, 'recording.webm');
+      // If audio, transcribe first then check if it's a conversation
+      let transcribedText = text || '';
+      
+      if (audioBlob && !text) {
+        // Step 1: Transcribe audio
+        const transcribeForm = new FormData();
+        transcribeForm.append('audio', audioBlob, 'recording.webm');
+        const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: transcribeForm });
+        if (transcribeRes.ok) {
+          const { text: transcript } = await transcribeRes.json();
+          transcribedText = transcript || '';
+        }
+        
+        if (!transcribedText.trim()) {
+          setPandaImage('/panda/new-wave.png');
+          setPandaMessage('No te escuché, ¿puedes repetir?');
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Step 2: Check if it's a conversation with Kai
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const kaiRes = await fetch('/api/kai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: transcribedText, userId: user?.id, accessToken: session?.access_token }),
+          });
+          
+          if (kaiRes.ok) {
+            const kaiData = await kaiRes.json();
+            if (kaiData.type === 'conversation') {
+              setPandaMessage(kaiData.message);
+              setPandaImage(kaiData.pose || '/panda/new-wave.png');
+              if (kaiData.actions?.length > 0) loadBambooProgress(user!.id);
+              setIsProcessing(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('Kai voice chat error:', e);
+        }
       }
-      if (text) {
-        formData.append('text', text);
+
+      // Step 3: Brain dump flow — send to process-voice with text (skip re-transcription if already transcribed)
+      const formData = new FormData();
+      if (audioBlob && !transcribedText) {
+        formData.append('audio', audioBlob, 'recording.webm');
+      } else {
+        // Already transcribed or text input — send as text to avoid double transcription
+        formData.append('text', transcribedText);
       }
 
       const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
@@ -769,7 +813,7 @@ export default function PandaHub() {
       }
 
       const extractData = await res.json();
-      const transcribedText = extractData.transcription || text || '';
+      transcribedText = extractData.transcription || transcribedText || '';
 
       if (!transcribedText?.trim() && (!extractData.items || extractData.items.length === 0)) {
         setPandaImage('/panda/new-wave.png');
