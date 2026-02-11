@@ -103,7 +103,7 @@ End of month: ${dates.endOfMonth}
 work, meetings, email, calls, coding, writing, personal, family, social, gifts, health, fitness, medical, finance, bills, shopping, home, maintenance, learning, creative, travel, errands
 
 ## LANGUAGE
-Respond in THE SAME LANGUAGE as the input.
+Respond in THE SAME LANGUAGE as the input. ALL fields (title, context, everything) must be in the same language as the user's input. If the user speaks Spanish, ALL output must be in Spanish. No mixing languages.
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON, no markdown:
