@@ -1665,7 +1665,6 @@ export default function PandaHub() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/20 z-40"
-              onClick={discardItems}
             />
             
             {/* Sheet */}
