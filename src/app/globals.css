@@ -458,3 +458,15 @@ header {
   0%, 100% { opacity: 0.4; transform: scale(1.4); }
   50% { opacity: 0.6; transform: scale(1.6); }
 }
+
+/* Panda background circle - only visible in dark mode */
+.panda-bg-circle {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .panda-bg-circle {
+    display: block;
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+}

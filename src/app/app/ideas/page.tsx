@@ -1351,7 +1351,7 @@ export default function IdeasBoard() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <div className="mx-auto mb-4 w-[160px] h-[160px] relative flex items-center justify-center">
-              <div className="absolute w-[130px] h-[130px] rounded-full bg-transparent dark:bg-gray-600/50" />
+              <div className="panda-bg-circle absolute w-[130px] h-[130px] rounded-full" />
               <Image 
                 src="/images/panda-idea.png" 
                 alt="Panda con idea" 
