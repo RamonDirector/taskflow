@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DarkModeInit } from '@/components/DarkModeInit';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Hansei',
@@ -10,5 +11,10 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <DarkModeInit />
+      {children}
+    </>
+  );
 }
