@@ -96,7 +96,7 @@ export default function LandingPage() {
           </Link>
 
           <p className="text-xs text-gray-400 mt-4">
-Solo 15 plazas disponibles
+Los primeros 50 tendrán un 30% de descuento de por vida
           </p>
         </div>
 
