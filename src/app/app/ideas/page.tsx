@@ -1350,8 +1350,8 @@ export default function IdeasBoard() {
       {ideas.filter(i => i.type === 'idea').length === 0 && !loading && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <div className="mx-auto mb-4 w-[160px] h-[160px] relative">
-              <div className="absolute inset-0 rounded-full bg-transparent dark:bg-gray-700/40 blur-xl scale-90" />
+            <div className="mx-auto mb-4 w-[160px] h-[160px] relative flex items-center justify-center">
+              <div className="absolute w-[130px] h-[130px] rounded-full bg-transparent dark:bg-gray-600/50" />
               <Image 
                 src="/images/panda-idea.png" 
                 alt="Panda con idea" 

@@ -548,8 +548,8 @@ export default function DreamsPage() {
 
         {dreams.length === 0 && (
           <div className="text-center py-12">
-            <div className="mx-auto mb-4 w-[160px] h-[160px] relative">
-              <div className="absolute inset-0 rounded-full bg-transparent dark:bg-gray-700/40 blur-xl scale-90" />
+            <div className="mx-auto mb-4 w-[160px] h-[160px] relative flex items-center justify-center">
+              <div className="absolute w-[130px] h-[130px] rounded-full bg-transparent dark:bg-gray-600/50" />
               <Image 
                 src="/images/panda-sleeping.png" 
                 alt="Panda durmiendo" 
