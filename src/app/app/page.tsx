@@ -1643,8 +1643,8 @@ export default function PandaHub() {
         </motion.div>
         )}
 
-        {/* Kai's pixel speech bubble - hidden when sheet is open */}
-        {!showConfirmation && pandaMessage && (
+        {/* Kai's pixel speech bubble - hidden when sheet is open or during loading states */}
+        {!showConfirmation && pandaMessage && !['Déjame pensar...', 'Te escucho...', '¿Qué tienes en mente?'].includes(pandaMessage) && (
           <div className="mb-2 max-w-xs mx-auto" key={pandaMessage}>
             <PixelBubble message={pandaMessage} />
           </div>
