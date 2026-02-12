@@ -1,12 +1,43 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 
 interface PixelBubbleProps {
   message: string;
   className?: string;
   tailPosition?: 'center' | 'left' | 'right';
   animate?: boolean;
+}
+
+/**
+ * Render basic markdown: **bold**, \n line breaks.
+ * Returns array of React elements.
+ */
+function renderSimpleMarkdown(text: string): React.ReactNode[] {
+  // Split by newlines first
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  
+  lines.forEach((line, lineIdx) => {
+    if (lineIdx > 0) elements.push(<br key={`br-${lineIdx}`} />);
+    
+    // Parse **bold** within each line
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    parts.forEach((part, partIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        elements.push(
+          <strong key={`${lineIdx}-${partIdx}`} className="font-semibold">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      } else if (part) {
+        elements.push(part);
+      }
+    });
+  });
+  
+  return elements;
 }
 
 /**
@@ -101,9 +132,9 @@ export function PixelBubble({ message, className = '', tailPosition = 'center', 
             border: `${px}px solid ${color}`,
           }}
         />
-        <p className="text-sm text-gray-800 dark:text-gray-200 text-center leading-relaxed relative z-10">
-          {message}
-        </p>
+        <div className="text-sm text-gray-800 dark:text-gray-200 text-left leading-relaxed relative z-10 max-h-[200px] overflow-y-auto scrollbar-hide">
+          {renderSimpleMarkdown(message)}
+        </div>
       </div>
 
       {/* Pixel tail pointing down to Kai */}
