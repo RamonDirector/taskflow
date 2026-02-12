@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || process.env.Claude_API_KEY || process.env.CLAUDE_KEY || process.env.SONNET_API_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+// Routing: determine if we need Sonnet (expensive) or Gemini (cheap)
+function needsSonnet(text: string): boolean {
+  const lower = text.toLowerCase().trim();
+  const words = lower.split(/\s+/);
+  
+  // Greetings → Gemini
+  if (/^(hola|hey|qu[eé] tal|buenas|buenos d[ií]as|good morning|hi|hello)[\s!?.]*$/i.test(lower)) return false;
+  
+  // Short acknowledgments → Gemini
+  if (words.length <= 2 && !/\b(crea|borra|elimina|completa|prioriza)\b/i.test(lower)) return false;
+  
+  // Task CRUD actions → Sonnet (needs tools)
+  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita)\b/i.test(lower)) return true;
+  
+  // Coaching / prioritization questions → Sonnet (needs reasoning)
+  if (/\b(qu[eé] (debo|hago|tengo|podr[ií]a)|c[oó]mo voy|sugi[eé]r|recomiend|prioriz|por d[oó]nde empiezo|ayuda)\b/i.test(lower)) return true;
+  
+  // Status / summary questions → Gemini can handle with context
+  if (/\b(cu[aá]ntas?|resumen|estado|pendientes|lista)\b/i.test(lower)) return false;
+  
+  // Default: messages > 8 words likely need reasoning → Sonnet
+  return words.length > 8;
+}
 
 // Intent detection: INVERTED — detect brain dumps, everything else goes to Kai
 function isConversation(text: string): boolean {
@@ -61,6 +87,8 @@ export async function POST(request: NextRequest) {
       console.error('Missing API key. ANTHROPIC_API_KEY:', !!process.env.ANTHROPIC_API_KEY, 'CLAUDE_API_KEY:', !!process.env.CLAUDE_API_KEY);
       return NextResponse.json({ error: 'Anthropic API key not configured', debug: 'no_key' }, { status: 500 });
     }
+    
+    const useSonnet = needsSonnet(text);
     
     // Fetch user context from Supabase — use user's access token for RLS
     const supabaseOptions = accessToken 
@@ -121,61 +149,129 @@ export async function POST(request: NextRequest) {
 ## Tu contexto actual
 
 ### Tareas pendientes (${pendingTasks.length})
-${pendingTasks.slice(0, 10).map(t => `- "${t.title}" ${t.due_date === today ? '(HOY)' : ''} ${staleTasks.find(s => s.id === t.id) ? `(${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} días)` : ''} [prioridad: ${t.priority || 'normal'}]`).join('\n')}
+${pendingTasks.slice(0, 10).map(t => `- [#${t.id}] "${t.title}" ${t.due_date === today ? '(HOY)' : ''} ${staleTasks.find(s => s.id === t.id) ? `(${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} días)` : ''} [prioridad: ${t.priority || 'normal'}]`).join('\n')}
 ${pendingTasks.length > 10 ? `...y ${pendingTasks.length - 10} más` : ''}
 
 ### Tareas completadas recientes (${completedTasks.length})
-${completedTasks.slice(0, 5).map(t => `- "${t.title}"`).join('\n')}
+${completedTasks.slice(0, 5).map(t => `- [#${t.id}] "${t.title}"`).join('\n')}
 
 ### Ideas activas (${ideas.length})
-${ideas.slice(0, 5).map(i => `- "${i.title}"`).join('\n')}
+${ideas.slice(0, 5).map(i => `- [#${i.id}] "${i.title}"`).join('\n')}
 
 ### Actividad última semana
 - Tareas completadas: ${completedThisWeek}
 - Brain dumps: ${brainDumpsThisWeek}
 
 ### Tareas estancadas (3+ días sin mover)
-${staleTasks.length > 0 ? staleTasks.map(t => `- "${t.title}" (${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} días)`).join('\n') : 'Ninguna'}
+${staleTasks.length > 0 ? staleTasks.map(t => `- [#${t.id}] "${t.title}" (${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} días)`).join('\n') : 'Ninguna'}
 
 ### Foco de hoy
-${todayTasks.length > 0 ? todayTasks.map(t => `- "${t.title}"`).join('\n') : 'Sin tareas para hoy'}
+${todayTasks.length > 0 ? todayTasks.map(t => `- [#${t.id}] "${t.title}"`).join('\n') : 'Sin tareas para hoy'}
 `.trim();
 
-    // Build tools for Kai
+    // === TIER 1: Gemini Flash for simple responses (no tools needed) ===
+    if (!useSonnet) {
+      try {
+        const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const geminiPrompt = `Eres Kai, el panda asistente de Hansei. Responde en español, informal (tuteo). 
+Máximo 1-2 frases cortas. Sin emojis. Directo y cálido.
+Si preguntan algo fuera de productividad: "Eso no es lo mío. ¿Hablamos de tus tareas?"
+
+${contextBlock}
+
+Usuario: ${text}`;
+        
+        const geminiRes = await geminiModel.generateContent(geminiPrompt);
+        const geminiText = geminiRes.response.text();
+        const pose = determinePose(geminiText, []);
+        
+        return NextResponse.json({
+          type: 'conversation',
+          message: geminiText,
+          pose,
+          actions: [],
+          model: 'gemini',
+        });
+      } catch (geminiError) {
+        console.error('Gemini fallback to Sonnet:', geminiError);
+        // Fall through to Sonnet
+      }
+    }
+    
+    // === TIER 2: Sonnet for complex responses (tools, reasoning, coaching) ===
+    
+    // Build tools for Kai — ACI optimized per Anthropic best practices
     const tools = [
       {
         name: 'create_task',
-        description: 'Crear una nueva tarea para el usuario. Usa cuando el usuario pide crear una tarea o cuando sugieres una acción concreta.',
+        description: `Crear una nueva tarea para el usuario.
+
+Usa cuando:
+- El usuario pide explícitamente crear/añadir una tarea
+- El usuario acepta una sugerencia tuya ("sí, ponla")
+- "recuérdame X" o "añade X a mi lista"
+
+NO uses cuando:
+- El usuario habla de algo que YA hizo → usa complete_task
+- Mención vaga sin intención de crear ("debería hacer X algún día") → solo responde
+- El input ya se detectó como brain dump → no llegarás aquí
+
+Ejemplos:
+- "crea una tarea para llamar al dentista" → title: "Llamar al dentista"
+- "pon comprar pan como prioridad alta para hoy" → title: "Comprar pan", priority: "high", due_today: true`,
         input_schema: {
           type: 'object',
           properties: {
-            title: { type: 'string', description: 'Título de la tarea' },
-            priority: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Prioridad' },
-            due_today: { type: 'boolean', description: 'Si la tarea es para hoy' },
+            title: { type: 'string', description: 'Título claro y accionable. Empieza con verbo.' },
+            priority: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Prioridad. Default: medium si no se especifica.' },
+            due_today: { type: 'boolean', description: 'true si el usuario dice "hoy" o implica urgencia inmediata.' },
           },
           required: ['title'],
         },
       },
       {
         name: 'complete_task',
-        description: 'Completar una tarea existente. Usa cuando el usuario dice que ya hizo algo.',
+        description: `Marcar una tarea existente como completada.
+
+Usa cuando:
+- El usuario dice que ya hizo algo: "ya llamé al dentista", "hecho", "listo"
+- El usuario confirma que terminó una tarea específica
+
+NO uses cuando:
+- No hay tarea pendiente que coincida → responde "no encuentro esa tarea"
+- El usuario quiere ELIMINAR (no completar) una tarea → usa delete_task
+
+Usa task_id (del contexto [#ID]) siempre que sea posible. Fallback a task_title si no hay ID claro.
+Si hay varias coincidencias por título, completa la más antigua (probablemente la que el usuario quiere cerrar).`,
         input_schema: {
           type: 'object',
           properties: {
-            task_title: { type: 'string', description: 'Título (o parte) de la tarea a completar' },
+            task_id: { type: 'string', description: 'ID de la tarea del contexto (ej: "42"). Preferido sobre título.' },
+            task_title: { type: 'string', description: 'Título parcial como fallback si no hay ID claro.' },
           },
-          required: ['task_title'],
+          required: [],
         },
       },
       {
         name: 'delete_task',
-        description: 'Eliminar una tarea. Usa cuando el usuario quiere quitar algo de su lista.',
+        description: `Eliminar una tarea de la lista.
+
+Usa cuando:
+- El usuario quiere quitar algo: "borra X", "elimina X", "quita X de mi lista"
+
+NO uses cuando:
+- El usuario dice "borra todo/todas" → NO ejecutar, responde "¿cuáles exactamente?"
+- El usuario completó la tarea (la hizo) → usa complete_task
+- No hay match claro → pregunta cuál tarea se refiere
+
+Usa task_id siempre que sea posible. Si hay varias coincidencias por título, PREGUNTA cuál.`,
         input_schema: {
           type: 'object',
           properties: {
-            task_title: { type: 'string', description: 'Título (o parte) de la tarea a eliminar' },
+            task_id: { type: 'string', description: 'ID de la tarea del contexto (ej: "42"). Preferido sobre título.' },
+            task_title: { type: 'string', description: 'Título parcial como fallback si no hay ID claro.' },
           },
-          required: ['task_title'],
+          required: [],
         },
       },
     ];
@@ -353,19 +449,34 @@ async function executeTool(
     }
     
     case 'complete_task': {
-      const searchTitle = input.task_title as string;
+      const taskId = input.task_id as string | undefined;
+      const searchTitle = input.task_title as string | undefined;
       
-      // Find matching task
-      const { data: matches } = await supabase
-        .from('tasks')
-        .select('id, title')
-        .eq('user_id', userId)
-        .eq('type', 'task')
-        .eq('completed', false)
-        .ilike('title', `%${searchTitle}%`)
-        .limit(1);
+      // Find matching task — prefer ID, fallback to title search
+      let matches;
+      if (taskId) {
+        const res = await supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('id', taskId)
+          .eq('user_id', userId)
+          .eq('completed', false)
+          .limit(1);
+        matches = res.data;
+      } else if (searchTitle) {
+        const res = await supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('user_id', userId)
+          .eq('type', 'task')
+          .eq('completed', false)
+          .ilike('title', `%${searchTitle}%`)
+          .order('created_at', { ascending: true })
+          .limit(1);
+        matches = res.data;
+      }
       
-      if (!matches?.length) return `No encontré tarea con "${searchTitle}"`;
+      if (!matches?.length) return `No encontré esa tarea pendiente`;
       
       const task = matches[0];
       await supabase.from('tasks').update({ 
@@ -385,17 +496,31 @@ async function executeTool(
     }
     
     case 'delete_task': {
-      const searchTitle = input.task_title as string;
+      const taskId = input.task_id as string | undefined;
+      const searchTitle = input.task_title as string | undefined;
       
-      const { data: matches } = await supabase
-        .from('tasks')
-        .select('id, title')
-        .eq('user_id', userId)
-        .eq('type', 'task')
-        .ilike('title', `%${searchTitle}%`)
-        .limit(1);
+      // Find matching task — prefer ID, fallback to title search
+      let matches;
+      if (taskId) {
+        const res = await supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('id', taskId)
+          .eq('user_id', userId)
+          .limit(1);
+        matches = res.data;
+      } else if (searchTitle) {
+        const res = await supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('user_id', userId)
+          .eq('type', 'task')
+          .ilike('title', `%${searchTitle}%`)
+          .limit(1);
+        matches = res.data;
+      }
       
-      if (!matches?.length) return `No encontré tarea con "${searchTitle}"`;
+      if (!matches?.length) return `No encontré esa tarea`;
       
       const task = matches[0];
       await supabase.from('tasks').delete().eq('id', task.id);
