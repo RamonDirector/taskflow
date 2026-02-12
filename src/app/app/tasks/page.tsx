@@ -903,13 +903,14 @@ export default function TasksPage() {
 
         {filteredTasks.length === 0 && focusTasks.length === 0 && (
           <div className="text-center py-12">
-            <Image 
-              src="/images/panda-laptop.png" 
-              alt="Panda con laptop" 
-              width={160} 
-              height={160} 
-              className="mx-auto mb-4"
-            />
+            <div className="mx-auto mb-4 w-[160px] h-[160px] relative dark:drop-shadow-[0_0_20px_rgba(107,143,113,0.3)]">
+              <Image 
+                src="/images/panda-laptop.png" 
+                alt="Panda con laptop" 
+                width={160} 
+                height={160} 
+              />
+            </div>
             <p className="text-gray-500 dark:text-gray-400 font-medium">
               {filter === 'pending' ? '¡Todo al día!' : filter === 'completed' ? 'Aún no has completado ninguna' : '¡Todo al día!'}
             </p>
