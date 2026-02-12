@@ -557,22 +557,25 @@ function determinePose(message: string, actions: Array<{ tool: string }>): strin
   // Action taken → pointing (confident)
   if (actions.length > 0) return '/panda/new-pointing.png';
   
-  // Encouraging / celebrating
-  if (lower.includes('bien') || lower.includes('genial') || lower.includes('racha') || lower.includes('completaste'))
+  // Encouraging / celebrating — check FIRST (positive tone overrides everything)
+  if (lower.includes('puedes') || lower.includes('bien') || lower.includes('genial') || 
+      lower.includes('racha') || lower.includes('completaste') || lower.includes('excelente') ||
+      lower.includes('avance') || lower.includes('dale') || lower.includes('vamos'))
     return '/panda/new-celebrate.png';
-  
-  // Thinking / suggesting
-  if (lower.includes('sugiero') || lower.includes('podrías') || lower.includes('prueba') || lower.includes('quizás'))
-    return '/panda/new-thinking.png';
-  
-  // Nudging about stale tasks
-  if (lower.includes('días') || lower.includes('estancad') || lower.includes('pendiente'))
-    return '/panda/new-annoyed.png';
   
   // Out of scope
   if (lower.includes('no es lo mío') || lower.includes('no puedo'))
     return '/panda/new-shrug.png';
   
-  // Default
+  // Thinking / suggesting
+  if (lower.includes('sugiero') || lower.includes('podrías') || lower.includes('prueba') || 
+      lower.includes('quizás') || lower.includes('prioriza') || lower.includes('empieza'))
+    return '/panda/new-thinking.png';
+  
+  // Nudging — only when tone is clearly negative (stale, forgotten)
+  if (lower.includes('estancad') || lower.includes('olvidad') || lower.includes('sin mover'))
+    return '/panda/new-neutral.png';
+  
+  // Default — friendly wave
   return '/panda/new-wave.png';
 }
