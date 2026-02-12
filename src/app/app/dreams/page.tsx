@@ -548,19 +548,16 @@ export default function DreamsPage() {
 
         {dreams.length === 0 && (
           <div className="text-center py-12">
-            <div className="mx-auto mb-4 w-[160px] h-[160px] relative flex items-center justify-center">
-              <div className="absolute w-[130px] h-[130px] rounded-full hidden dark:block bg-gray-600/50" />
-              <Image 
-                src="/images/panda-sleeping.png" 
-                alt="Panda durmiendo" 
-                width={160} 
-                height={160} 
-                className="relative z-10"
-              />
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 font-medium">Kai guarda tus sueños</p>
+            <Image 
+              src="/images/panda-sleeping-v2.png" 
+              alt="Kai durmiendo" 
+              width={160} 
+              height={160} 
+              className="mx-auto mb-4 drop-shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+            />
+            <p className="text-gray-500 dark:text-gray-400 font-medium">Tus sueños, a salvo</p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              Di "Soñé que..." para empezar
+              Di &quot;Soñé que...&quot; y Kai lo interpreta
             </p>
           </div>
         )}
