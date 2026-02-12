@@ -481,7 +481,7 @@ async function executeTool(
           .eq('type', 'task')
           .eq('completed', false)
           .ilike('title', `%${searchTitle}%`)
-          .order('created_at', { ascending: true })
+          .order('created_at', { ascending: false })
           .limit(1);
         matches = res.data;
       }
