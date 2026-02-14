@@ -1827,7 +1827,7 @@ export default function PandaHub() {
                         onClick={() => { setBatchMode(false); setBatchSelected(new Set()); }}
                         className="w-full text-xs text-[var(--gray-4)] py-1"
                       >
-                        Cancelar selección
+                        {t.app.cancel_selection}
                       </button>
                     </motion.div>
                   ) : (
@@ -1837,7 +1837,7 @@ export default function PandaHub() {
                         onClick={discardItems}
                         className="flex-1 h-12 rounded-full border border-[var(--gray-3)] text-[var(--gray-5)] text-sm font-medium active:scale-[0.98]"
                       >
-                        Descartar
+                        {t.app.discard}
                       </button>
                       <button
                         onClick={saveItems}

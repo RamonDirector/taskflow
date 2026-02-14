@@ -3,12 +3,30 @@
 import { useState, useEffect } from 'react';
 import { isOnline, onOnlineStatusChange, getAllPendingCount } from '@/lib/offline-store';
 import { getSyncStatus, onSyncStatusChange, SyncStatus } from '@/lib/sync-manager';
+import { getLocale } from '@/lib/i18n';
+
+const offlineText = {
+  en: {
+    offline: 'Offline — Recordings will be saved locally',
+    syncing: (n: number) => `Syncing ${n} pending item${n !== 1 ? 's' : ''}...`,
+    pending: (n: number) => `${n} item${n !== 1 ? 's' : ''} pending sync`,
+    connected: 'Connected! Everything synced',
+  },
+  es: {
+    offline: 'Sin conexión — Las grabaciones se guardarán localmente',
+    syncing: (n: number) => `Sincronizando ${n} pendiente${n !== 1 ? 's' : ''}...`,
+    pending: (n: number) => `${n} elemento${n !== 1 ? 's' : ''} pendiente${n !== 1 ? 's' : ''} de sincronizar`,
+    connected: '¡Conectado! Todo sincronizado',
+  },
+};
 
 export function OfflineIndicator() {
   const [online, setOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [pendingCount, setPendingCount] = useState({ recordings: 0, tasks: 0 });
   const [showBanner, setShowBanner] = useState(false);
+
+  const txt = offlineText[getLocale()];
 
   useEffect(() => {
     setOnline(isOnline());
@@ -69,7 +87,7 @@ export function OfflineIndicator() {
               d="M18.364 5.636a9 9 0 010 12.728m-3.536-3.536a4 4 0 010-5.656m-7.072 7.072a9 9 0 010-12.728m3.536 3.536a4 4 0 010 5.656" 
             />
           </svg>
-          Sin conexión — Las grabaciones se guardarán localmente
+          {txt.offline}
         </div>
       )}
 
@@ -82,7 +100,7 @@ export function OfflineIndicator() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" 
             />
           </svg>
-          Sincronizando {totalPending} pendiente{totalPending !== 1 ? 's' : ''}...
+          {txt.syncing(totalPending)}
         </div>
       )}
 
@@ -94,7 +112,7 @@ export function OfflineIndicator() {
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
             />
           </svg>
-          {totalPending} elemento{totalPending !== 1 ? 's' : ''} pendiente{totalPending !== 1 ? 's' : ''} de sincronizar
+          {txt.pending(totalPending)}
         </div>
       )}
 
@@ -104,7 +122,7 @@ export function OfflineIndicator() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          ¡Conectado! Todo sincronizado
+          {txt.connected}
         </div>
       )}
     </div>

@@ -267,7 +267,7 @@ export default function TasksPage() {
           editType: 'action-point',
           voiceInput: text,
           context: {
-            ideaTitle: 'Tarea',
+            ideaTitle: t.app.type_task,
             stepTitle: task.title,
             stepIndex: 0,
             totalSteps: 1,

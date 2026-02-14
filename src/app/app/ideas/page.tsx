@@ -573,7 +573,7 @@ export default function IdeasBoard() {
             editType: 'action-point', // Reuse same logic
             voiceInput: text.trim(),
             context: {
-              ideaTitle: 'Idea',
+              ideaTitle: t.app.type_idea,
               stepTitle: selectedIdea.title,
               stepIndex: 0,
               totalSteps: 1,
@@ -959,13 +959,13 @@ export default function IdeasBoard() {
                           }}
                           className="px-3 py-1.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
                         >
-                          Cancelar
+                          {t.ideas.cancel}
                         </button>
                         <button
                           onClick={updateIdeaTitle}
                           className="px-4 py-1.5 rounded-xl bg-[#6b8f71] text-white text-sm font-medium"
                         >
-                          Guardar
+                          {t.ideas.save}
                         </button>
                       </div>
                     </div>
@@ -1088,7 +1088,7 @@ export default function IdeasBoard() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
-                        Añadir a tareas
+                        {t.ideas.add_to_tasks}
                       </button>
                     </div>
                     
@@ -1291,7 +1291,7 @@ export default function IdeasBoard() {
                   onClick={() => deleteIdea(selectedIdea.id)}
                   className="w-full px-4 py-2 rounded-xl text-[#8B2942] hover:bg-[#8B2942]/10 dark:hover:bg-[#8B2942]/20 text-sm font-medium transition-colors"
                 >
-                  Eliminar idea
+                  {t.ideas.delete_idea}
                 </button>
               </div>
             </motion.div>
@@ -1318,7 +1318,7 @@ export default function IdeasBoard() {
             >
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-amber-500">{Icons.lightbulb}</span>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Nueva idea</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t.ideas.new_idea}</h2>
               </div>
 
               <input
@@ -1327,7 +1327,7 @@ export default function IdeasBoard() {
                 value={newIdeaTitle}
                 onChange={(e) => setNewIdeaTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addNewIdea()}
-                placeholder="¿Qué tienes en mente?"
+                placeholder={t.ideas.whats_on_your_mind}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2d2d30] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/50"
               />
 
@@ -1336,14 +1336,14 @@ export default function IdeasBoard() {
                   onClick={() => setShowInput(false)}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  Cancelar
+                  {t.ideas.cancel}
                 </button>
                 <button
                   onClick={addNewIdea}
                   disabled={!newIdeaTitle.trim()}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-[#6b8f71] hover:bg-[#5a7d60] disabled:opacity-50 text-white text-sm font-medium transition-colors"
                 >
-                  Añadir
+                  {t.ideas.add}
                 </button>
               </div>
             </motion.div>
@@ -1362,8 +1362,8 @@ export default function IdeasBoard() {
               height={160} 
               className="mx-auto mb-4 drop-shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
             />
-            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">Tu espacio para ideas</p>
-            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Di &quot;Tengo una idea...&quot; y Kai la guarda</p>
+            <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">{t.ideas.your_space}</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{t.ideas.say_idea_hint}</p>
           </div>
         </div>
       )}

@@ -513,7 +513,7 @@ export default function DreamsPage() {
                               }}
                               className="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                             >
-                              Cancelar
+                              {t.ideas.cancel}
                             </button>
                             <button
                               onClick={(e) => {
@@ -522,7 +522,7 @@ export default function DreamsPage() {
                               }}
                               className="px-3 py-1 text-xs text-white bg-purple-600 rounded-lg"
                             >
-                              Guardar
+                              {t.ideas.save}
                             </button>
                           </div>
                         </div>

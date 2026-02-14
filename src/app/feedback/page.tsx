@@ -3,8 +3,81 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
+import { useLocale } from '@/lib/i18n';
+
+// Translations for feedback-specific content (not in global i18n to keep it lean)
+const feedbackContent = {
+  en: {
+    subtitle: '2 minutes · Your opinion is gold to us',
+    freq_label: 'How many times did you use Hansei this week?',
+    freq_opts: [
+      { value: '0', label: "Didn't use it" },
+      { value: '1-2', label: '1-2 times' },
+      { value: '3-5', label: '3-5 times' },
+      { value: '6-10', label: '6-10 times' },
+      { value: '10+', label: 'More than 10' },
+    ],
+    ease_label: 'How easy was it to record your first idea?',
+    ease_low: 'Very hard',
+    ease_high: 'Very easy',
+    class_label: 'Was the automatic classification correct?',
+    class_opts: [
+      { value: 'always', label: 'Always or almost always' },
+      { value: 'sometimes', label: 'Sometimes yes, sometimes no' },
+      { value: 'rarely', label: 'Almost never' },
+      { value: 'didnt_notice', label: "Didn't notice" },
+    ],
+    frust_label: 'What was the MOST frustrating or confusing?',
+    liked_label: 'What did you like MOST?',
+    missing_label: 'What feature would make you use it every day?',
+    nps_label: 'Would you recommend Hansei to a friend?',
+    nps_low: 'Never',
+    nps_high: 'Definitely',
+    comments_label: 'Anything else you want to tell us?',
+    next: 'Next',
+    back: 'Back',
+    thank_desc: 'Your opinion helps us build a better product.',
+    back_to_app: 'Back to the app',
+  },
+  es: {
+    subtitle: '2 minutos · Tu opinión es oro para nosotros',
+    freq_label: '¿Cuántas veces usaste Hansei esta semana?',
+    freq_opts: [
+      { value: '0', label: 'No la usé' },
+      { value: '1-2', label: '1-2 veces' },
+      { value: '3-5', label: '3-5 veces' },
+      { value: '6-10', label: '6-10 veces' },
+      { value: '10+', label: 'Más de 10' },
+    ],
+    ease_label: '¿Qué tan fácil fue grabar tu primera idea?',
+    ease_low: 'Muy difícil',
+    ease_high: 'Muy fácil',
+    class_label: '¿La clasificación automática fue correcta?',
+    class_opts: [
+      { value: 'always', label: 'Siempre o casi siempre' },
+      { value: 'sometimes', label: 'A veces sí, a veces no' },
+      { value: 'rarely', label: 'Casi nunca' },
+      { value: 'didnt_notice', label: 'No me fijé' },
+    ],
+    frust_label: '¿Qué fue lo MÁS frustrante o confuso?',
+    liked_label: '¿Qué fue lo que MÁS te gustó?',
+    missing_label: '¿Qué feature te falta para usarla todos los días?',
+    nps_label: '¿Recomendarías Hansei a un amigo?',
+    nps_low: 'Nunca',
+    nps_high: 'Seguro que sí',
+    comments_label: '¿Algo más que quieras decirnos?',
+    next: 'Siguiente',
+    back: 'Atrás',
+    thank_desc: 'Tu opinión nos ayuda a construir un mejor producto.',
+    back_to_app: 'Volver a la app',
+  },
+};
 
 export default function FeedbackPage() {
+  const { locale, t } = useLocale();
+  const fc = feedbackContent[locale];
+  const ft = t.feedback;
+
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,10 +121,10 @@ export default function FeedbackPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">¡Gracias por tu feedback!</h1>
-          <p className="text-gray-500 mb-6">Tu opinión nos ayuda a construir un mejor producto.</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">{ft.thank_you}</h1>
+          <p className="text-gray-500 mb-6">{fc.thank_desc}</p>
           <a href="/app" className="inline-flex items-center gap-2 px-6 py-3 bg-[#6b8f71] hover:bg-[#5a7d60] text-white font-medium rounded-xl transition-all">
-            Volver a la app
+            {fc.back_to_app}
           </a>
         </div>
       </main>
@@ -70,8 +143,8 @@ export default function FeedbackPage() {
             height={48}
             className="rounded-xl mx-auto mb-4"
           />
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Feedback Beta Tester</h1>
-          <p className="text-gray-500">2 minutos · Tu opinión es oro para nosotros</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">{ft.title}</h1>
+          <p className="text-gray-500">{fc.subtitle}</p>
         </div>
 
         {/* Progress */}
@@ -87,19 +160,12 @@ export default function FeedbackPage() {
         {/* Step 1 */}
         {step === 1 && (
           <div className="space-y-6">
-            {/* Frecuencia */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                ¿Cuántas veces usaste Hansei esta semana?
+                {fc.freq_label}
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: '0', label: 'No la usé' },
-                  { value: '1-2', label: '1-2 veces' },
-                  { value: '3-5', label: '3-5 veces' },
-                  { value: '6-10', label: '6-10 veces' },
-                  { value: '10+', label: 'Más de 10' },
-                ].map((opt) => (
+                {fc.freq_opts.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setForm({ ...form, usage_frequency: opt.value })}
@@ -115,10 +181,9 @@ export default function FeedbackPage() {
               </div>
             </div>
 
-            {/* Facilidad */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                ¿Qué tan fácil fue grabar tu primera idea?
+                {fc.ease_label}
               </label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -136,23 +201,17 @@ export default function FeedbackPage() {
                 ))}
               </div>
               <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
-                <span>Muy difícil</span>
-                <span>Muy fácil</span>
+                <span>{fc.ease_low}</span>
+                <span>{fc.ease_high}</span>
               </div>
             </div>
 
-            {/* Clasificación */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                ¿La clasificación automática fue correcta?
+                {fc.class_label}
               </label>
               <div className="space-y-2">
-                {[
-                  { value: 'always', label: 'Siempre o casi siempre' },
-                  { value: 'sometimes', label: 'A veces sí, a veces no' },
-                  { value: 'rarely', label: 'Casi nunca' },
-                  { value: 'didnt_notice', label: 'No me fijé' },
-                ].map((opt) => (
+                {fc.class_opts.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setForm({ ...form, classification_accuracy: opt.value })}
@@ -173,7 +232,7 @@ export default function FeedbackPage() {
               disabled={!form.usage_frequency || !form.ease_of_capture || !form.classification_accuracy}
               className="w-full py-4 bg-[#6b8f71] hover:bg-[#5a7d60] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
             >
-              Siguiente
+              {fc.next}
             </button>
           </div>
         )}
@@ -183,36 +242,36 @@ export default function FeedbackPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ¿Qué fue lo MÁS frustrante o confuso?
+                {fc.frust_label}
               </label>
               <textarea
                 value={form.most_frustrating}
                 onChange={(e) => setForm({ ...form, most_frustrating: e.target.value })}
-                placeholder="Cuéntanos tu experiencia..."
+                placeholder={ft.experience_placeholder}
                 className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/20 focus:border-[#6b8f71]"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ¿Qué fue lo que MÁS te gustó?
+                {fc.liked_label}
               </label>
               <textarea
                 value={form.most_liked}
                 onChange={(e) => setForm({ ...form, most_liked: e.target.value })}
-                placeholder="Lo mejor de la app..."
+                placeholder={ft.best_placeholder}
                 className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/20 focus:border-[#6b8f71]"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ¿Qué feature te falta para usarla todos los días?
+                {fc.missing_label}
               </label>
               <textarea
                 value={form.missing_feature}
                 onChange={(e) => setForm({ ...form, missing_feature: e.target.value })}
-                placeholder="Esa cosa que haría todo mejor..."
+                placeholder={ft.improve_placeholder}
                 className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/20 focus:border-[#6b8f71]"
               />
             </div>
@@ -222,13 +281,13 @@ export default function FeedbackPage() {
                 onClick={() => setStep(1)}
                 className="flex-1 py-4 border border-gray-200 text-gray-600 font-medium rounded-xl transition-all hover:bg-gray-50"
               >
-                Atrás
+                {fc.back}
               </button>
               <button
                 onClick={() => setStep(3)}
                 className="flex-1 py-4 bg-[#6b8f71] hover:bg-[#5a7d60] text-white font-medium rounded-xl transition-all"
               >
-                Siguiente
+                {fc.next}
               </button>
             </div>
           </div>
@@ -237,10 +296,9 @@ export default function FeedbackPage() {
         {/* Step 3 */}
         {step === 3 && (
           <div className="space-y-6">
-            {/* NPS */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                ¿Recomendarías Hansei a un amigo?
+                {fc.nps_label}
               </label>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
@@ -258,19 +316,19 @@ export default function FeedbackPage() {
                 ))}
               </div>
               <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
-                <span>Nunca</span>
-                <span>Seguro que sí</span>
+                <span>{fc.nps_low}</span>
+                <span>{fc.nps_high}</span>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ¿Algo más que quieras decirnos?
+                {fc.comments_label}
               </label>
               <textarea
                 value={form.additional_comments}
                 onChange={(e) => setForm({ ...form, additional_comments: e.target.value })}
-                placeholder="Opcional..."
+                placeholder={ft.email_placeholder}
                 className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-[#6b8f71]/20 focus:border-[#6b8f71]"
               />
             </div>
@@ -280,14 +338,14 @@ export default function FeedbackPage() {
                 onClick={() => setStep(2)}
                 className="flex-1 py-4 border border-gray-200 text-gray-600 font-medium rounded-xl transition-all hover:bg-gray-50"
               >
-                Atrás
+                {fc.back}
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!form.nps || loading}
                 className="flex-1 py-4 bg-[#6b8f71] hover:bg-[#5a7d60] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
               >
-                {loading ? 'Enviando...' : 'Enviar feedback'}
+                {loading ? ft.submitting : ft.submit}
               </button>
             </div>
           </div>
