@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, TouchEvent, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import { type Locale, getTranslations, getLocale, setLocale } from '@/lib/i18n';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -57,43 +58,52 @@ interface OnboardingStep {
   skipVoice?: boolean;
 }
 
-const STEPS: OnboardingStep[] = [
-  {
-    id: 'welcome',
-    panda: '/panda/new-wave.png',
-    title: '¡Hola! Soy Kai',
-    subtitle: 'Tu compañero para capturar ideas',
-  },
-  {
-    id: 'name',
-    panda: '/panda/new-neutral.png',
-    title: '¿Y tú, cómo te llamas?',
-  },
-  {
-    id: 'what-capture',
-    panda: '/panda/new-thinking.png',
-    title: '¿Qué sueles capturar?',
-    contextOptions: ['Ideas', 'Tareas', 'Notas', 'Listas', 'Pensamientos', 'Sueños'],
-  },
-  {
-    id: 'when-ideas',
-    panda: '/panda/new-thinking.png',
-    title: '¿Cuándo te vienen ideas?',
-    contextOptions: ['Caminando', 'Ducha', 'Cama', 'Mañana', 'Ejercicio', 'Random'],
-  },
-  {
-    id: 'complete',
-    panda: '/panda/new-celebrate.png',
-    title: '¡Listo!',
-    subtitle: 'Ya puedes empezar a capturar',
-  },
-];
+function getSteps(locale: Locale): OnboardingStep[] {
+  const t = getTranslations(locale);
+  return [
+    {
+      id: 'welcome',
+      panda: '/panda/new-wave.png',
+      title: t.onboarding.welcome_title,
+      subtitle: t.onboarding.welcome_subtitle,
+    },
+    {
+      id: 'language',
+      panda: '/panda/new-neutral.png',
+      title: t.onboarding.language_title,
+      subtitle: t.onboarding.language_subtitle,
+    },
+    {
+      id: 'name',
+      panda: '/panda/new-neutral.png',
+      title: t.onboarding.name_title,
+    },
+    {
+      id: 'what-capture',
+      panda: '/panda/new-thinking.png',
+      title: t.onboarding.what_capture_title,
+      contextOptions: [...t.onboarding.what_capture_options],
+    },
+    {
+      id: 'when-ideas',
+      panda: '/panda/new-thinking.png',
+      title: t.onboarding.when_ideas_title,
+      contextOptions: [...t.onboarding.when_ideas_options],
+    },
+    {
+      id: 'complete',
+      panda: '/panda/new-celebrate.png',
+      title: t.onboarding.complete_title,
+    },
+  ];
+}
 
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
   
+  const [locale, setLocaleState] = useState<Locale>('en');
   const [currentStep, setCurrentStep] = useState(0);
   const [userName, setUserName] = useState('');
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
@@ -115,8 +125,15 @@ function OnboardingContent() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const step = STEPS[currentStep];
-  const progress = ((currentStep + 1) / STEPS.length) * 100;
+  const t = getTranslations(locale);
+  const steps = getSteps(locale);
+  const step = steps[currentStep];
+  const progress = ((currentStep + 1) / steps.length) * 100;
+
+  // Load saved locale on mount
+  useEffect(() => {
+    setLocaleState(getLocale());
+  }, []);
 
   // Check onboarding status
   useEffect(() => {
@@ -131,18 +148,23 @@ function OnboardingContent() {
     if (completed) router.push('/app');
   }, [router, searchParams]);
 
-  // Keep mic stream reference to avoid asking permission multiple times
   const streamRef = useRef<MediaStream | null>(null);
   
   useEffect(() => {
     return () => {
-      // Cleanup on unmount
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, []);
 
+  const handleSelectLocale = (newLocale: Locale) => {
+    setLocale(newLocale);
+    setLocaleState(newLocale);
+    // Auto-advance after selecting language
+    setTimeout(() => goNext(), 150);
+  };
+
   const goNext = () => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep < steps.length - 1) {
       setDirection('forward');
       setIsAnimating(true);
       setInputText('');
@@ -181,7 +203,6 @@ function OnboardingContent() {
   // Voice recording
   const startRecording = async () => {
     try {
-      // Reuse existing stream or create new one
       let stream = streamRef.current;
       if (!stream || !stream.active) {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -201,7 +222,6 @@ function OnboardingContent() {
       };
 
       mediaRecorder.onstop = async () => {
-        // Don't stop the stream tracks - keep permission alive
         if (timerRef.current) clearInterval(timerRef.current);
         await processVoiceInput();
       };
@@ -238,9 +258,8 @@ function OnboardingContent() {
   const processVoiceInput = async () => {
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
     
-    // If it's the capture step, go to processing
     if (step.id === 'first-capture') {
-      setCurrentStep(currentStep + 1); // Go to processing
+      setCurrentStep(currentStep + 1);
       
       try {
         const formData = new FormData();
@@ -268,13 +287,12 @@ function OnboardingContent() {
           }
         }
         
-        setCurrentStep(currentStep + 1); // Go to complete
+        setCurrentStep(currentStep + 1);
       } catch (e) {
         console.error('Processing error:', e);
-        setCurrentStep(currentStep + 1); // Go to complete anyway
+        setCurrentStep(currentStep + 1);
       }
     } else {
-      // For other steps, transcribe and use as text input
       try {
         const formData = new FormData();
         formData.append('audio', audioBlob, 'recording.webm');
@@ -286,7 +304,6 @@ function OnboardingContent() {
             if (step.id === 'name') {
               setUserName(text.trim());
             } else if (step.contextOptions) {
-              // Try to match spoken words to options
               const lowerText = text.toLowerCase();
               step.contextOptions.forEach(opt => {
                 if (lowerText.includes(opt.toLowerCase())) {
@@ -310,8 +327,7 @@ function OnboardingContent() {
       setUserName(inputText.trim());
       goNext();
     } else if (step.id === 'first-capture') {
-      // Process text input for capture
-      setCurrentStep(currentStep + 1); // Go to processing
+      setCurrentStep(currentStep + 1);
       setTranscript(inputText);
       
       fetch('/api/extract-tasks', {
@@ -349,14 +365,8 @@ function OnboardingContent() {
     return true;
   };
 
-  const getPlaceholder = () => {
-    if (step.id === 'name') return 'Escribe tu nombre...';
-    if (step.id === 'first-capture') return 'Escribe o habla...';
-    if (step.contextOptions) return 'O dilo con tu voz...';
-    return 'Escribe algo...';
-  };
-
-  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete';
+  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language';
+  const showInputBar = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language';
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
@@ -367,7 +377,7 @@ function OnboardingContent() {
 
       {/* Progress dots */}
       <div className="flex justify-center gap-1.5 pt-4">
-        {STEPS.map((_, i) => (
+        {steps.map((_, i) => (
           <div
             key={i}
             className="w-1.5 h-1.5 rounded-full transition-all duration-300"
@@ -384,12 +394,10 @@ function OnboardingContent() {
       >
         {/* Panda with matcha aura */}
         <div className="relative w-32 h-32 mb-6">
-          {/* Matcha aura glow */}
           <div 
             className="absolute inset-0 rounded-full bg-[#6b8f71]/50 blur-2xl scale-150"
             style={{ animation: 'auraPulse 3s ease-in-out infinite' }}
           />
-          {/* Shadow */}
           <div 
             className="absolute bottom-0 left-1/2 w-16 h-3 rounded-full bg-black/10 blur-sm -translate-x-1/2"
             style={{ animation: 'shadowPulse 3s ease-in-out infinite' }}
@@ -406,7 +414,9 @@ function OnboardingContent() {
 
         {/* Title */}
         <h1 className="text-2xl font-semibold text-[var(--foreground)] text-center mb-1 tracking-tight">
-          {step.id === 'complete' && userName ? `¡Listo, ${userName}!` : step.title}
+          {step.id === 'complete' && userName 
+            ? t.onboarding.complete_title_name.replace('{name}', userName) 
+            : step.title}
         </h1>
 
         {/* Subtitle */}
@@ -418,7 +428,35 @@ function OnboardingContent() {
 
       {/* Bottom section - ALWAYS visible */}
       <div className="p-5 pb-8 space-y-4">
-        {/* Context options - floating pills with hover effect */}
+        {/* Language selector */}
+        {step.id === 'language' && (
+          <div className="flex flex-col gap-3 mb-4 px-2">
+            <button
+              onClick={() => handleSelectLocale('en')}
+              className={`w-full h-16 rounded-2xl text-base font-medium transition-all duration-200 border-2 flex items-center justify-center gap-3
+                ${locale === 'en' 
+                  ? 'bg-[#6b8f71]/15 border-[#6b8f71] text-[#6b8f71]' 
+                  : 'bg-[var(--gray-1)] border-[var(--gray-2)] text-[var(--foreground)] hover:border-[#6b8f71]/50'
+                }
+              `}
+            >
+              <span className="text-xl">🇬🇧</span> English
+            </button>
+            <button
+              onClick={() => handleSelectLocale('es')}
+              className={`w-full h-16 rounded-2xl text-base font-medium transition-all duration-200 border-2 flex items-center justify-center gap-3
+                ${locale === 'es' 
+                  ? 'bg-[#6b8f71]/15 border-[#6b8f71] text-[#6b8f71]' 
+                  : 'bg-[var(--gray-1)] border-[var(--gray-2)] text-[var(--foreground)] hover:border-[#6b8f71]/50'
+                }
+              `}
+            >
+              <span className="text-xl">🇪🇸</span> Español
+            </button>
+          </div>
+        )}
+
+        {/* Context options - floating pills */}
         {step.contextOptions && (
           <div className="flex flex-wrap justify-center gap-3 mb-4 px-2">
             {step.contextOptions.map(option => (
@@ -446,13 +484,12 @@ function OnboardingContent() {
           </div>
         )}
 
-        {/* Input bar - voice first with smooth transition */}
-        {step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && (
+        {/* Input bar */}
+        {showInputBar && (
           <div className="relative">
             <div 
               className="flex items-center gap-2 h-14 px-4 rounded-full border bg-[var(--gray-1)] border-[var(--gray-2)] relative overflow-hidden"
             >
-              {/* Black overlay that expands from the mic button */}
               <div 
                 className="absolute inset-0 bg-[#2d2d30] rounded-full transition-all"
                 style={{ 
@@ -463,7 +500,6 @@ function OnboardingContent() {
                   transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               />
-              {/* Cancel button - only when recording */}
               <div className={`relative z-10 transition-all duration-300 ${isRecording ? 'w-10 opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}>
                 <button 
                   onClick={cancelRecording} 
@@ -473,7 +509,6 @@ function OnboardingContent() {
                 </button>
               </div>
 
-              {/* Input / Recording content */}
               <div className="flex-1 flex items-center gap-2 relative z-10">
                 {!isRecording ? (
                   <input
@@ -483,10 +518,9 @@ function OnboardingContent() {
                     onChange={(e) => step.id === 'name' ? (setInputText(e.target.value), setUserName(e.target.value)) : setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
                     placeholder={
-                      step.id === 'name' ? 'Escribe tu nombre...' :
-                      step.id === 'first-capture' ? 'Escribe una idea o tarea...' :
-                      step.contextOptions ? 'O escríbelo aquí...' :
-                      'Escribe aquí...'
+                      step.id === 'name' ? t.onboarding.name_placeholder :
+                      step.contextOptions ? t.onboarding.write_here :
+                      t.onboarding.write_here
                     }
                     className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none font-medium tracking-tight"
                   />
@@ -494,7 +528,7 @@ function OnboardingContent() {
                   <>
                     <div className="flex-1 flex items-center">
                       <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500 }}>
-                        Escuchando
+                        {t.onboarding.listening}
                       </span>
                       <span className="dots" style={{ color: '#ffffff' }}>
                         <span>.</span><span>.</span><span>.</span>
@@ -505,7 +539,6 @@ function OnboardingContent() {
                 )}
               </div>
 
-              {/* Mic/Check button - shows check if text entered or recording */}
               {showVoiceButton && (
                 <button
                   onClick={() => {
@@ -521,14 +554,12 @@ function OnboardingContent() {
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-105 active:scale-95 relative z-10"
                   style={{ backgroundColor: THEME_COLOR }}
                 >
-                  {/* Mic icon - shows when no text and not recording */}
                   <div 
                     className={`absolute transition-all ease-out ${(isRecording || inputText.trim().length > 0 || (step.id === 'name' && userName.trim().length > 0)) ? 'opacity-0 scale-75' : 'opacity-100 scale-100'}`}
                     style={{ transitionDuration: '300ms' }}
                   >
                     {Icons.mic}
                   </div>
-                  {/* Check icon - shows when text entered or recording */}
                   <div 
                     className={`absolute transition-all ease-out ${(isRecording || inputText.trim().length > 0 || (step.id === 'name' && userName.trim().length > 0)) ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-45'}`}
                     style={{ transitionDuration: '300ms' }}
@@ -539,9 +570,8 @@ function OnboardingContent() {
               )}
             </div>
             
-            {/* Helper text */}
             <p className={`text-center text-xs mt-3 transition-all duration-300 ${isRecording ? 'text-white/50' : 'text-[var(--gray-4)]'}`}>
-              Habla naturalmente, como si le contaras a un amigo
+              {t.onboarding.speak_naturally}
             </p>
           </div>
         )}
@@ -553,19 +583,27 @@ function OnboardingContent() {
             className="w-full h-14 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ backgroundColor: THEME_COLOR }}
           >
-            Empezar {Icons.arrow}
+            {t.onboarding.start_button} {Icons.arrow}
           </button>
         )}
 
-        {/* Complete button */}
+        {/* Complete section: Kai guide + button */}
         {step.id === 'complete' && (
-          <button
-            onClick={saveAndFinish}
-            className="w-full h-14 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-            style={{ backgroundColor: THEME_COLOR }}
-          >
-            Empezar {Icons.arrow}
-          </button>
+          <>
+            {/* Kai post-onboarding guide bubble */}
+            <div className="rounded-2xl border border-[#6b8f71]/30 bg-[#6b8f71]/8 p-4 mb-4">
+              <p className="text-sm font-medium text-[var(--foreground)] mb-1.5">{t.kai_guide.title}</p>
+              <p className="text-sm text-[var(--gray-5)] leading-relaxed">{t.kai_guide.message}</p>
+            </div>
+
+            <button
+              onClick={saveAndFinish}
+              className="w-full h-14 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              style={{ backgroundColor: THEME_COLOR }}
+            >
+              {t.kai_guide.cta} {Icons.arrow}
+            </button>
+          </>
         )}
 
         {/* Next button for selection steps */}
@@ -575,7 +613,7 @@ function OnboardingContent() {
             className="w-full h-12 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ backgroundColor: THEME_COLOR }}
           >
-            Siguiente {Icons.arrow}
+            {t.onboarding.next_button} {Icons.arrow}
           </button>
         )}
       </div>
