@@ -10,12 +10,12 @@ export async function POST(request: Request) {
     const access = await checkAIAccess();
     if (!access.allowed) {
       return NextResponse.json(
-        { affirmation: 'Qué tienes en mente?', error: access.error },
+        { affirmation: "What's on your mind?", error: access.error },
         { status: 429 }
       );
     }
 
-    const { context } = await request.json();
+    const { context, locale = 'es' } = await request.json();
     
     const {
       userName,
@@ -42,7 +42,33 @@ export async function POST(request: Request) {
       contextParts.push(`Days since last activity: ${daysSinceLastActivity}`);
     }
 
-    const prompt = `You are a friendly panda mascot inviting the user to speak or type their thoughts.
+    const prompt = locale === 'en'
+      ? `You are a friendly panda mascot inviting the user to speak or type their thoughts.
+
+Your job is to generate a SHORT, INFORMAL prompt that encourages the user to tap the microphone.
+
+RULES:
+- Maximum 8 words. Very short.
+- Warm, friendly, casual tone.
+- Vary the phrasing each time.
+- No exclamation marks.
+
+GOOD examples:
+- "What's on your mind?"
+- "Tell me, what's new?"
+- "What do you want to capture?"
+- "I'm listening. What's up?"
+- "Any ideas floating around?"
+- "What's for today?"
+- "Tell me what you're thinking"
+- "Something on your mind?"
+
+BAD examples (avoid):
+- "You're amazing!" (motivational)
+- Any stats or achievements
+
+Generate a short invitation prompt in English for the user to speak or type what's on their mind. Just the prompt, nothing else.`
+      : `You are a friendly panda mascot inviting the user to speak or type their thoughts.
 
 Your job is to generate a SHORT, INFORMAL prompt that encourages the user to tap the microphone.
 
@@ -76,7 +102,7 @@ Generate a short invitation prompt in Spanish for the user to speak or type what
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const affirmation = response.text()?.trim() || 'Qué tienes en mente?';
+    const affirmation = response.text()?.trim() || (locale === 'en' ? "What's on your mind?" : 'Qué tienes en mente?');
 
     // Increment usage counter
     if (access.userId) {
@@ -86,6 +112,6 @@ Generate a short invitation prompt in Spanish for the user to speak or type what
     return NextResponse.json({ affirmation });
   } catch (error) {
     console.error('Affirmation generation error:', error);
-    return NextResponse.json({ affirmation: 'Qué tienes en mente?' });
+    return NextResponse.json({ affirmation: locale === 'en' ? "What's on your mind?" : 'Qué tienes en mente?' });
   }
 }
