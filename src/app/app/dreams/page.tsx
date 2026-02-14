@@ -48,18 +48,18 @@ interface Dream {
   emotion?: string;
 }
 
-// Emotion config: color + emoji for visual tagging
-const EMOTION_CONFIG: Record<string, { emoji: string; color: string; bg: string }> = {
-  anxiety: { emoji: '😰', color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30' },
-  joy: { emoji: '😊', color: 'text-yellow-600', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
-  confusion: { emoji: '😵‍💫', color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  fear: { emoji: '😨', color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30' },
-  sadness: { emoji: '😢', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  anger: { emoji: '😤', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-  peace: { emoji: '😌', color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' },
-  excitement: { emoji: '🤩', color: 'text-pink-600', bg: 'bg-pink-100 dark:bg-pink-900/30' },
-  nostalgia: { emoji: '🥹', color: 'text-amber-600', bg: 'bg-amber-100 dark:bg-amber-900/30' },
-  wonder: { emoji: '🤯', color: 'text-violet-600', bg: 'bg-violet-100 dark:bg-violet-900/30' },
+// Emotion config: clean color badges, no emojis (Hansei design principle)
+const EMOTION_CONFIG: Record<string, { color: string; bg: string }> = {
+  anxiety: { color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  joy: { color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+  confusion: { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  fear: { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30' },
+  sadness: { color: 'text-blue-500 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  anger: { color: 'text-red-500 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30' },
+  peace: { color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
+  excitement: { color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-100 dark:bg-pink-900/30' },
+  nostalgia: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30' },
+  wonder: { color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/30' },
 };
 
 const THEME_COLOR = '#6b8f71';
@@ -570,8 +570,8 @@ export default function DreamsPage() {
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         {dream.emotion && EMOTION_CONFIG[dream.emotion] && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${EMOTION_CONFIG[dream.emotion].bg} ${EMOTION_CONFIG[dream.emotion].color} font-medium`}>
-                            {EMOTION_CONFIG[dream.emotion].emoji} {dream.emotion}
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${EMOTION_CONFIG[dream.emotion].bg} ${EMOTION_CONFIG[dream.emotion].color} font-medium capitalize`}>
+                            {dream.emotion}
                           </span>
                         )}
                         {dream.interpretation && !dream.emotion && (
@@ -669,8 +669,7 @@ export default function DreamsPage() {
                     })}
                   </p>
                   {selectedDream.emotion && EMOTION_CONFIG[selectedDream.emotion] && (
-                    <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full ${EMOTION_CONFIG[selectedDream.emotion].bg}`}>
-                      <span className="text-sm">{EMOTION_CONFIG[selectedDream.emotion].emoji}</span>
+                    <div className={`inline-flex items-center mt-2 px-3 py-1 rounded-full ${EMOTION_CONFIG[selectedDream.emotion].bg}`}>
                       <span className={`text-xs font-medium ${EMOTION_CONFIG[selectedDream.emotion].color} capitalize`}>{selectedDream.emotion}</span>
                     </div>
                   )}
