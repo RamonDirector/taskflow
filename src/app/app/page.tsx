@@ -13,6 +13,7 @@ import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type Streak
 import { haptic } from '@/lib/haptics';
 import { logActivity } from '@/lib/activity';
 import { PixelBubble } from '@/components/PixelBubble';
+import { useLocale } from '@/lib/i18n';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -71,25 +72,22 @@ const Icons = {
   ),
 };
 
-// Type styles
-const typeConfig = {
+// Type styles (labels set dynamically via i18n in component)
+const typeConfigBase = {
   task: {
     icon: Icons.checkCircle,
-    label: 'Tarea',
     color: 'text-emerald-500',
     bg: 'bg-emerald-500/10',
     panda: '/panda/new-celebrate.png',
   },
   idea: {
     icon: Icons.lightbulb,
-    label: 'Idea',
     color: 'text-amber-500',
     bg: 'bg-amber-500/10',
     panda: '/panda/new-celebrate.png',
   },
   dream: {
     icon: Icons.moon,
-    label: 'Sueño',
     color: 'text-indigo-500',
     bg: 'bg-indigo-500/10',
     panda: '/panda/new-thinking.png',
@@ -106,18 +104,27 @@ interface CapturedItem {
   _fromIdeaTitle?: string; // Track which idea generated this task (for linking)
 }
 
-// Deadline options
-const deadlineOptions = [
-  { id: 'today', label: 'Hoy', days: 0 },
-  { id: 'tomorrow', label: 'Mañana', days: 1 },
-  { id: 'week', label: 'Esta semana', days: 7 },
-  { id: 'none', label: 'Sin fecha', days: null },
-];
+// Deadline options (labels set dynamically via i18n)
 
 export default function PandaHub() {
+  const { locale, t } = useLocale();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
+
+  // Type config with translated labels
+  const typeConfig = {
+    task: { ...typeConfigBase.task, label: t.app.type_task },
+    idea: { ...typeConfigBase.idea, label: t.app.type_idea },
+    dream: { ...typeConfigBase.dream, label: t.app.type_dream },
+  };
+
+  const deadlineOptions = [
+    { id: 'today', label: t.app.today, days: 0 },
+    { id: 'tomorrow', label: t.app.tomorrow, days: 1 },
+    { id: 'week', label: t.app.this_week, days: 7 },
+    { id: 'none', label: t.app.no_date, days: null as number | null },
+  ];
   
   // Panda state
   const [pandaImage, setPandaImage] = useState('/panda/new-wave.png');
@@ -127,23 +134,8 @@ export default function PandaHub() {
   const kaiTapCountRef = useRef(0);
   const kaiTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  const KAI_TAP_PHRASES = [
-    { message: '¿Qué? Estoy pensando', image: '/panda/new-thinking.png' },
-    { message: 'No me toques que pierdo la concentración', image: '/panda/new-annoyed.png' },
-    { message: '¿Necesitas algo o solo me molestas?', image: '/panda/new-shrug.png' },
-    { message: 'Estaba meditando...', image: '/panda/new-sleeping.png' },
-    { message: 'Oye, que tengo sentimientos', image: '/panda/new-annoyed.png' },
-    { message: 'Vale, ya estoy aquí. Dime', image: '/panda/new-pointing.png' },
-    { message: 'Zzz... ah, perdona. ¿Decías?', image: '/panda/new-sleeping.png' },
-    { message: '¿Hm?', image: '/panda/new-thinking.png' },
-  ];
-  
-  const KAI_MULTI_TAP_PHRASES = [
-    { message: '¿En serio? ¿No tienes tareas que hacer?', image: '/panda/new-annoyed.png' },
-    { message: 'Esto cuenta como procrastinar', image: '/panda/new-pointing.png' },
-    { message: 'Para. De. Tocarme.', image: '/panda/new-annoyed.png' },
-    { message: 'Voy a empezar a cobrar por toque', image: '/panda/new-shrug.png' },
-  ];
+  const KAI_TAP_PHRASES = t.app.kai_tap_phrases;
+  const KAI_MULTI_TAP_PHRASES = t.app.kai_multi_tap_phrases;
   
   const handleKaiTap = () => {
     if (isRecording || isProcessing || showConfirmation) return;
@@ -165,7 +157,7 @@ export default function PandaHub() {
   };
   
   // Daily affirmation state
-  const [dailyAffirmation, setDailyAffirmation] = useState('El camino se hace al andar.');
+  const [dailyAffirmation, setDailyAffirmation] = useState('');
   
   // Input state
   const [inputText, setInputText] = useState('');
@@ -293,6 +285,7 @@ export default function PandaHub() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          locale,
           context: {
             userName: name,
             currentHour: now.getHours(),
@@ -310,7 +303,7 @@ export default function PandaHub() {
       }
     } catch (error) {
       console.error('Daily affirmation error:', error);
-      setDailyAffirmation('El camino se hace al andar.');
+      setDailyAffirmation(t.app.default_affirmation);
     }
   };
 
@@ -364,6 +357,7 @@ export default function PandaHub() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          locale,
           context: {
             userName: name,
             totalIdeas: ideas.length,
@@ -380,11 +374,11 @@ export default function PandaHub() {
         const { affirmation } = await response.json();
         setPandaMessage(affirmation);
       } else {
-        setPandaMessage('¿Qué tienes en mente?');
+        setPandaMessage(t.app.whats_on_your_mind);
       }
     } catch (error) {
       console.error('Affirmation error:', error);
-      setPandaMessage('¿Qué tienes en mente?');
+      setPandaMessage(t.app.whats_on_your_mind);
     }
   };
 
@@ -540,12 +534,7 @@ export default function PandaHub() {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   // Kai pose rotation during brain dump locked recording
-  const brainDumpPoses = [
-    { image: '/panda/new-neutral.png', message: 'Te escucho...' },
-    { image: '/panda/new-thinking.png', message: 'Sigue, sigue...' },
-    { image: '/panda/new-neutral.png', message: 'Tómate tu tiempo' },
-    { image: '/panda/new-celebrate.png', message: 'Cada idea cuenta' },
-  ];
+  const brainDumpPoses = t.app.brain_dump_poses;
 
   useEffect(() => {
     if (!brainDumpLocked || brainDumpPaused) return;
@@ -585,7 +574,7 @@ export default function PandaHub() {
       setBrainDumpPaused(false);
       setBrainDumpPoseIndex(0);
       setPandaImage('/panda/new-neutral.png');
-      setPandaMessage('Te escucho...');
+      setPandaMessage(t.app.listening);
       micTouchStartY.current = null;
     }
   };
@@ -673,12 +662,12 @@ export default function PandaHub() {
       setIsRecording(true);
       setRecordingTime(0);
       setPandaImage('/panda/new-neutral.png');
-      setPandaMessage('Te escucho...');
+      setPandaMessage(t.app.listening);
       
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
     } catch (e) {
       console.error('Recording error:', e);
-      setPandaMessage('No pude acceder al micrófono');
+      setPandaMessage(t.app.couldnt_access_mic);
     }
   };
 
@@ -700,7 +689,7 @@ export default function PandaHub() {
     setRecordingTime(0);
     chunksRef.current = [];
     setPandaImage('/panda/new-wave.png');
-    setPandaMessage('¿Qué tienes en mente?');
+    setPandaMessage(t.app.whats_on_your_mind);
   };
 
   // Process voice input
@@ -718,13 +707,13 @@ export default function PandaHub() {
     // Try Kai conversation first
     try {
       setPandaImage('/panda/new-thinking.png');
-      setPandaMessage('Déjame pensar...');
+      setPandaMessage(t.app.let_me_think);
       
       const { data: { session } } = await supabase.auth.getSession();
       const kaiRes = await fetch('/api/kai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, userId: user?.id, accessToken: session?.access_token }),
+        body: JSON.stringify({ text, userId: user?.id, accessToken: session?.access_token, locale }),
       });
       
       const kaiData = await kaiRes.json();
@@ -758,7 +747,7 @@ export default function PandaHub() {
   const processInput = async (audioBlob: Blob | null, text: string | null) => {
     setIsProcessing(true);
     setPandaImage('/panda/new-thinking.png');
-    setPandaMessage('Déjame pensar...');
+    setPandaMessage(t.app.let_me_think);
 
     try {
       // Single call to process-voice: transcribes + detects intent + classifies
@@ -769,6 +758,7 @@ export default function PandaHub() {
       if (text) {
         formData.append('text', text);
       }
+      formData.append('locale', locale);
 
       const res = await fetch('/api/process-voice', { method: 'POST', body: formData });
       if (!res.ok) {
@@ -787,7 +777,7 @@ export default function PandaHub() {
           const kaiRes = await fetch('/api/kai-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: transcribedText, userId: user?.id, accessToken: session?.access_token }),
+            body: JSON.stringify({ text: transcribedText, userId: user?.id, accessToken: session?.access_token, locale }),
           });
           
           if (kaiRes.ok) {
@@ -807,7 +797,7 @@ export default function PandaHub() {
 
       if (!transcribedText?.trim() && (!extractData.items || extractData.items.length === 0)) {
         setPandaImage('/panda/new-wave.png');
-        setPandaMessage('No te escuché, ¿puedes repetir?');
+        setPandaMessage(t.app.didnt_hear);
         setIsProcessing(false);
         return;
       }
@@ -856,7 +846,7 @@ export default function PandaHub() {
       const primaryType = items[0].type;
       const config = typeConfig[primaryType];
       setPandaImage(config.panda);
-      setPandaMessage(items.length === 1 ? '¡Listo! ¿Esto querías decir?' : '¡Listo! Esto es lo que capté:');
+      setPandaMessage(items.length === 1 ? t.app.got_it_single : t.app.got_it_multi);
       setShowConfirmation(true);
 
     } catch (e: any) {
@@ -864,11 +854,11 @@ export default function PandaHub() {
       setPandaImage('/panda/new-neutral.png');
       const msg = e?.message || '';
       if (msg.includes('API key') || msg.includes('401')) {
-        setPandaMessage('Error de API key. Revisa la configuración.');
+        setPandaMessage(t.app.api_key_error);
       } else if (msg.includes('429') || msg.includes('Límite')) {
-        setPandaMessage('Límite de uso alcanzado. Inténtalo más tarde.');
+        setPandaMessage(t.app.rate_limit);
       } else {
-        setPandaMessage('Hubo un error, ¿intentamos de nuevo?');
+        setPandaMessage(t.app.generic_error);
       }
     }
 
@@ -981,7 +971,7 @@ export default function PandaHub() {
     setSelectedDeadline('today'); // Reset to default
     setOriginalVoiceContext(null); // Clear voice context
     setPandaImage('/panda/new-celebrate.png');
-    setPandaMessage('¡Guardado! ¿Algo más?');
+    setPandaMessage(t.app.saved);
     
     // Update bamboo progress (new tasks added = more to complete)
     loadBambooProgress(user.id);
@@ -1001,7 +991,7 @@ export default function PandaHub() {
     setExpandedPlans(new Set());
     setConnections([]);
     setPandaImage('/panda/new-wave.png');
-    setPandaMessage('¿Qué tienes en mente?');
+    setPandaMessage(t.app.whats_on_your_mind);
   };
 
   // Remove single item
@@ -1092,7 +1082,7 @@ export default function PandaHub() {
       const res = await fetch('/api/action-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idea: item.title, voiceContext: item.context }),
+        body: JSON.stringify({ idea: item.title, voiceContext: item.context, locale }),
       });
       
       if (!res.ok) throw new Error('Failed');
@@ -1167,7 +1157,7 @@ export default function PandaHub() {
             />
             <div className="flex gap-2 justify-end">
               <button onClick={cancelEdit} className="px-3 py-1 text-xs text-[var(--gray-4)]">
-                Cancelar
+                {t.app.cancel}
               </button>
               <button onClick={saveEdit} className="px-3 py-1 text-xs text-white rounded-full" style={{ backgroundColor: THEME_COLOR }}>
                 OK
@@ -1195,7 +1185,7 @@ export default function PandaHub() {
                 onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); cycleItemType(i); }}
                 onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                 className={`${config.color} mt-0.5 p-1.5 -m-1.5 active:scale-90 transition-transform rounded-lg`}
-                title="Cambiar tipo"
+                title={t.app.change_type}
               >
                 {config.icon}
               </button>
@@ -1224,10 +1214,10 @@ export default function PandaHub() {
                     {actionPlans[i]?.loading ? (
                       <span className="flex items-center gap-1">
                         <div className="w-2.5 h-2.5 border border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
-                        Generando...
+                        {t.app.generating}
                       </span>
                     ) : (
-                      'Plan de acción'
+                      t.app.action_plan
                     )}
                   </button>
                 )}
@@ -1258,7 +1248,7 @@ export default function PandaHub() {
                       className="mt-2 w-full h-8 rounded-full text-[11px] font-medium text-white active:scale-[0.98] transition-transform"
                       style={{ backgroundColor: THEME_COLOR }}
                     >
-                      Añadir como tareas ({actionPlans[i].points.length})
+                      {t.app.add_as_tasks} ({actionPlans[i].points.length})
                     </button>
                   </motion.div>
                 )}
@@ -1308,7 +1298,7 @@ export default function PandaHub() {
                 router.push('/login');
               }}
               className="p-2 bg-transparent transition-opacity hover:opacity-70"
-              title="Cerrar sesión"
+              title={t.app.sign_out}
             >
               <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
@@ -1644,7 +1634,7 @@ export default function PandaHub() {
         )}
 
         {/* Kai's pixel speech bubble - hidden when sheet is open or during loading states */}
-        {!showConfirmation && pandaMessage && !['Déjame pensar...', 'Te escucho...', '¿Qué tienes en mente?'].includes(pandaMessage) && (
+        {!showConfirmation && pandaMessage && ![t.app.let_me_think, t.app.listening, t.app.whats_on_your_mind].includes(pandaMessage) && (
           <div className="mb-2 max-w-xs mx-auto" key={pandaMessage}>
             <PixelBubble message={pandaMessage} />
           </div>
@@ -1714,12 +1704,12 @@ export default function PandaHub() {
                   const ideaCount = capturedItems.filter(i => i.type === 'idea').length;
                   const dreamCount = capturedItems.filter(i => i.type === 'dream').length;
                   const parts = [];
-                  if (taskCount > 0) parts.push(`${taskCount} tarea${taskCount > 1 ? 's' : ''}`);
-                  if (ideaCount > 0) parts.push(`${ideaCount} idea${ideaCount > 1 ? 's' : ''}`);
-                  if (dreamCount > 0) parts.push(`${dreamCount} sueño${dreamCount > 1 ? 's' : ''}`);
+                  if (taskCount > 0) parts.push(t.app.captured_tasks(taskCount));
+                  if (ideaCount > 0) parts.push(t.app.captured_ideas(ideaCount));
+                  if (dreamCount > 0) parts.push(t.app.captured_dreams(dreamCount));
                   return (
                     <p className="text-sm font-medium text-[var(--foreground)] mb-4">
-                      Capté {parts.join(', ')}
+                      {t.app.captured_prefix}{parts.join(', ')}
                     </p>
                   );
                 })()}
@@ -1734,13 +1724,13 @@ export default function PandaHub() {
 
                 {/* Hint */}
                 <p className="text-[10px] text-center text-[var(--gray-4)] mt-2 mb-3">
-                  Toca icono = cambiar tipo · Doble tap = editar · Mantén = seleccionar
+                  {t.app.hint_instructions}
                 </p>
 
                 {/* Connections between items */}
                 {connections.length > 0 && (
                   <div className="mt-3 mb-3 pt-3 border-t border-[var(--gray-2)]">
-                    <p className="text-[10px] text-[var(--gray-4)] mb-2 font-medium uppercase tracking-wider">Conexiones</p>
+                    <p className="text-[10px] text-[var(--gray-4)] mb-2 font-medium uppercase tracking-wider">{t.app.connections_label}</p>
                     <div className="space-y-2">
                       {connections.map((conn, ci) => {
                         const fromItem = capturedItems[conn.from];
@@ -1772,7 +1762,7 @@ export default function PandaHub() {
                 {/* Deadline picker */}
                 {capturedItems.some(item => item.type === 'task') && (
                   <div className="mb-4">
-                    <p className="text-xs text-[var(--gray-4)] mb-2">¿Para cuándo?</p>
+                    <p className="text-xs text-[var(--gray-4)] mb-2">{t.app.when_for}</p>
                     <div className="flex gap-2">
                       {deadlineOptions.map(option => (
                         <button
@@ -1804,7 +1794,7 @@ export default function PandaHub() {
                       exit={{ opacity: 0, y: 8 }}
                       className="space-y-2"
                     >
-                      <p className="text-xs text-[var(--gray-4)] text-center">{batchSelected.size} seleccionados</p>
+                      <p className="text-xs text-[var(--gray-4)] text-center">{t.app.selected_count(batchSelected.size)}</p>
                       <div className="flex gap-2">
                         <button
                           onClick={() => batchReclassify('task')}
@@ -1854,7 +1844,7 @@ export default function PandaHub() {
                         className="flex-1 h-12 rounded-full text-white text-sm font-medium active:scale-[0.98]"
                         style={{ backgroundColor: THEME_COLOR }}
                       >
-                        Guardar ({capturedItems.length})
+                        {t.app.save} ({capturedItems.length})
                       </button>
                     </motion.div>
                   )}
@@ -1983,14 +1973,14 @@ export default function PandaHub() {
                     onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
-                    placeholder="Escribe o habla..."
+                    placeholder={t.app.type_or_speak}
                     disabled={isProcessing}
                     className="flex-1 bg-transparent text-[var(--foreground)] placeholder:text-[var(--gray-4)] focus:outline-none font-medium tracking-tight disabled:opacity-50"
                   />
                 ) : (
                   <>
                     <div className="flex-1 flex items-center">
-                      <span className="text-white text-sm font-medium">Escuchando</span>
+                      <span className="text-white text-sm font-medium">{t.app.listening_dots}</span>
                       <span className="dots text-white">
                         <span>.</span><span>.</span><span>.</span>
                       </span>

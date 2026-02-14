@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VoiceEditButton from '@/app/components/VoiceEditButton';
 import Image from 'next/image';
 import { BottomNav } from '@/components/BottomNav';
+import { useLocale } from '@/lib/i18n';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -106,8 +107,8 @@ const Icons = {
 };
 
 // Custom Idea Node Component
-const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; hasChildren: boolean; childCount: number }; selected: boolean }) => {
-  const { idea, onDelete, hasChildren, childCount } = data;
+const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: string) => void; hasChildren: boolean; childCount: number; ideaLabel: string; stepsLabel: (n: number) => string }; selected: boolean }) => {
+  const { idea, onDelete, hasChildren, childCount, ideaLabel, stepsLabel } = data;
   
   return (
     <motion.div
@@ -130,7 +131,7 @@ const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: strin
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
           </svg>
           <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-            Idea
+            {ideaLabel}
           </span>
         </div>
         <button
@@ -160,7 +161,7 @@ const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: strin
         )}
         {hasChildren && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-medium">
-            {childCount} pasos
+            {stepsLabel(childCount)}
           </span>
         )}
       </div>
@@ -171,6 +172,7 @@ const IdeaNode = ({ data, selected }: { data: { idea: Idea; onDelete: (id: strin
 // TaskNode removed - tasks only shown in drawer for mobile-friendly UX
 
 export default function IdeasBoard() {
+  const { locale, t } = useLocale();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const { darkMode, toggle: toggleDarkMode } = useDarkMode();
   const [loading, setLoading] = useState(true);
@@ -263,6 +265,8 @@ export default function IdeasBoard() {
         onDelete: deleteIdea,
         hasChildren: tasksOnly.some(t => t.parent_idea_id === idea.id),
         childCount: tasksOnly.filter(t => t.parent_idea_id === idea.id).length,
+        ideaLabel: t.ideas.idea_label,
+        stepsLabel: t.ideas.steps,
       },
     }));
 
@@ -391,7 +395,8 @@ export default function IdeasBoard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           idea: selectedIdea.title, 
-          voiceContext: selectedIdea.voice_context 
+          voiceContext: selectedIdea.voice_context,
+          locale,
         }),
       });
 
@@ -791,7 +796,7 @@ export default function IdeasBoard() {
               </svg>
             </button>
             <Image src="/icon-192-transparent.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Idea Board</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{t.ideas.title}</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
               {ideas.filter(i => i.type === 'idea').length} ideas
             </span>
@@ -800,7 +805,7 @@ export default function IdeasBoard() {
           {/* Voice button for new idea - Press and hold */}
           <div className="flex items-center gap-2">
             {isRecording && isRecordingNewIdea && (
-              <span className="text-xs text-[#6b8f71] font-medium animate-pulse">Grabando...</span>
+              <span className="text-xs text-[#6b8f71] font-medium animate-pulse">{t.app.recording}</span>
             )}
             <button
               onTouchStart={(e) => {
@@ -900,7 +905,7 @@ export default function IdeasBoard() {
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <span className="text-amber-500">{Icons.lightbulb}</span>
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Idea</span>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t.ideas.idea_label}</span>
                 </div>
                 <button
                   onClick={closeDrawer}
@@ -1016,14 +1021,14 @@ export default function IdeasBoard() {
                     </div>
                   )}
                   {isRecording && isEditingIdeaTitle && (
-                    <p className="text-xs text-[#6b8f71] mt-1">Grabando... {formatTime(recordingTime)}</p>
+                    <p className="text-xs text-[#6b8f71] mt-1">{t.app.recording} {formatTime(recordingTime)}</p>
                   )}
                 </div>
 
                 {/* Voice Context */}
                 {selectedIdea.voice_context && (
                   <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#2c2c2e] border border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Contexto original:</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t.ideas.original_context}</p>
                     <p className="text-sm text-gray-700 dark:text-gray-300 italic">"{selectedIdea.voice_context}"</p>
                   </div>
                 )}
@@ -1038,12 +1043,12 @@ export default function IdeasBoard() {
                     {isGeneratingPlan ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Generando plan...
+                        {t.ideas.generating_plan}
                       </>
                     ) : (
                       <>
                         {Icons.sparkles}
-                        Generar Plan
+                        {t.ideas.generate_plan}
                       </>
                     )}
                   </button>
@@ -1054,7 +1059,7 @@ export default function IdeasBoard() {
                   <div className="space-y-3" onClick={() => { if (selectedStepId) clearSelection(); }}>
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Plan de Acción ({childTasks.length} pasos)
+                        {t.ideas.action_plan(childTasks.length)}
                       </h3>
                       <button
                         onClick={async (e) => {
@@ -1202,7 +1207,7 @@ export default function IdeasBoard() {
                                     if (navigator.vibrate) navigator.vibrate(50);
                                   }}
                                   className="p-2 rounded-full text-gray-400 hover:text-[#6b8f71] hover:bg-[#6b8f71]/10 transition-all flex-shrink-0"
-                                  title="Añadir a tareas"
+                                  title={t.ideas.add_to_tasks}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -1267,7 +1272,7 @@ export default function IdeasBoard() {
                             {isRecording && editingStepIndex === index && (
                               <div className="mt-3 flex items-center gap-2 text-xs text-[#6b8f71]">
                                 <span className="w-2 h-2 rounded-full bg-[#6b8f71] animate-pulse" />
-                                Grabando... {formatTime(recordingTime)}
+                                {t.app.recording} {formatTime(recordingTime)}
                               </div>
                             )}
 

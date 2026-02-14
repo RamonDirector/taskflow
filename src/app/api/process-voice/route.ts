@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const textInput = formData.get('text') as string | null;
+    const locale = (formData.get('locale') as string) || 'es';
 
     if (!audioFile && !textInput) {
       return NextResponse.json({ error: 'No audio or text provided' }, { status: 400 });
@@ -111,7 +112,7 @@ End of month: ${dates.endOfMonth}
 work, meetings, email, calls, coding, writing, personal, family, social, gifts, health, fitness, medical, finance, bills, shopping, home, maintenance, learning, creative, travel, errands
 
 ## LANGUAGE
-Respond in THE SAME LANGUAGE as the input. ALL fields (title, context, everything) must be in the same language as the user's input. If the user speaks Spanish, ALL output must be in Spanish. No mixing languages.
+Respond in ${locale === 'en' ? 'ENGLISH' : 'SPANISH'}. ALL fields (title, context, everything) must be in ${locale === 'en' ? 'English' : 'Spanish'}. No mixing languages.
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON, no markdown:

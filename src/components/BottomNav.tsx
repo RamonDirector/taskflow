@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { haptic } from '@/lib/haptics';
+import { useLocale } from '@/lib/i18n';
 
 // Outline icons (inactive state)
 const IconsOutline = {
@@ -62,6 +63,7 @@ interface BottomNavProps {
 export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useLocale();
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
   const scrollDirection = useRef<'up' | 'down' | null>(null);
@@ -110,10 +112,10 @@ export function BottomNav({ hasNew = {}, onClearNew }: BottomNavProps) {
   }, []);
 
   const navItems = [
-    { id: 'home', iconOutline: IconsOutline.home, iconFilled: IconsFilled.home, label: 'Home', path: '/app' },
-    { id: 'ideas', iconOutline: IconsOutline.ideas, iconFilled: IconsFilled.ideas, label: 'Ideas', path: '/app/ideas' },
-    { id: 'tasks', iconOutline: IconsOutline.tasks, iconFilled: IconsFilled.tasks, label: 'Tasks', path: '/app/tasks' },
-    { id: 'dreams', iconOutline: IconsOutline.dreams, iconFilled: IconsFilled.dreams, label: 'Dreams', path: '/app/dreams' },
+    { id: 'home', iconOutline: IconsOutline.home, iconFilled: IconsFilled.home, label: t.nav.home, path: '/app' },
+    { id: 'ideas', iconOutline: IconsOutline.ideas, iconFilled: IconsFilled.ideas, label: t.nav.ideas, path: '/app/ideas' },
+    { id: 'tasks', iconOutline: IconsOutline.tasks, iconFilled: IconsFilled.tasks, label: t.nav.tasks, path: '/app/tasks' },
+    { id: 'dreams', iconOutline: IconsOutline.dreams, iconFilled: IconsFilled.dreams, label: t.nav.dreams, path: '/app/dreams' },
   ];
 
   return (

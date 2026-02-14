@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { idea, voiceContext } = await request.json();
+    const { idea, voiceContext, locale = 'es' } = await request.json();
     if (!idea) return NextResponse.json({ error: 'No idea provided' }, { status: 400 });
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -43,7 +43,7 @@ RULES:
 5. Avoid vague steps like "Think about...", "Consider...", "Plan..."
 6. Each step must be completable in <30 minutes
 7. Time estimates: realistic, not optimistic
-8. SAME LANGUAGE as the input
+8. RESPOND IN ${locale === 'en' ? 'ENGLISH' : 'SPANISH'} — all titles and text must be in this language
 
 The goal: user sees the plan and can START IMMEDIATELY. 5 focused steps > 15 overwhelming ones.
 Prioritize IMPACT over completeness. What are the 3-5 steps that move the needle most?

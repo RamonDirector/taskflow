@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { haptic } from '@/lib/haptics';
 import { logActivity } from '@/lib/activity';
 import { PixelBubble } from '@/components/PixelBubble';
+import { useLocale } from '@/lib/i18n';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -81,6 +82,7 @@ interface Idea {
 }
 
 export default function TasksPage() {
+  const { locale, t } = useLocale();
   const { darkMode, toggle: toggleDarkMode } = useDarkMode();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -449,7 +451,7 @@ export default function TasksPage() {
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim() }),
+        body: JSON.stringify({ text: text.trim(), locale }),
       });
 
       if (!extractRes.ok) throw new Error('Extraction failed');
@@ -579,7 +581,7 @@ export default function TasksPage() {
               {Icons.back}
             </button>
             <Image src="/icon-192-transparent.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Tareas</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{t.tasks.title}</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#6b8f71]/15 dark:bg-[#6b8f71]/20 text-[#6b8f71] dark:text-[#8fb396]">
               {completedCount}/{tasks.length}
             </span>
@@ -588,7 +590,7 @@ export default function TasksPage() {
           {/* Voice button for new task - Press and hold */}
           <div className="flex items-center gap-2">
             {isRecording && isRecordingNewTask && (
-              <span className="text-xs text-[#6b8f71] font-medium animate-pulse">Grabando...</span>
+              <span className="text-xs text-[#6b8f71] font-medium animate-pulse">{t.app.recording}</span>
             )}
             <button
               onTouchStart={(e) => {
@@ -646,7 +648,7 @@ export default function TasksPage() {
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              {f === 'all' ? 'Todas' : f === 'pending' ? 'Pendientes' : 'Completadas'}
+              {f === 'all' ? t.tasks.all : f === 'pending' ? t.tasks.pending : t.tasks.completed}
             </button>
           ))}
         </div>
@@ -668,8 +670,8 @@ export default function TasksPage() {
                 <ellipse cx="12" cy="11" rx="1" ry="0.5" fill="currentColor"/>
                 <ellipse cx="12" cy="16" rx="1" ry="0.5" fill="currentColor"/>
               </svg>
-              <span className="text-sm font-semibold text-[#6b8f71]">{streak} {streak === 1 ? 'día' : 'días'}</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">racha</span>
+              <span className="text-sm font-semibold text-[#6b8f71]">{streak} {streak === 1 ? t.tasks.day : t.tasks.days}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t.tasks.streak_label}</span>
             </div>
           </div>
         )}
@@ -685,7 +687,7 @@ export default function TasksPage() {
                   <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
                   <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
                 </svg>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Foco de hoy</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t.tasks.focus_today}</h2>
               </div>
               <span className="text-xs font-medium text-[#6b8f71]">
                 {todayCompletedTasks}/{todayTotalTasks}
@@ -710,14 +712,14 @@ export default function TasksPage() {
                       <path d="M5 5l1.5 3L5 9.5 6.5 11 5 12.5l1.5 1.5 1.5-1.5L9.5 14l-1.5-1.5L6.5 11 8 9.5 6.5 8 5 5z" opacity="0.6"/>
                       <path d="M19 5l-1.5 3L19 9.5 17.5 11 19 12.5l-1.5 1.5-1.5-1.5L14.5 14l1.5-1.5L17.5 11 16 9.5 17.5 8 19 5z" opacity="0.6"/>
                     </svg>
-                    ¡Completaste todo tu foco de hoy!
+                    {t.tasks.completed_all_focus}
                   </p>
                 )}
                 {todayProgress > 0 && todayProgress < 100 && (
                   <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
                     {todayTotalTasks - todayCompletedTasks === 1 
-                      ? '¡Solo queda 1 tarea!' 
-                      : `${todayTotalTasks - todayCompletedTasks} tareas restantes`}
+                      ? t.tasks.one_task_left 
+                      : t.tasks.tasks_remaining(todayTotalTasks - todayCompletedTasks)}
                   </p>
                 )}
               </div>
@@ -743,11 +745,11 @@ export default function TasksPage() {
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{task.title}</p>
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#6b8f71]/20 text-[#6b8f71] font-medium">
-                        HOY
+                        {t.tasks.today_label}
                       </span>
                       {task.origin_idea_id && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                          De: {getIdeaTitle(task.origin_idea_id)}
+                          {t.tasks.from_label} {getIdeaTitle(task.origin_idea_id)}
                         </span>
                       )}
                     </div>
@@ -769,7 +771,7 @@ export default function TasksPage() {
 
         {/* Rest of tasks */}
         {filteredTasks.length > 0 && focusTasks.length > 0 && filter === 'all' && (
-          <p className="text-xs text-[var(--gray-4)] mb-2">Todas las tareas</p>
+          <p className="text-xs text-[var(--gray-4)] mb-2">{t.tasks.all_tasks}</p>
         )}
 
         <AnimatePresence mode="popLayout">
@@ -871,7 +873,7 @@ export default function TasksPage() {
                         )}
                         {task.origin_idea_id && !isInlineEditing && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                            De: {getIdeaTitle(task.origin_idea_id)}
+                            {t.tasks.from_label} {getIdeaTitle(task.origin_idea_id)}
                           </span>
                         )}
                       </div>
@@ -892,7 +894,7 @@ export default function TasksPage() {
                   {isProcessingVoice && (
                     <p className="mt-2 text-xs text-[#6b8f71] flex items-center gap-2">
                       <span className="w-3 h-3 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
-                      Procesando...
+                      {t.tasks.processing}
                     </p>
                   )}
                 </div>
@@ -911,10 +913,10 @@ export default function TasksPage() {
               className="mx-auto mb-4 drop-shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
             />
             <p className="text-gray-500 dark:text-gray-400 font-medium">
-              {filter === 'pending' ? 'Nada pendiente' : filter === 'completed' ? 'Nada completado aún' : 'Nada pendiente'}
+              {filter === 'pending' ? t.tasks.nothing_pending : filter === 'completed' ? t.tasks.nothing_completed : t.tasks.nothing_pending}
             </p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              Habla o escribe para crear tareas
+              {t.app.speak_or_write_to_create}
             </p>
           </div>
         )}

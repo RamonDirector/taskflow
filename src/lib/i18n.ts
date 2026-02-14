@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 export type Locale = 'en' | 'es';
 
 const translations = {
@@ -25,7 +27,142 @@ const translations = {
       title: "Here's how to start",
       message: "Hold the mic and tell me what's on your mind today. Tasks, ideas, dreams — I'll organize everything for you.",
       cta: "Try it now"
-    }
+    },
+    // Main app page
+    app: {
+      // Type labels
+      type_task: 'Task',
+      type_idea: 'Idea',
+      type_dream: 'Dream',
+      // Panda messages
+      listening: "I'm listening...",
+      keep_going: 'Keep going...',
+      take_your_time: 'Take your time',
+      every_idea_counts: 'Every idea counts',
+      let_me_think: 'Let me think...',
+      whats_on_your_mind: "What's on your mind?",
+      didnt_hear: "Didn't catch that, can you repeat?",
+      saved: 'Saved! Anything else?',
+      got_it_single: 'Got it! Is this what you meant?',
+      got_it_multi: "Got it! Here's what I captured:",
+      couldnt_access_mic: "Couldn't access the microphone",
+      api_key_error: 'API key error. Check the configuration.',
+      rate_limit: 'Usage limit reached. Try again later.',
+      generic_error: 'Something went wrong, try again?',
+      // Easter egg tap phrases
+      kai_tap_phrases: [
+        { message: "What? I'm thinking", image: '/panda/new-thinking.png' },
+        { message: "Don't touch me, I'm trying to focus", image: '/panda/new-annoyed.png' },
+        { message: 'Need something or just bothering me?', image: '/panda/new-shrug.png' },
+        { message: 'I was meditating...', image: '/panda/new-sleeping.png' },
+        { message: 'Hey, I have feelings too', image: '/panda/new-annoyed.png' },
+        { message: "OK OK, I'm here. What's up?", image: '/panda/new-pointing.png' },
+        { message: 'Zzz... oh sorry. You were saying?', image: '/panda/new-sleeping.png' },
+        { message: 'Hm?', image: '/panda/new-thinking.png' },
+      ],
+      kai_multi_tap_phrases: [
+        { message: "Seriously? Don't you have tasks to do?", image: '/panda/new-annoyed.png' },
+        { message: 'This counts as procrastinating', image: '/panda/new-pointing.png' },
+        { message: 'Stop. Touching. Me.', image: '/panda/new-annoyed.png' },
+        { message: "I'm going to start charging per tap", image: '/panda/new-shrug.png' },
+      ],
+      // Brain dump poses
+      brain_dump_poses: [
+        { image: '/panda/new-neutral.png', message: "I'm listening..." },
+        { image: '/panda/new-thinking.png', message: 'Keep going...' },
+        { image: '/panda/new-neutral.png', message: 'Take your time' },
+        { image: '/panda/new-celebrate.png', message: 'Every idea counts' },
+      ],
+      // UI labels
+      action_plan: 'Action plan',
+      generating: 'Generating...',
+      add_as_tasks: 'Add as tasks',
+      sign_out: 'Sign out',
+      change_type: 'Change type',
+      cancel: 'Cancel',
+      discard: 'Discard',
+      save: 'Save',
+      // Confirmation sheet
+      captured_tasks: (n: number) => `${n} task${n > 1 ? 's' : ''}`,
+      captured_ideas: (n: number) => `${n} idea${n > 1 ? 's' : ''}`,
+      captured_dreams: (n: number) => `${n} dream${n > 1 ? 's' : ''}`,
+      captured_prefix: 'Captured ',
+      hint_instructions: 'Tap icon = change type · Double tap = edit · Hold = select',
+      connections_label: 'Connections',
+      when_for: 'When for?',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      this_week: 'This week',
+      no_date: 'No date',
+      // Batch mode
+      selected_count: (n: number) => `${n} selected`,
+      tasks_label: 'Tasks',
+      ideas_label: 'Ideas',
+      dreams_label: 'Dreams',
+      cancel_selection: 'Cancel selection',
+      // Input bar
+      type_or_speak: 'Type or speak...',
+      listening_dots: 'Listening',
+      recording: 'Recording...',
+      // Default affirmation
+      default_affirmation: 'The path is made by walking.',
+      // Stale suggestion
+      speak_or_write_to_create: 'Speak or write to create tasks',
+    },
+    // Tasks page
+    tasks: {
+      title: 'Tasks',
+      all: 'All',
+      pending: 'Pending',
+      completed: 'Completed',
+      day: 'day',
+      days: 'days',
+      streak_label: 'streak',
+      focus_today: 'Focus today',
+      completed_all_focus: 'You completed all your focus for today!',
+      one_task_left: 'Just 1 task left!',
+      tasks_remaining: (n: number) => `${n} tasks remaining`,
+      nothing_pending: 'Nothing pending',
+      nothing_completed: 'Nothing completed yet',
+      all_tasks: 'All tasks',
+      processing: 'Processing...',
+      from_label: 'From:',
+      today_label: 'TODAY',
+    },
+    // Ideas page
+    ideas: {
+      title: 'Idea Board',
+      idea_label: 'Idea',
+      steps: (n: number) => `${n} steps`,
+      action_plan: (n: number) => `Action Plan (${n} steps)`,
+      add_to_tasks: 'Add to tasks',
+      generate_plan: 'Generate Plan',
+      generating_plan: 'Generating plan...',
+      whats_on_your_mind: "What's on your mind?",
+      add: 'Add',
+      cancel: 'Cancel',
+      save: 'Save',
+      original_context: 'Original context:',
+    },
+    // Dreams page
+    dreams: {
+      title: 'Dreams',
+      your_dreams_safe: 'Your dreams, safe',
+      say_dream_hint: 'Say "I dreamt that..." and Kai interprets it',
+      dream_label: 'Dream',
+      interpret_dream: 'Interpret dream',
+      interpreting: 'Interpreting...',
+      interpretation: 'Interpretation',
+      delete_dream: 'Delete dream',
+      interpreted: 'Interpreted',
+    },
+    // Bottom nav
+    nav: {
+      home: 'Home',
+      ideas: 'Ideas',
+      tasks: 'Tasks',
+      dreams: 'Dreams',
+    },
   },
   es: {
     onboarding: {
@@ -51,12 +188,136 @@ const translations = {
       title: "Así empezamos",
       message: "Mantén pulsado el micro y cuéntame qué tienes en mente hoy. Tareas, ideas, sueños — yo lo organizo todo.",
       cta: "Pruébalo ahora"
-    }
+    },
+    app: {
+      type_task: 'Tarea',
+      type_idea: 'Idea',
+      type_dream: 'Sueño',
+      listening: 'Te escucho...',
+      keep_going: 'Sigue, sigue...',
+      take_your_time: 'Tómate tu tiempo',
+      every_idea_counts: 'Cada idea cuenta',
+      let_me_think: 'Déjame pensar...',
+      whats_on_your_mind: '¿Qué tienes en mente?',
+      didnt_hear: 'No te escuché, ¿puedes repetir?',
+      saved: '¡Guardado! ¿Algo más?',
+      got_it_single: '¡Listo! ¿Esto querías decir?',
+      got_it_multi: '¡Listo! Esto es lo que capté:',
+      couldnt_access_mic: 'No pude acceder al micrófono',
+      api_key_error: 'Error de API key. Revisa la configuración.',
+      rate_limit: 'Límite de uso alcanzado. Inténtalo más tarde.',
+      generic_error: 'Hubo un error, ¿intentamos de nuevo?',
+      kai_tap_phrases: [
+        { message: '¿Qué? Estoy pensando', image: '/panda/new-thinking.png' },
+        { message: 'No me toques que pierdo la concentración', image: '/panda/new-annoyed.png' },
+        { message: '¿Necesitas algo o solo me molestas?', image: '/panda/new-shrug.png' },
+        { message: 'Estaba meditando...', image: '/panda/new-sleeping.png' },
+        { message: 'Oye, que tengo sentimientos', image: '/panda/new-annoyed.png' },
+        { message: 'Vale, ya estoy aquí. Dime', image: '/panda/new-pointing.png' },
+        { message: 'Zzz... ah, perdona. ¿Decías?', image: '/panda/new-sleeping.png' },
+        { message: '¿Hm?', image: '/panda/new-thinking.png' },
+      ],
+      kai_multi_tap_phrases: [
+        { message: '¿En serio? ¿No tienes tareas que hacer?', image: '/panda/new-annoyed.png' },
+        { message: 'Esto cuenta como procrastinar', image: '/panda/new-pointing.png' },
+        { message: 'Para. De. Tocarme.', image: '/panda/new-annoyed.png' },
+        { message: 'Voy a empezar a cobrar por toque', image: '/panda/new-shrug.png' },
+      ],
+      brain_dump_poses: [
+        { image: '/panda/new-neutral.png', message: 'Te escucho...' },
+        { image: '/panda/new-thinking.png', message: 'Sigue, sigue...' },
+        { image: '/panda/new-neutral.png', message: 'Tómate tu tiempo' },
+        { image: '/panda/new-celebrate.png', message: 'Cada idea cuenta' },
+      ],
+      action_plan: 'Plan de acción',
+      generating: 'Generando...',
+      add_as_tasks: 'Añadir como tareas',
+      sign_out: 'Cerrar sesión',
+      change_type: 'Cambiar tipo',
+      cancel: 'Cancelar',
+      discard: 'Descartar',
+      save: 'Guardar',
+      captured_tasks: (n: number) => `${n} tarea${n > 1 ? 's' : ''}`,
+      captured_ideas: (n: number) => `${n} idea${n > 1 ? 's' : ''}`,
+      captured_dreams: (n: number) => `${n} sueño${n > 1 ? 's' : ''}`,
+      captured_prefix: 'Capté ',
+      hint_instructions: 'Toca icono = cambiar tipo · Doble tap = editar · Mantén = seleccionar',
+      connections_label: 'Conexiones',
+      when_for: '¿Para cuándo?',
+      today: 'Hoy',
+      tomorrow: 'Mañana',
+      this_week: 'Esta semana',
+      no_date: 'Sin fecha',
+      selected_count: (n: number) => `${n} seleccionados`,
+      tasks_label: 'Tareas',
+      ideas_label: 'Ideas',
+      dreams_label: 'Sueños',
+      cancel_selection: 'Cancelar selección',
+      type_or_speak: 'Escribe o habla...',
+      listening_dots: 'Escuchando',
+      recording: 'Grabando...',
+      default_affirmation: 'El camino se hace al andar.',
+      speak_or_write_to_create: 'Habla o escribe para crear tareas',
+    },
+    tasks: {
+      title: 'Tareas',
+      all: 'Todas',
+      pending: 'Pendientes',
+      completed: 'Completadas',
+      day: 'día',
+      days: 'días',
+      streak_label: 'racha',
+      focus_today: 'Foco de hoy',
+      completed_all_focus: '¡Completaste todo tu foco de hoy!',
+      one_task_left: '¡Solo queda 1 tarea!',
+      tasks_remaining: (n: number) => `${n} tareas restantes`,
+      nothing_pending: 'Nada pendiente',
+      nothing_completed: 'Nada completado aún',
+      all_tasks: 'Todas las tareas',
+      processing: 'Procesando...',
+      from_label: 'De:',
+      today_label: 'HOY',
+    },
+    ideas: {
+      title: 'Idea Board',
+      idea_label: 'Idea',
+      steps: (n: number) => `${n} pasos`,
+      action_plan: (n: number) => `Plan de Acción (${n} pasos)`,
+      add_to_tasks: 'Añadir a tareas',
+      generate_plan: 'Generar Plan',
+      generating_plan: 'Generando plan...',
+      whats_on_your_mind: '¿Qué tienes en mente?',
+      add: 'Añadir',
+      cancel: 'Cancelar',
+      save: 'Guardar',
+      original_context: 'Contexto original:',
+    },
+    dreams: {
+      title: 'Sueños',
+      your_dreams_safe: 'Tus sueños, a salvo',
+      say_dream_hint: 'Di "Soñé que..." y Kai lo interpreta',
+      dream_label: 'Sueño',
+      interpret_dream: 'Interpretar sueño',
+      interpreting: 'Interpretando...',
+      interpretation: 'Interpretación',
+      delete_dream: 'Eliminar sueño',
+      interpreted: 'Interpretado',
+    },
+    nav: {
+      home: 'Home',
+      ideas: 'Ideas',
+      tasks: 'Tareas',
+      dreams: 'Sueños',
+    },
   }
 } as const;
 
-export function getTranslations(locale: Locale) {
-  return translations[locale];
+// Type helpers
+type TranslationsType = typeof translations;
+export type Translations = TranslationsType['en'];
+
+export function getTranslations(locale: Locale): Translations {
+  return translations[locale] as unknown as Translations;
 }
 
 export function getLocale(): Locale {
@@ -68,4 +329,19 @@ export function getLocale(): Locale {
 
 export function setLocale(locale: Locale) {
   localStorage.setItem('hansei-locale', locale);
+}
+
+export function useLocale() {
+  const [locale, setLocaleState] = useState<Locale>('en');
+
+  useEffect(() => {
+    setLocaleState(getLocale());
+  }, []);
+
+  const changeLocale = (newLocale: Locale) => {
+    setLocale(newLocale);
+    setLocaleState(newLocale);
+  };
+
+  return { locale, t: getTranslations(locale), changeLocale };
 }

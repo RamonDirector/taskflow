@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { BottomNav } from '@/components/BottomNav';
+import { useLocale } from '@/lib/i18n';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -89,6 +90,7 @@ const Icons = {
 };
 
 export default function DreamsPage() {
+  const { locale, t } = useLocale();
   const { darkMode, toggle: toggleDarkMode } = useDarkMode();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,6 +165,7 @@ export default function DreamsPage() {
         body: JSON.stringify({
           dream: selectedDream.title,
           voiceContext: selectedDream.voice_context,
+          locale,
         }),
       });
 
@@ -361,7 +364,7 @@ export default function DreamsPage() {
               {Icons.back}
             </button>
             <Image src="/icon-192-transparent.png" alt="Hansei" width={28} height={28} className="rounded-lg" />
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Sueños</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{t.dreams.title}</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
               {dreams.length}
             </span>
@@ -370,7 +373,7 @@ export default function DreamsPage() {
           {/* Voice button for new dream */}
           <div className="flex items-center gap-2">
             {isRecording && isRecordingNewDream && (
-              <span className="text-xs text-purple-600 font-medium animate-pulse">Grabando...</span>
+              <span className="text-xs text-purple-600 font-medium animate-pulse">{t.app.recording}</span>
             )}
             <button
               onTouchStart={(e) => {
@@ -531,7 +534,7 @@ export default function DreamsPage() {
                       <div className="flex items-center gap-2 mt-2">
                         {dream.interpretation && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500 text-white">
-                            ✨ Interpretado
+                            {t.dreams.interpreted}
                           </span>
                         )}
                         <span className="text-[10px] text-gray-400">
@@ -555,9 +558,9 @@ export default function DreamsPage() {
               height={160} 
               className="mx-auto mb-4 drop-shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
             />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">Tus sueños, a salvo</p>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">{t.dreams.your_dreams_safe}</p>
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
-              Di &quot;Soñé que...&quot; y Kai lo interpreta
+              {t.dreams.say_dream_hint}
             </p>
           </div>
         )}
@@ -593,7 +596,7 @@ export default function DreamsPage() {
               <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-200 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <span className="text-purple-500">{Icons.moonSmall}</span>
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sueño</span>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t.dreams.dream_label}</span>
                 </div>
                 <button
                   onClick={closeDrawer}
@@ -635,12 +638,12 @@ export default function DreamsPage() {
                     {isInterpreting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Interpretando...
+                        {t.dreams.interpreting}
                       </>
                     ) : (
                       <>
                         {Icons.sparkles}
-                        Interpretar sueño
+                        {t.dreams.interpret_dream}
                       </>
                     )}
                   </button>
@@ -655,7 +658,7 @@ export default function DreamsPage() {
                   >
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-purple-500">{Icons.sparkles}</span>
-                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Interpretación</span>
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">{t.dreams.interpretation}</span>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                       {selectedDream.interpretation}
@@ -670,7 +673,7 @@ export default function DreamsPage() {
                   onClick={() => deleteDream(selectedDream.id)}
                   className="w-full px-4 py-2 rounded-xl text-[#8B2942] hover:bg-[#8B2942]/10 text-sm font-medium transition-colors"
                 >
-                  Eliminar sueño
+                  {t.dreams.delete_dream}
                 </button>
               </div>
             </motion.div>
