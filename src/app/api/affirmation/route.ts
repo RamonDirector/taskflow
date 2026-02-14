@@ -67,7 +67,7 @@ BAD examples (avoid):
 - "You're amazing!" (motivational)
 - Any stats or achievements
 
-Generate a short invitation prompt in English for the user to speak or type what's on their mind. Just the prompt, nothing else.`
+Generate ONLY the short phrase. No preamble, no "Here's a prompt:", no quotes, no explanation. Just the raw phrase itself, nothing else.`
       : `You are a friendly panda mascot inviting the user to speak or type their thoughts.
 
 Your job is to generate a SHORT, INFORMAL prompt that encourages the user to tap the microphone.
@@ -97,12 +97,14 @@ BAD examples (avoid):
 - "¡Sigue así!" (motivational)
 - Any stats or achievements
 
-Generate a short invitation prompt in Spanish for the user to speak or type what's on their mind. Just the prompt, nothing else.`;
+Generate ONLY the short phrase. No preamble, no "Here's a prompt:", no quotes, no explanation. Just the raw phrase itself, nothing else.`;
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const affirmation = response.text()?.trim() || (locale === 'en' ? "What's on your mind?" : 'Qué tienes en mente?');
+    let affirmation = response.text()?.trim() || (locale === 'en' ? "What's on your mind?" : 'Qué tienes en mente?');
+    // Strip any preamble Gemini might add
+    affirmation = affirmation.replace(/^(okay[,.]?\s*|sure[,.]?\s*|here'?s?\s*(a\s*)?prompt:?\s*)/i, '').replace(/^["'"]+|["'"]+$/g, '').trim();
 
     // Increment usage counter
     if (access.userId) {
