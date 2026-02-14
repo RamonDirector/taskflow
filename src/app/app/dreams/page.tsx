@@ -45,7 +45,22 @@ interface Dream {
   type?: string;
   completed?: boolean;
   interpretation?: string;
+  emotion?: string;
 }
+
+// Emotion config: color + emoji for visual tagging
+const EMOTION_CONFIG: Record<string, { emoji: string; color: string; bg: string }> = {
+  anxiety: { emoji: '😰', color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  joy: { emoji: '😊', color: 'text-yellow-600', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+  confusion: { emoji: '😵‍💫', color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  fear: { emoji: '😨', color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30' },
+  sadness: { emoji: '😢', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  anger: { emoji: '😤', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
+  peace: { emoji: '😌', color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' },
+  excitement: { emoji: '🤩', color: 'text-pink-600', bg: 'bg-pink-100 dark:bg-pink-900/30' },
+  nostalgia: { emoji: '🥹', color: 'text-amber-600', bg: 'bg-amber-100 dark:bg-amber-900/30' },
+  wonder: { emoji: '🤯', color: 'text-violet-600', bg: 'bg-violet-100 dark:bg-violet-900/30' },
+};
 
 const THEME_COLOR = '#6b8f71';
 const DELETE_COLOR = '#8B2942';
@@ -159,6 +174,17 @@ export default function DreamsPage() {
     setIsInterpreting(true);
 
     try {
+      // Build recent dreams context (last 10, excluding current)
+      const recentDreams = dreams
+        .filter(d => d.id !== selectedDream.id)
+        .slice(0, 10)
+        .map(d => ({
+          title: d.title,
+          created_at: d.created_at,
+          interpretation: d.interpretation,
+          emotion: d.emotion,
+        }));
+
       const res = await fetch('/api/interpret-dream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,11 +192,12 @@ export default function DreamsPage() {
           dream: selectedDream.title,
           voiceContext: selectedDream.voice_context,
           locale,
+          recentDreams,
         }),
       });
 
       if (!res.ok) throw new Error('Failed to interpret');
-      const { interpretation } = await res.json();
+      const { interpretation, emotion } = await res.json();
 
       // Save interpretation to DB
       await supabase
@@ -178,11 +205,21 @@ export default function DreamsPage() {
         .update({ interpretation })
         .eq('id', selectedDream.id);
 
+      // Save emotion separately (column may not exist yet)
+      if (emotion) {
+        await supabase
+          .from('tasks')
+          .update({ emotion } as Record<string, string>)
+          .eq('id', selectedDream.id)
+          .then(() => {}) // ignore errors if column doesn't exist
+          .catch(() => {});
+      }
+
       // Update local state
       setDreams(prev => prev.map(d => 
-        d.id === selectedDream.id ? { ...d, interpretation } : d
+        d.id === selectedDream.id ? { ...d, interpretation, ...(emotion ? { emotion } : {}) } : d
       ));
-      setSelectedDream(prev => prev ? { ...prev, interpretation } : null);
+      setSelectedDream(prev => prev ? { ...prev, interpretation, ...(emotion ? { emotion } : {}) } : null);
     } catch (e) {
       console.error('Interpretation error:', e);
     }
@@ -532,13 +569,18 @@ export default function DreamsPage() {
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
-                        {dream.interpretation && (
+                        {dream.emotion && EMOTION_CONFIG[dream.emotion] && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${EMOTION_CONFIG[dream.emotion].bg} ${EMOTION_CONFIG[dream.emotion].color} font-medium`}>
+                            {EMOTION_CONFIG[dream.emotion].emoji} {dream.emotion}
+                          </span>
+                        )}
+                        {dream.interpretation && !dream.emotion && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500 text-white">
                             {t.dreams.interpreted}
                           </span>
                         )}
                         <span className="text-[10px] text-gray-400">
-                          {new Date(dream.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                          {new Date(dream.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })}
                         </span>
                       </div>
                     </div>
@@ -619,13 +661,19 @@ export default function DreamsPage() {
                     </p>
                   )}
                   <p className="text-xs text-gray-400 mt-2">
-                    {new Date(selectedDream.created_at).toLocaleDateString('es-ES', { 
+                    {new Date(selectedDream.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { 
                       weekday: 'long', 
                       day: 'numeric', 
                       month: 'long',
                       year: 'numeric'
                     })}
                   </p>
+                  {selectedDream.emotion && EMOTION_CONFIG[selectedDream.emotion] && (
+                    <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full ${EMOTION_CONFIG[selectedDream.emotion].bg}`}>
+                      <span className="text-sm">{EMOTION_CONFIG[selectedDream.emotion].emoji}</span>
+                      <span className={`text-xs font-medium ${EMOTION_CONFIG[selectedDream.emotion].color} capitalize`}>{selectedDream.emotion}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Interpret Button - only show if not yet interpreted */}
