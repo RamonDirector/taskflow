@@ -450,17 +450,17 @@ ${contextBlock}`;
     
     // If Sonnet wants to use tools and also respond, handle the tool_use stop_reason
     if (data.stop_reason === 'tool_use') {
-      // Build tool results and do follow-up
+      // Build tool results from already-executed actions (don't re-execute!)
       const toolResults = [];
+      let actionIdx = 0;
       for (const block of data.content) {
         if (block.type === 'tool_use') {
-          const result = await executeTool(block.name, block.input, userId, supabase);
           toolResults.push({
             type: 'tool_result',
             tool_use_id: block.id,
-            content: result,
+            content: actions[actionIdx]?.result || 'Done',
           });
-          actions.push({ tool: block.name, input: block.input, result });
+          actionIdx++;
         }
       }
       
