@@ -4,8 +4,8 @@
   "description": "Capture ideas in 2 seconds. Never lose one.",
   "start_url": "/app",
   "display": "standalone",
-  "background_color": "#fafafa",
-  "theme_color": "#6b8f71",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
