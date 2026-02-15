@@ -48,6 +48,7 @@ interface Reminder {
   schedule_type: 'once' | 'recurring';
   trigger_at: string;
   next_trigger: string;
+  interval_ms: number | null;
   active: boolean;
   created_at: string;
   source: 'kai' | 'manual';
@@ -739,9 +740,15 @@ export default function TasksPage() {
                             </svg>
                             {dateStr} {timeStr}
                           </span>
-                          {reminder.schedule_type === 'recurring' && (
+                          {reminder.schedule_type === 'recurring' && reminder.interval_ms && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                              {locale === 'es' ? 'Recurrente' : 'Recurring'}
+                              {(() => {
+                                const hours = Math.round(reminder.interval_ms / (1000 * 60 * 60));
+                                if (hours < 1) return locale === 'es' ? `Cada ${Math.round(reminder.interval_ms / 60000)} min` : `Every ${Math.round(reminder.interval_ms / 60000)} min`;
+                                if (hours === 1) return locale === 'es' ? 'Cada hora' : 'Every hour';
+                                if (hours === 24) return locale === 'es' ? 'Cada día' : 'Daily';
+                                return locale === 'es' ? `Cada ${hours}h` : `Every ${hours}h`;
+                              })()}
                             </span>
                           )}
                         </div>
