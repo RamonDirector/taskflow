@@ -92,3 +92,58 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// ========================================
+// PUSH NOTIFICATIONS
+// ========================================
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch (e) {
+    data = { title: 'Hansei', body: event.data.text() };
+  }
+
+  const options = {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: data.tag || 'hansei-notification',
+    renotify: !!data.tag,
+    data: {
+      url: data.url || '/app',
+      pushId: data.pushId || null,
+    },
+    actions: data.actions || [],
+    silent: data.silent || false,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Hansei', options)
+  );
+});
+
+// Handle notification click — open the app at the right page
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/app';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If app is already open, focus it and navigate
+      for (const client of clientList) {
+        if (client.url.includes('/app') && 'focus' in client) {
+          client.focus();
+          client.navigate(url);
+          return;
+        }
+      }
+      // Otherwise open a new window
+      return self.clients.openWindow(url);
+    })
+  );
+});

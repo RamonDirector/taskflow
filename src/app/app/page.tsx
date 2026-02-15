@@ -13,6 +13,7 @@ import { calculateStreak, getMilestones, getNewlyAchievedMilestones, type Streak
 import { haptic } from '@/lib/haptics';
 import { logActivity } from '@/lib/activity';
 import { PixelBubble } from '@/components/PixelBubble';
+import { PushPromptBanner } from '@/components/PushPromptBanner';
 import { useLocale } from '@/lib/i18n';
 
 const THEME_COLOR = '#6b8f71';
@@ -1639,6 +1640,9 @@ export default function PandaHub() {
             <PixelBubble message={pandaMessage} />
           </div>
         )}
+
+        {/* Push notification prompt for existing users */}
+        {!showConfirmation && <PushPromptBanner />}
 
         {/* Proactive suggestion - removed, Kai handles this conversationally now */}
         <AnimatePresence>

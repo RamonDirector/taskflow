@@ -28,6 +28,12 @@ const translations = {
       message: "Hold the mic and tell me what's on your mind today. Tasks, ideas, dreams — I'll organize everything for you.",
       cta: "Try it now"
     },
+    notifications: {
+      title: "Stay on track",
+      subtitle: "I can remind you about pending tasks and nudge you when ideas need action.",
+      accept: "Yes, notify me",
+      skip: "Maybe later",
+    },
     // Main app page
     app: {
       // Type labels
@@ -210,6 +216,12 @@ const translations = {
       title: "Así empezamos",
       message: "Mantén pulsado el micro y cuéntame qué tienes en mente hoy. Tareas, ideas, sueños — yo lo organizo todo.",
       cta: "Pruébalo ahora"
+    },
+    notifications: {
+      title: "No pierdas el ritmo",
+      subtitle: "Puedo recordarte tareas pendientes y avisarte cuando tus ideas necesiten acción.",
+      accept: "Sí, avísame",
+      skip: "Quizás después",
     },
     app: {
       type_task: 'Tarea',

@@ -207,12 +207,14 @@ export default function DreamsPage() {
 
       // Save emotion separately (column may not exist yet)
       if (emotion) {
-        await supabase
-          .from('tasks')
-          .update({ emotion } as Record<string, string>)
-          .eq('id', selectedDream.id)
-          .then(() => {}) // ignore errors if column doesn't exist
-          .catch(() => {});
+        try {
+          await supabase
+            .from('tasks')
+            .update({ emotion } as Record<string, string>)
+            .eq('id', selectedDream.id);
+        } catch {
+          // ignore if column doesn't exist yet
+        }
       }
 
       // Update local state

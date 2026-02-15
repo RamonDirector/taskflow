@@ -91,6 +91,13 @@ function getSteps(locale: Locale): OnboardingStep[] {
       contextOptions: [...t.onboarding.when_ideas_options],
     },
     {
+      id: 'notifications',
+      panda: '/panda/new-pointing.png',
+      title: t.notifications.title,
+      subtitle: t.notifications.subtitle,
+      skipVoice: true,
+    },
+    {
       id: 'complete',
       panda: '/panda/new-celebrate.png',
       title: t.onboarding.complete_title,
@@ -365,8 +372,8 @@ function OnboardingContent() {
     return true;
   };
 
-  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language';
-  const showInputBar = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language';
+  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language' && step.id !== 'notifications';
+  const showInputBar = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language' && step.id !== 'notifications';
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
@@ -577,6 +584,28 @@ function OnboardingContent() {
         )}
 
         {/* Welcome button */}
+        {step.id === 'notifications' && (
+          <div className="space-y-3 w-full">
+            <button
+              onClick={async () => {
+                const { subscribeToPush } = await import('@/lib/push');
+                await subscribeToPush();
+                goNext();
+              }}
+              className="w-full h-14 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              style={{ backgroundColor: THEME_COLOR }}
+            >
+              {t.notifications.accept}
+            </button>
+            <button
+              onClick={goNext}
+              className="w-full h-12 rounded-full font-medium text-[var(--gray-5)] flex items-center justify-center transition-all active:scale-[0.98]"
+            >
+              {t.notifications.skip}
+            </button>
+          </div>
+        )}
+
         {step.id === 'welcome' && (
           <button
             onClick={goNext}

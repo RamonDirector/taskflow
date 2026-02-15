@@ -114,6 +114,6 @@ Generate ONLY the short phrase. No preamble, no "Here's a prompt:", no quotes, n
     return NextResponse.json({ affirmation });
   } catch (error) {
     console.error('Affirmation generation error:', error);
-    return NextResponse.json({ affirmation: locale === 'en' ? "What's on your mind?" : 'Qué tienes en mente?' });
+    return NextResponse.json({ affirmation: "What's on your mind?" });
   }
 }
