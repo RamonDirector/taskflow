@@ -668,7 +668,7 @@ async function executeTool(
 
       if (error) return `Error setting reminder: ${error.message}`;
 
-      const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
       return `Reminder "${title}" set for ${timeStr}${recurring ? ` (repeating every ${intervalHours}h)` : ''}`;
     }
 
