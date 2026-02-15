@@ -60,13 +60,21 @@ export async function subscribeToPush(): Promise<boolean> {
       console.log('[Push] New subscription created');
     }
 
-    // Save to Supabase via API route (avoids client-side RLS issues)
+    // Save to Supabase via API route
     const subJSON = subscription.toJSON();
     console.log('[Push] Saving subscription, endpoint:', subJSON.endpoint?.substring(0, 50));
 
+    // Get auth token for the API route
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('[Push] Auth session:', session ? 'present' : 'MISSING');
+
     const res = await fetch('/api/push/subscribe', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+      },
       body: JSON.stringify({ subscription: subJSON }),
     });
 
