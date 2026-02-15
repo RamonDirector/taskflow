@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPushStatus, subscribeToPush } from '@/lib/push';
+import { getPushStatus, subscribeToPush, isSubscribed } from '@/lib/push';
 import { useLocale } from '@/lib/i18n';
 import { PixelBubble } from '@/components/PixelBubble';
 
@@ -12,16 +12,26 @@ export function PushPromptBanner() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Don't show if already prompted, denied, or subscribed
-    const alreadyPrompted = localStorage.getItem(PROMPTED_KEY);
-    if (alreadyPrompted) return;
+    const checkPush = async () => {
+      const alreadyPrompted = localStorage.getItem(PROMPTED_KEY);
+      const { supported, permission } = getPushStatus();
+      
+      if (!supported || permission === 'denied') return;
 
-    const { supported, permission } = getPushStatus();
-    if (!supported || permission === 'denied' || permission === 'granted') return;
+      // If permission already granted, silently subscribe (no banner needed)
+      if (permission === 'granted') {
+        const subscribed = await isSubscribed();
+        if (!subscribed) {
+          await subscribeToPush();
+        }
+        return;
+      }
 
-    // Show after a short delay (let the app load first)
-    const timer = setTimeout(() => setShow(true), 3000);
-    return () => clearTimeout(timer);
+      // Permission is 'default' — show banner if not yet prompted
+      if (alreadyPrompted) return;
+      setTimeout(() => setShow(true), 3000);
+    };
+    checkPush();
   }, []);
 
   if (!show) return null;
