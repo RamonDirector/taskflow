@@ -253,9 +253,10 @@ export default function PandaHub() {
       setUserName(name);
       setLoading(false);
       
-      // Generate both affirmations
-      generateDailyAffirmation(user.id, name);
-      generateAffirmation(user.id, name);
+      // Generate both affirmations (read locale directly — React state may not be set yet)
+      const currentLocale = localStorage.getItem('hansei-locale') || 'en';
+      generateDailyAffirmation(user.id, name, currentLocale);
+      generateAffirmation(user.id, name, currentLocale);
       
       // Check for stale items (proactive suggestions)
       checkStaleItems(user.id);
@@ -268,7 +269,7 @@ export default function PandaHub() {
   }, [supabase, router]);
 
   // Generate daily motivational affirmation
-  const generateDailyAffirmation = async (userId: string, name: string) => {
+  const generateDailyAffirmation = async (userId: string, name: string, localeOverride?: string) => {
     try {
       const now = new Date();
       
@@ -286,7 +287,7 @@ export default function PandaHub() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          locale,
+          locale: localeOverride || locale,
           context: {
             userName: name,
             currentHour: now.getHours(),
@@ -309,7 +310,7 @@ export default function PandaHub() {
   };
 
   // Generate AI-powered contextual affirmation
-  const generateAffirmation = async (userId: string, name: string) => {
+  const generateAffirmation = async (userId: string, name: string, localeOverride?: string) => {
     try {
       // Fetch user stats
       const today = new Date().toISOString().split('T')[0];
@@ -358,7 +359,7 @@ export default function PandaHub() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          locale,
+          locale: localeOverride || locale,
           context: {
             userName: name,
             totalIdeas: ideas.length,
