@@ -19,7 +19,9 @@ function needsSonnet(text: string): boolean {
   if (words.length <= 2 && !/\b(crea|borra|elimina|completa|prioriza)\b/i.test(lower)) return false;
   
   // Task CRUD actions + reminders → Sonnet (needs tools)
-  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita|recu[eé]rd|remind|recordar|alarm|avisa)\b/i.test(lower)) return true;
+  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita|remind|alarm|avisa)\b/i.test(lower)) return true;
+  // Spanish accented words — \b doesn't work with accented chars in JS
+  if (/(recu[eé]rd|recordar)/i.test(lower)) return true;
   
   // Coaching / prioritization questions → Sonnet (needs reasoning)
   if (/\b(qu[eé] (debo|hago|tengo|podr[ií]a)|c[oó]mo voy|sugi[eé]r|recomiend|prioriz|por d[oó]nde empiezo|ayuda)\b/i.test(lower)) return true;
