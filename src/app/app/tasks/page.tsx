@@ -138,6 +138,9 @@ export default function TasksPage() {
   // Scroll state for header transparency
   const [scrolled, setScrolled] = useState(false);
   
+  // Export toast
+  const [showExportToast, setShowExportToast] = useState(false);
+  
   // Streak state
   const [streak, setStreak] = useState(0);
   
@@ -417,6 +420,45 @@ export default function TasksPage() {
     setInlineEditId(null);
   };
 
+  // Export for AI
+  const exportForAI = async () => {
+    const pending = tasks.filter(t => !t.completed);
+    const completed = tasks.filter(t => t.completed);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    let md = `# Hansei — Tasks\n> Exported: ${dateStr} | ${pending.length} pending, ${completed.length} completed\n\n`;
+    
+    if (pending.length > 0) {
+      md += `## Pending\n`;
+      pending.forEach(task => {
+        const created = new Date(task.created_at);
+        const daysAgo = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        const age = daysAgo === 0 ? 'today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+        const priority = task.priority ? `, priority: ${task.priority}` : '';
+        const origin = task.origin_idea_id ? `, from idea: ${getIdeaTitle(task.origin_idea_id)}` : '';
+        md += `- ${task.title} (created ${age}${priority}${origin})\n`;
+      });
+      md += '\n';
+    }
+    
+    if (completed.length > 0) {
+      md += `## Completed Recently\n`;
+      completed.slice(0, 20).forEach(task => {
+        const completedDate = task.completed_at 
+          ? new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'unknown';
+        md += `- ${task.title} (completed ${completedDate})\n`;
+      });
+    }
+    
+    try {
+      await navigator.clipboard.writeText(md.trim());
+      setShowExportToast(true);
+      setTimeout(() => setShowExportToast(false), 2000);
+    } catch { /* clipboard not available */ }
+  };
+
   // Voice recording for NEW task
   const startRecordingForNewTask = async () => {
     try {
@@ -613,6 +655,15 @@ export default function TasksPage() {
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#6b8f71]/15 dark:bg-[#6b8f71]/20 text-[#6b8f71] dark:text-[#8fb396]">
               {completedCount}/{tasks.length}
             </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); exportForAI(); }}
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400 hover:text-[#6b8f71]"
+              title="Export for AI"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5A3.375 3.375 0 006.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0015 2.25h-1.5a2.251 2.251 0 00-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 00-9-9z" />
+              </svg>
+            </button>
           </div>
           
           {/* Voice button for new task - Press and hold */}
@@ -1006,6 +1057,20 @@ export default function TasksPage() {
           </div>
         )}
       </main>
+
+      {/* Export toast */}
+      <AnimatePresence>
+        {showExportToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-[#6b8f71] text-white text-sm font-medium shadow-lg"
+          >
+            {t.tasks.export_copied}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom Navigation */}
       <BottomNav />

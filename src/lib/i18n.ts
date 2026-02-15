@@ -134,6 +134,7 @@ const translations = {
       processing: 'Processing...',
       from_label: 'From:',
       today_label: 'TODAY',
+      export_copied: 'Copied!',
     },
     // Ideas page
     ideas: {
@@ -153,6 +154,7 @@ const translations = {
       your_space: 'Your space for ideas',
       say_idea_hint: 'Say "I have an idea..." and Kai saves it',
       delete_idea: 'Delete idea',
+      export_copied: 'Copied!',
     },
     // Dreams page
     dreams: {
@@ -165,6 +167,7 @@ const translations = {
       interpretation: 'Interpretation',
       delete_dream: 'Delete dream',
       interpreted: 'Interpreted',
+      export_copied: 'Copied!',
     },
     // Feedback page
     feedback: {
@@ -327,6 +330,7 @@ const translations = {
       processing: 'Procesando...',
       from_label: 'De:',
       today_label: 'HOY',
+      export_copied: 'Copiado!',
     },
     ideas: {
       title: 'Idea Board',
@@ -345,6 +349,7 @@ const translations = {
       your_space: 'Tu espacio para ideas',
       say_idea_hint: 'Di "Tengo una idea..." y Kai la guarda',
       delete_idea: 'Eliminar idea',
+      export_copied: 'Copiado!',
     },
     dreams: {
       title: 'Sueños',
@@ -356,6 +361,7 @@ const translations = {
       interpretation: 'Interpretación',
       delete_dream: 'Eliminar sueño',
       interpreted: 'Interpretado',
+      export_copied: 'Copiado!',
     },
     feedback: {
       title: 'Feedback Beta Tester',
