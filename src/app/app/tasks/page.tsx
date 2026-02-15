@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { haptic } from '@/lib/haptics';
 import { logActivity } from '@/lib/activity';
 import { PixelBubble } from '@/components/PixelBubble';
+import { PushBanner } from '@/components/PushBanner';
 import { useLocale } from '@/lib/i18n';
 
 // Dark mode hook
@@ -40,6 +41,17 @@ const useDarkMode = () => {
 
 const THEME_COLOR = '#6b8f71';
 const DELETE_COLOR = '#8B2942'; // Burgundy red
+
+interface Reminder {
+  id: string;
+  title: string;
+  schedule_type: 'once' | 'recurring';
+  trigger_at: string;
+  next_trigger: string;
+  active: boolean;
+  created_at: string;
+  source: 'kai' | 'manual';
+}
 
 interface Task {
   id: string;
@@ -87,6 +99,7 @@ export default function TasksPage() {
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]); // For origin labels
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [originFilter, setOriginFilter] = useState<string | null>(null); // null = all, 'independent' = no origin, or idea id
@@ -160,6 +173,20 @@ export default function TasksPage() {
     return currentStreak;
   }, []);
 
+  const fetchReminders = useCallback(async () => {
+    const { data } = await supabase
+      .from('reminders')
+      .select('*')
+      .eq('active', true)
+      .order('next_trigger', { ascending: true });
+    if (data) setReminders(data as Reminder[]);
+  }, [supabase]);
+
+  const dismissReminder = async (id: string) => {
+    await supabase.from('reminders').update({ active: false }).eq('id', id);
+    setReminders(prev => prev.filter(r => r.id !== id));
+  };
+
   const fetchTasks = useCallback(async () => {
     // Fetch tasks
     const { data: taskData, error: taskError } = await supabase
@@ -195,7 +222,7 @@ export default function TasksPage() {
         return;
       }
       setUser(user);
-      await fetchTasks();
+      await Promise.all([fetchTasks(), fetchReminders()]);
       setLoading(false);
     };
     init();
@@ -655,6 +682,9 @@ export default function TasksPage() {
         
       </header>
 
+      {/* Push notification banner */}
+      <PushBanner />
+
       {/* Task list */}
       <main className="max-w-2xl mx-auto p-4 space-y-3 pb-20">
         {/* Streak badge */}
@@ -673,6 +703,55 @@ export default function TasksPage() {
               <span className="text-sm font-semibold text-[#6b8f71]">{streak} {streak === 1 ? t.tasks.day : t.tasks.days}</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">{t.tasks.streak_label}</span>
             </div>
+          </div>
+        )}
+
+        {/* Reminder cards */}
+        {reminders.length > 0 && filter === 'all' && (
+          <div className="mb-4 space-y-2">
+            {reminders.map(reminder => {
+              const triggerDate = new Date(reminder.next_trigger);
+              const timeStr = triggerDate.toLocaleTimeString(locale === 'es' ? 'es' : 'en', { hour: 'numeric', minute: '2-digit' });
+              const dateStr = triggerDate.toLocaleDateString(locale === 'es' ? 'es' : 'en', { month: 'short', day: 'numeric' });
+              const isPast = triggerDate.getTime() < Date.now();
+
+              return (
+                <div
+                  key={reminder.id}
+                  className={`relative flex items-center gap-3 p-4 rounded-2xl border-2 border-l-4 transition-all ${
+                    isPast
+                      ? 'border-[#6b8f71] border-l-[#6b8f71] bg-[#6b8f71]/10 dark:bg-[#6b8f71]/15'
+                      : 'border-gray-200 dark:border-gray-700 border-l-[#6b8f71] bg-white dark:bg-[#2c2c2e]'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-[#6b8f71] flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{reminder.title}</p>
+                    <div className="flex gap-1.5 mt-1">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#6b8f71]/20 text-[#6b8f71] font-medium">
+                        {t.push.reminder_label}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                        {dateStr} {timeStr}
+                      </span>
+                      {reminder.schedule_type === 'recurring' && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+                          {locale === 'es' ? 'Recurrente' : 'Recurring'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => dismissReminder(reminder.id)}
+                    className="w-6 h-6 rounded-full border-2 border-[#6b8f71] flex-shrink-0 flex items-center justify-center hover:bg-[#6b8f71] hover:text-white transition-all text-[#6b8f71]"
+                  >
+                    {Icons.check}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
 

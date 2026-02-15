@@ -284,6 +284,36 @@ Usa task_id siempre que sea posible. Si hay varias coincidencias por título, PR
           required: [],
         },
       },
+      {
+        name: 'set_reminder',
+        description: `Set a reminder for the user at a specific time.
+
+Use when:
+- "remind me to X at 3pm" or "remind me in 2 hours"
+- "set a reminder for tomorrow morning"
+- User explicitly asks to be reminded about something
+
+Don't use when:
+- User wants to create a task (use create_task instead)
+- User wants to complete something
+- No clear time/schedule specified — ask when
+
+Examples:
+- "remind me to call the dentist at 3pm" → title: "Call the dentist", trigger_at: today 3pm
+- "remind me in 2 hours to check email" → title: "Check email", delay_minutes: 120
+- "remind me every day at 9am to meditate" → title: "Meditate", trigger_at: tomorrow 9am, recurring: true, interval_hours: 24`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'What to remind about. Clear and actionable.' },
+            delay_minutes: { type: 'number', description: 'Minutes from now to trigger. Use this OR trigger_at.' },
+            trigger_at: { type: 'string', description: 'ISO 8601 datetime to trigger. Use this OR delay_minutes.' },
+            recurring: { type: 'boolean', description: 'Whether this repeats. Default false.' },
+            interval_hours: { type: 'number', description: 'Hours between recurrences. Only if recurring=true.' },
+          },
+          required: ['title'],
+        },
+      },
     ];
 
     // Call Sonnet
@@ -601,6 +631,45 @@ async function executeTool(
       return `Tarea "${task.title}" eliminada`;
     }
     
+    case 'set_reminder': {
+      const title = input.title as string;
+      const delayMinutes = input.delay_minutes as number | undefined;
+      const triggerAtStr = input.trigger_at as string | undefined;
+      const recurring = input.recurring as boolean || false;
+      const intervalHours = input.interval_hours as number | undefined;
+
+      let triggerAt: Date;
+      if (delayMinutes) {
+        triggerAt = new Date(Date.now() + delayMinutes * 60 * 1000);
+      } else if (triggerAtStr) {
+        triggerAt = new Date(triggerAtStr);
+      } else {
+        // Default: 1 hour from now
+        triggerAt = new Date(Date.now() + 60 * 60 * 1000);
+      }
+
+      const intervalMs = recurring && intervalHours ? intervalHours * 60 * 60 * 1000 : null;
+
+      // Use service role to bypass RLS for insert
+      const serviceSupabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || '');
+
+      const { error } = await serviceSupabase.from('reminders').insert({
+        user_id: userId,
+        title,
+        schedule_type: recurring ? 'recurring' : 'once',
+        trigger_at: triggerAt.toISOString(),
+        next_trigger: triggerAt.toISOString(),
+        interval_ms: intervalMs,
+        active: true,
+        source: 'kai',
+      });
+
+      if (error) return `Error setting reminder: ${error.message}`;
+
+      const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return `Reminder "${title}" set for ${timeStr}${recurring ? ` (repeating every ${intervalHours}h)` : ''}`;
+    }
+
     default:
       return 'Acción no reconocida';
   }
