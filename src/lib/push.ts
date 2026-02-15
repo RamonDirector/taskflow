@@ -36,16 +36,20 @@ export function getPushStatus(): {
 export async function subscribeToPush(): Promise<boolean> {
   try {
     const { supported } = getPushStatus();
+    console.log('[Push] Supported:', supported, 'VAPID key:', VAPID_PUBLIC_KEY ? 'present' : 'MISSING');
     if (!supported) return false;
 
     const permission = await Notification.requestPermission();
+    console.log('[Push] Permission:', permission);
     if (permission !== 'granted') return false;
 
     // Get service worker registration
     const registration = await navigator.serviceWorker.ready;
+    console.log('[Push] SW ready:', registration.scope);
 
     // Check for existing subscription
     let subscription = await registration.pushManager.getSubscription();
+    console.log('[Push] Existing subscription:', !!subscription);
 
     // If no subscription, create one
     if (!subscription) {
@@ -53,30 +57,25 @@ export async function subscribeToPush(): Promise<boolean> {
         userVisuallyIndicatesInterest: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
       });
+      console.log('[Push] New subscription created');
     }
 
-    // Save to Supabase
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
+    // Save to Supabase via API route (avoids client-side RLS issues)
     const subJSON = subscription.toJSON();
+    console.log('[Push] Saving subscription, endpoint:', subJSON.endpoint?.substring(0, 50));
 
-    await supabase.from('push_subscriptions').upsert(
-      {
-        user_id: user.id,
-        endpoint: subJSON.endpoint!,
-        p256dh: subJSON.keys!.p256dh!,
-        auth_key: subJSON.keys!.auth!,
-        device_name: getDeviceName(),
-        active: true,
-      },
-      { onConflict: 'user_id,endpoint' }
-    );
+    const res = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: subJSON }),
+    });
 
-    return true;
+    const result = await res.json();
+    console.log('[Push] Save result:', result);
+
+    return result.success === true;
   } catch (error) {
-    console.error('Push subscription error:', error);
+    console.error('[Push] Subscription error:', error);
     return false;
   }
 }
