@@ -104,7 +104,12 @@ Generate ONLY the short phrase. No preamble, no "Here's a prompt:", no quotes, n
     const response = await result.response;
     let affirmation = response.text()?.trim() || (locale === 'en' ? "What's on your mind?" : 'Qué tienes en mente?');
     // Strip any preamble Gemini might add
-    affirmation = affirmation.replace(/^(okay[,.]?\s*|sure[,.]?\s*|here'?s?\s*(a\s*)?prompt:?\s*)/i, '').replace(/^["'"]+|["'"]+$/g, '').trim();
+    affirmation = affirmation
+      .replace(/^(okay[,.]?\s*|sure[!,.]?\s*|here'?s?\s*(a\s*)?(new\s*)?prompt:?\s*|here you go:?\s*|how about:?\s*)/i, '')
+      .replace(/^["'""\n]+|["'""\n]+$/g, '')
+      .trim();
+    // If still starts with lowercase after stripping, capitalize
+    if (affirmation) affirmation = affirmation.charAt(0).toUpperCase() + affirmation.slice(1);
 
     // Increment usage counter
     if (access.userId) {
