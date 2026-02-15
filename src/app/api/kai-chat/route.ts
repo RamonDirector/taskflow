@@ -18,8 +18,8 @@ function needsSonnet(text: string): boolean {
   // Short acknowledgments → Gemini
   if (words.length <= 2 && !/\b(crea|borra|elimina|completa|prioriza)\b/i.test(lower)) return false;
   
-  // Task CRUD actions → Sonnet (needs tools)
-  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita)\b/i.test(lower)) return true;
+  // Task CRUD actions + reminders → Sonnet (needs tools)
+  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita|recu[eé]rd|remind|recordar|alarm|avisa)\b/i.test(lower)) return true;
   
   // Coaching / prioritization questions → Sonnet (needs reasoning)
   if (/\b(qu[eé] (debo|hago|tengo|podr[ií]a)|c[oó]mo voy|sugi[eé]r|recomiend|prioriz|por d[oó]nde empiezo|ayuda)\b/i.test(lower)) return true;
