@@ -706,50 +706,49 @@ export default function TasksPage() {
           </div>
         )}
 
-        {/* Reminder cards */}
+        {/* Reminder cards — same UI as regular tasks */}
         {reminders.length > 0 && filter === 'all' && (
           <div className="mb-4 space-y-2">
             {reminders.map(reminder => {
               const triggerDate = new Date(reminder.next_trigger);
               const timeStr = triggerDate.toLocaleTimeString(locale === 'es' ? 'es' : 'en', { hour: 'numeric', minute: '2-digit' });
               const dateStr = triggerDate.toLocaleDateString(locale === 'es' ? 'es' : 'en', { month: 'short', day: 'numeric' });
-              const isPast = triggerDate.getTime() < Date.now();
 
               return (
-                <div
+                <motion.div
                   key={reminder.id}
-                  className={`relative flex items-center gap-3 p-4 rounded-2xl border-2 border-l-4 transition-all ${
-                    isPast
-                      ? 'border-[#6b8f71] border-l-[#6b8f71] bg-[#6b8f71]/10 dark:bg-[#6b8f71]/15'
-                      : 'border-gray-200 dark:border-gray-700 border-l-[#6b8f71] bg-white dark:bg-[#2c2c2e]'
-                  }`}
+                  layout
+                  initial={false}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                  className="relative overflow-hidden rounded-2xl"
                 >
-                  <svg className="w-5 h-5 text-[#6b8f71] flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{reminder.title}</p>
-                    <div className="flex gap-1.5 mt-1">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#6b8f71]/20 text-[#6b8f71] font-medium">
-                        {t.push.reminder_label}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                        {dateStr} {timeStr}
-                      </span>
-                      {reminder.schedule_type === 'recurring' && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
-                          {locale === 'es' ? 'Recurrente' : 'Recurring'}
-                        </span>
-                      )}
+                  <div className="relative p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2c2c2e] active:scale-[0.98] transition-all">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => dismissReminder(reminder.id)}
+                        className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-[#6b8f71]/60 flex-shrink-0 flex items-center justify-center hover:bg-[#6b8f71] hover:text-white transition-all"
+                      >
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{reminder.title}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#6b8f71]/20 text-[#6b8f71] font-medium flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {dateStr} {timeStr}
+                          </span>
+                          {reminder.schedule_type === 'recurring' && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                              {locale === 'es' ? 'Recurrente' : 'Recurring'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => dismissReminder(reminder.id)}
-                    className="w-6 h-6 rounded-full border-2 border-[#6b8f71] flex-shrink-0 flex items-center justify-center hover:bg-[#6b8f71] hover:text-white transition-all text-[#6b8f71]"
-                  >
-                    {Icons.check}
-                  </button>
-                </div>
+                </motion.div>
               );
             })}
           </div>
