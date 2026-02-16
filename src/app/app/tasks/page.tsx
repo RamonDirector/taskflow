@@ -554,7 +554,7 @@ export default function TasksPage() {
       
       const allItems = extractData.items || extractData.tasks || [];
       
-      // Separate reminders from tasks
+      // Separate reminders from tasks/ideas
       const reminderItems = allItems.filter((item: { type: string }) => item.type === 'reminder');
       const taskItems = allItems.filter((item: { type: string }) => item.type !== 'reminder');
       
@@ -567,17 +567,22 @@ export default function TasksPage() {
         });
       }
 
-      // 3a. Create reminders via kai-chat API (which has set_reminder tool)
+      // 3a. Create reminders directly via API
       for (const reminder of reminderItems) {
         try {
-          await fetch('/api/kai-chat', {
+          const res = await fetch('/api/reminders/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              message: `Set a reminder: "${reminder.title}"${reminder.reminder_time ? ` at ${reminder.reminder_time}` : ''}${reminder.recurring ? ` recurring ${reminder.interval || 'daily'}` : ''}`,
-              locale,
+              title: reminder.title,
+              reminder_time: reminder.reminder_time || null,
+              recurring: reminder.recurring || false,
+              interval: reminder.interval || null,
             }),
           });
+          if (!res.ok) {
+            console.error('Reminder create failed:', await res.text());
+          }
         } catch (e) {
           console.error('Reminder creation error:', e);
         }
