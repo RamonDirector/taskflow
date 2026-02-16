@@ -181,6 +181,21 @@ function parseReminderTime(timeStr: string, recurring: boolean, interval: string
     if (lower.includes(name)) { targetDay = day; break; }
   }
   
+  // If no explicit time, infer from meal/context keywords
+  if (hours === null && targetDay !== null) {
+    if (/(?:dinner|cenar|cena|evening|noche)/.test(lower)) {
+      hours = 19; minutes = 0;
+    } else if (/(?:lunch|comer|comida|almuerz|mediod[ií]a)/.test(lower)) {
+      hours = 13; minutes = 0;
+    } else if (/(?:morning|mañana|desayun)/.test(lower) && !isTomorrow) {
+      hours = 9; minutes = 0;
+    } else if (/(?:afternoon|tarde)/.test(lower)) {
+      hours = 15; minutes = 0;
+    } else {
+      hours = 9; minutes = 0; // Default 9:00 for day-only reminders
+    }
+  }
+
   if (hours !== null) {
     triggerAt = new Date(now);
     if (isTomorrow) {
