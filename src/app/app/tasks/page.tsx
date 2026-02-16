@@ -537,7 +537,7 @@ export default function TasksPage() {
       const { text } = await transcribeRes.json();
       if (!text?.trim()) {
         setIsRecordingNewTask(false);
-        setIsProcessingVoice(false);
+        setIsProcessingNewTask(false);
         return;
       }
 
@@ -552,49 +552,68 @@ export default function TasksPage() {
       
       const extractData = await extractRes.json();
       
-      // From the tasks view, treat ALL extracted items as tasks (tasks + ideas + any type)
-      // The user explicitly used the task mic button, so everything should become a task
       const allItems = extractData.items || extractData.tasks || [];
-      const extractedTasks = allItems.length > 0 
-        ? allItems.map((item: { title: string; category?: string; priority?: string }) => ({
-            title: item.title,
-            category: item.category || 'personal',
-            priority: item.priority || 'high',
-          }))
-        : [{
-            title: text.trim(),
-            category: 'personal',
-            priority: 'high',
-          }];
-
-      // 3. Insert all extracted tasks with today's date (Foco del día)
-      const todayDate = new Date().toISOString().split('T')[0];
       
-      const tasksToInsert = extractedTasks.map((task: { title: string; category?: string; priority?: string }) => ({
-        user_id: user.id,
-        title: task.title,
-        type: 'task',
-        category: task.category || 'personal',
-        priority: task.priority || 'high',
-        completed: false,
-        due_date: todayDate, // Foco del día
-      }));
+      // Separate reminders from tasks
+      const reminderItems = allItems.filter((item: { type: string }) => item.type === 'reminder');
+      const taskItems = allItems.filter((item: { type: string }) => item.type !== 'reminder');
+      
+      // If no items at all, create a task from raw text
+      if (allItems.length === 0) {
+        taskItems.push({
+          title: text.trim(),
+          category: 'personal',
+          priority: 'high',
+        });
+      }
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert(tasksToInsert)
-        .select();
+      // 3a. Create reminders via kai-chat API (which has set_reminder tool)
+      for (const reminder of reminderItems) {
+        try {
+          await fetch('/api/kai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: `Set a reminder: "${reminder.title}"${reminder.reminder_time ? ` at ${reminder.reminder_time}` : ''}${reminder.recurring ? ` recurring ${reminder.interval || 'daily'}` : ''}`,
+              locale,
+            }),
+          });
+        } catch (e) {
+          console.error('Reminder creation error:', e);
+        }
+      }
 
-      if (!error && data) {
-        setTasks(prev => [...data, ...prev]);
-        if (user) {
-          for (const t of data) {
-            logActivity({ supabase, userId: user.id, action: 'task_created', entityType: 'task', entityId: t.id });
+      // 3b. Insert tasks with today's date (Foco del día)
+      if (taskItems.length > 0) {
+        const todayDate = new Date().toISOString().split('T')[0];
+        
+        const tasksToInsert = taskItems.map((task: { title: string; category?: string; priority?: string }) => ({
+          user_id: user.id,
+          title: task.title,
+          type: 'task',
+          category: task.category || 'personal',
+          priority: task.priority || 'high',
+          completed: false,
+          due_date: todayDate,
+        }));
+
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert(tasksToInsert)
+          .select();
+
+        if (!error && data) {
+          setTasks(prev => [...data, ...prev]);
+          if (user) {
+            for (const t of data) {
+              logActivity({ supabase, userId: user.id, action: 'task_created', entityType: 'task', entityId: t.id });
+            }
           }
         }
-        // Haptic success feedback
-        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
       }
+
+      // Haptic success feedback
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     } catch (e) {
       console.error('New task recording error:', e);
     }
