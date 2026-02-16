@@ -91,14 +91,18 @@ End of month: ${dates.endOfMonth}
 "cuando pueda/algún día" → null
 
 ## EXTRACTION RULES
-1. SEPARATE compound statements into individual items
-2. CATCH everything — even brief mentions ("ah, y también...")
-3. DEDUPLICATE — keep the one with most context
-4. TASK = Actionable ("llamar", "comprar", "enviar", "tengo que")
-5. IDEA = Concept/possibility ("sería bueno", "podríamos", "se me ocurrió")
-6. DREAM = ONLY sleep dream narration ("soñé que X")
-7. REMINDER = Time-based reminder ("remind me", "recuérdame", "avísame", "a las 7:30", "every morning", "cada mañana")
-8. If "soñé que X" then mentions tasks/ideas → SEPARATE them (dream + tasks)
+1. **COHESION FIRST (CRITICAL)**: Before splitting, determine if the user describes ONE concept from multiple angles OR truly separate items.
+   - ONE IDEA with aspects: "I want a dating app that focuses on women, detects red flags, analyzes photos" → **1 idea** with rich title + all details in context
+   - SEPARATE items: "Call the dentist and also I had this idea for an app" → **2 items**
+   - **Test**: Do all aspects revolve around the SAME core concept? Yes → ONE item. Different topics → separate.
+2. SEPARATE compound statements ONLY when truly different topics
+3. CATCH everything — even brief mentions ("ah, y también...")
+4. DEDUPLICATE — keep the one with most context
+5. TASK = Actionable ("llamar", "comprar", "enviar", "tengo que")
+6. IDEA = Concept/possibility ("sería bueno", "podríamos", "se me ocurrió")
+7. DREAM = ONLY sleep dream narration ("soñé que X")
+8. REMINDER = Time-based reminder ("remind me", "recuérdame", "avísame", "a las 7:30", "every morning", "cada mañana")
+9. If "soñé que X" then mentions tasks/ideas → SEPARATE them (dream + tasks)
 
 ## REMINDER DETECTION
 When type=reminder, also extract these fields:

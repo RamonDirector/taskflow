@@ -115,18 +115,24 @@ Map these phrases to actual dates:
 
 ## BRAIN DUMP EXTRACTION RULES
 
-1. **SEPARATE compound statements**: "Tengo que llamar al dentista y también comprar el regalo de María" = 2 tasks
+1. **COHESION FIRST (CRITICAL)**: Before splitting, determine if the user is describing ONE concept from multiple angles OR truly separate items.
+   - ONE IDEA with multiple aspects: "I want to build a dating app that focuses on women, detects red/green flags, and analyzes photos" → **1 idea** with rich title and all aspects in context
+   - MULTIPLE separate items: "I need to call the dentist and also I had this idea for a dating app" → **2 items** (task + idea)
+   - **The test**: Do all aspects revolve around the SAME core concept? If yes → ONE item. If they're about different topics → separate items.
+   - When keeping as ONE item: title captures the core concept (10-20 words), context captures ALL the details, features, and nuances the user mentioned
 
-2. **CATCH everything**: Even brief mentions like "ah, y también..." count. Don't miss anything.
+2. **SEPARATE compound statements** (only when truly different topics): "Tengo que llamar al dentista y también comprar el regalo de María" = 2 tasks
 
-3. **DEDUPLICATE**: If the same thing is mentioned twice, keep only one (with the most context)
+3. **CATCH everything**: Even brief mentions like "ah, y también..." count. Don't miss anything.
 
-4. **INFER context**: 
+4. **DEDUPLICATE**: If the same thing is mentioned twice, keep only one (with the most context)
+
+5. **INFER context**: 
    - "llamar al dentista" → category: health
    - "enviar propuesta al cliente" → category: work
    - "comprar regalo" → category: errands or personal
 
-5. **DISTINGUISH task vs idea vs dream vs reminder** (VERY IMPORTANT):
+6. **DISTINGUISH task vs idea vs dream vs reminder** (VERY IMPORTANT):
    - TASK = Actionable with clear next step ("llamar", "comprar", "enviar", "ir a", "tengo que")
    - IDEA = Concept, thought, possibility ("sería bueno...", "podríamos...", "qué tal si...", "se me ocurrió")
    - DREAM = ONLY the sleep dream narration itself ("soñé que X" - X is the dream content)
@@ -139,7 +145,7 @@ Map these phrases to actual dates:
    - Everything else (tasks, ideas mentioned after) keeps its own type
    - ALWAYS analyze the FULL transcript and extract EACH distinct item separately
 
-6. **TITLE RULES (CRITICAL)**:
+7. **TITLE RULES (CRITICAL)**:
    - TASKS: 3-6 words (verb + object, actionable)
    - IDEAS: 10-20 words (capture the full concept, keep important context)
    - NO filler words, but IDEAS should have enough detail to understand later
@@ -150,7 +156,7 @@ Map these phrases to actual dates:
    IDEA GOOD: "App que conecta vecinos para compartir herramientas y reducir consumo"
    IDEA BAD: "App de vecinos" (too short, loses the essence)
 
-7. **PRIORITY inference**:
+8. **PRIORITY inference**:
    - high: "urgente", "antes de", "hoy", deadline próximo, palabras de estrés
    - medium: fechas esta semana, importancia implícita
    - low: "cuando pueda", "algún día", sin fecha
@@ -201,6 +207,21 @@ Return ONLY valid JSON, no markdown:
   - Task "Preparar presentación" ↔ Idea "Aprender a hacer mejores slides" (same topic)
   - Task "Ir al gimnasio" ↔ Task "Comprar ropa deportiva" (one enables the other)
   - Idea "App de recetas" ↔ Task "Investigar APIs de nutrición" (research supports idea)
+
+## COHESION EXAMPLES (STUDY THESE — MOST COMMON MISTAKE)
+
+**Example: ONE idea explained in depth (DO NOT SPLIT)**
+Input: "Se me ha ocurrido una app de citas que ayude a la gente a mejorar sus habilidades. Que se enfoque en las necesidades de las mujeres, que detecte red flags y green flags en los perfiles, y que analice las fotos según los objetivos del usuario."
+Correct Output: **1 SINGLE idea** ✅
+- { "title": "Dating app to improve dating skills with focus on women's needs", "type": "idea", "context": "App that focuses on women's needs, detects green and red flags in dating profiles, analyzes profile photos based on user goals. Differentiator: helps users actually improve, not just swipe." }
+WRONG: Splitting into 4-5 separate ideas (one per feature) ❌
+
+**Example: TRULY separate items**
+Input: "Tengo que llamar al dentista. Ah y se me ocurrió una app de citas. También tengo que comprar leche."
+Correct Output: **3 separate items** ✅
+- { "title": "Llamar al dentista", "type": "task" }
+- { "title": "App de citas", "type": "idea" }
+- { "title": "Comprar leche", "type": "task" }
 
 ## MIXED INPUT EXAMPLES (STUDY THESE CAREFULLY)
 
