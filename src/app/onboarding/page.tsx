@@ -511,12 +511,22 @@ function OnboardingContent() {
               <path d="M0,105 Q60,65 110,85 T200,70 T280,80 L280,160 L0,160 Z" fill="url(#obHill2)" />
               <path d="M0,120 Q45,90 90,110 T180,95 T260,115 T280,100 L280,160 L0,160 Z" fill="url(#obHill1)" />
               {/* Bamboo stalks */}
-              <line x1="70" y1="160" x2="70" y2="60" stroke="#5a7d60" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-              <line x1="72" y1="80" x2="85" y2="68" stroke="#5a7d60" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-              <ellipse cx="88" cy="65" rx="8" ry="4" fill="#6b8f71" opacity="0.6" />
-              <line x1="200" y1="160" x2="200" y2="70" stroke="#5a7d60" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
-              <line x1="198" y1="90" x2="185" y2="78" stroke="#5a7d60" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-              <ellipse cx="182" cy="75" rx="7" ry="3.5" fill="#6b8f71" opacity="0.5" />
+              {/* Left bamboo */}
+              <line x1="70" y1="160" x2="70" y2="45" stroke="#4a6b50" strokeWidth="5" strokeLinecap="round" />
+              <line x1="70" y1="120" x2="70" y2="120" stroke="#3d5c43" strokeWidth="7" strokeLinecap="round" opacity="0.5" />
+              <line x1="70" y1="85" x2="70" y2="85" stroke="#3d5c43" strokeWidth="7" strokeLinecap="round" opacity="0.5" />
+              <line x1="72" y1="70" x2="90" y2="55" stroke="#4a6b50" strokeWidth="2.5" strokeLinecap="round" />
+              <ellipse cx="95" cy="51" rx="12" ry="5" fill="#5a7d60" opacity="0.9" />
+              <line x1="68" y1="90" x2="52" y2="78" stroke="#4a6b50" strokeWidth="2" strokeLinecap="round" />
+              <ellipse cx="47" cy="75" rx="10" ry="4" fill="#6b8f71" opacity="0.8" />
+              {/* Right bamboo */}
+              <line x1="200" y1="160" x2="200" y2="50" stroke="#4a6b50" strokeWidth="4.5" strokeLinecap="round" />
+              <line x1="200" y1="115" x2="200" y2="115" stroke="#3d5c43" strokeWidth="6.5" strokeLinecap="round" opacity="0.5" />
+              <line x1="200" y1="80" x2="200" y2="80" stroke="#3d5c43" strokeWidth="6.5" strokeLinecap="round" opacity="0.5" />
+              <line x1="198" y1="75" x2="182" y2="60" stroke="#4a6b50" strokeWidth="2.5" strokeLinecap="round" />
+              <ellipse cx="177" cy="57" rx="11" ry="4.5" fill="#5a7d60" opacity="0.9" />
+              <line x1="202" y1="95" x2="218" y2="83" stroke="#4a6b50" strokeWidth="2" strokeLinecap="round" />
+              <ellipse cx="223" cy="80" rx="10" ry="4" fill="#6b8f71" opacity="0.8" />
               {/* Sakura flowers */}
               <g transform="translate(45, 115)">
                 <path d="M0,8 Q-1,4 0,0" stroke="#8b7355" strokeWidth="1.5" fill="none" />
