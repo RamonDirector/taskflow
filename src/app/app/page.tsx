@@ -120,7 +120,8 @@ interface CapturedItem {
 }
 
 // Parse reminder time string into trigger_at and interval_ms
-function parseReminderTime(timeStr: string, recurring: boolean, interval: string | null): { triggerAt: string; intervalMs: number | null } {
+// titleHint provides extra context (day names, meal keywords) when reminder_time is sparse
+function parseReminderTime(timeStr: string, recurring: boolean, interval: string | null, titleHint?: string): { triggerAt: string; intervalMs: number | null } {
   const now = new Date();
   // Use Europe/Amsterdam timezone
   const amsterdamOffset = () => {
@@ -135,6 +136,8 @@ function parseReminderTime(timeStr: string, recurring: boolean, interval: string
   let intervalMs: number | null = null;
   
   const lower = timeStr.toLowerCase();
+  // Combine timeStr + titleHint for day/meal detection (Gemini sometimes puts day in title, not reminder_time)
+  const searchText = titleHint ? `${lower} ${titleHint.toLowerCase()}` : lower;
   
   // "in X minutes/hours"
   const inMinMatch = lower.match(/in\s+(\d+)\s*min/);
@@ -167,7 +170,7 @@ function parseReminderTime(timeStr: string, recurring: boolean, interval: string
   }
   
   // "tomorrow" / "mañana"  
-  const isTomorrow = /\b(tomorrow|mañana)\b/.test(lower);
+  const isTomorrow = /\b(tomorrow|mañana)\b/.test(searchText);
   
   // Day of week
   const dayMap: Record<string, number> = {
@@ -178,18 +181,18 @@ function parseReminderTime(timeStr: string, recurring: boolean, interval: string
   
   let targetDay: number | null = null;
   for (const [name, day] of Object.entries(dayMap)) {
-    if (lower.includes(name)) { targetDay = day; break; }
+    if (searchText.includes(name)) { targetDay = day; break; }
   }
   
-  // If no explicit time, infer from meal/context keywords
+  // If no explicit time, infer from meal/context keywords (check both timeStr and title)
   if (hours === null && targetDay !== null) {
-    if (/(?:dinner|cenar|cena|evening|noche)/.test(lower)) {
+    if (/(?:dinner|cenar|cena|evening|noche)/.test(searchText)) {
       hours = 19; minutes = 0;
-    } else if (/(?:lunch|comer|comida|almuerz|mediod[ií]a)/.test(lower)) {
+    } else if (/(?:lunch|comer|comida|almuerz|mediod[ií]a)/.test(searchText)) {
       hours = 13; minutes = 0;
-    } else if (/(?:morning|mañana|desayun)/.test(lower) && !isTomorrow) {
+    } else if (/(?:morning|mañana|desayun)/.test(searchText) && !isTomorrow) {
       hours = 9; minutes = 0;
-    } else if (/(?:afternoon|tarde)/.test(lower)) {
+    } else if (/(?:afternoon|tarde)/.test(searchText)) {
       hours = 15; minutes = 0;
     } else {
       hours = 9; minutes = 0; // Default 9:00 for day-only reminders
@@ -1033,7 +1036,7 @@ export default function PandaHub() {
     // Save reminders to reminders table
     if (reminderItems.length > 0) {
       const reminderRows = reminderItems.map(item => {
-        const { triggerAt, intervalMs } = parseReminderTime(item.reminder_time || '', item.recurring || false, item.interval || null);
+        const { triggerAt, intervalMs } = parseReminderTime(item.reminder_time || '', item.recurring || false, item.interval || null, item.title);
         return {
           user_id: user.id,
           title: item.title,
