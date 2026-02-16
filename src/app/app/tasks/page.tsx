@@ -400,16 +400,15 @@ export default function TasksPage() {
     }
   };
 
-  // Long press handlers
+  // Long press handlers — toggle focus of the day
   const handleLongPressStart = (task: Task) => {
     longPressTimerRef.current = setTimeout(() => {
-      // Long press → inline edit
+      // Long press → toggle focus
       setSwipingId(null);
       setSwipeOffset(0);
       setSelectedTaskId(null);
-      setInlineEditId(task.id);
-      setInlineEditValue(task.title);
-      if (navigator.vibrate) navigator.vibrate(50);
+      toggleFocus(task.id);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
     }, LONG_PRESS_DELAY);
   };
 
@@ -904,6 +903,9 @@ export default function TasksPage() {
                 <div
                   key={task.id}
                   onClick={() => handleTaskTap(task)}
+                  onTouchStart={() => handleLongPressStart(task)}
+                  onTouchEnd={() => handleLongPressEnd()}
+                  onTouchMove={() => handleLongPressEnd()}
                   className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                     selectedTaskId === task.id
                       ? 'border-[#6b8f71] ring-2 ring-[#6b8f71]/30 bg-white dark:bg-[#2c2c2e]'
@@ -930,25 +932,11 @@ export default function TasksPage() {
                     </div>
                   </div>
                   {selectedTaskId === task.id && !task.completed && (
-                    <div className="flex items-center gap-1.5">
-                      {/* Unfocus button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleFocus(task.id); }}
-                        className="w-9 h-9 rounded-full flex items-center justify-center bg-[#6b8f71]/15 text-[#6b8f71] transition-all duration-200"
-                        title="Remove from focus"
-                      >
-                        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="9" />
-                          <circle cx="12" cy="12" r="5" />
-                          <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-                        </svg>
-                      </button>
-                      <VoiceEditButton
-                        onTranscript={handleVoiceTranscript}
-                        size="md"
-                        disabled={isProcessingVoice}
-                      />
-                    </div>
+                    <VoiceEditButton
+                      onTranscript={handleVoiceTranscript}
+                      size="md"
+                      disabled={isProcessingVoice}
+                    />
                   )}
                 </div>
               ))}
@@ -1068,32 +1056,13 @@ export default function TasksPage() {
                       </div>
                     </div>
 
-                    {/* Action buttons when selected */}
+                    {/* Voice edit button when selected (only for incomplete tasks) */}
                     {isSelected && !task.completed && (
-                      <div className="flex items-center gap-1.5">
-                        {/* Focus toggle */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleFocus(task.id); }}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
-                            task.due_date === today
-                              ? 'bg-[#6b8f71]/15 text-[#6b8f71]'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-                          }`}
-                          title={task.due_date === today ? 'Remove from focus' : 'Add to focus'}
-                        >
-                          <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill={task.due_date === today ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="9" />
-                            <circle cx="12" cy="12" r="5" />
-                            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-                          </svg>
-                        </button>
-                        {/* Voice edit */}
-                        <VoiceEditButton
-                          onTranscript={handleVoiceTranscript}
-                          size="md"
-                          disabled={isProcessingVoice}
-                        />
-                      </div>
+                      <VoiceEditButton
+                        onTranscript={handleVoiceTranscript}
+                        size="md"
+                        disabled={isProcessingVoice}
+                      />
                     )}
                   </div>
 
