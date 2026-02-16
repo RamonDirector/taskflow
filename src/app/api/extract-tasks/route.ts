@@ -180,7 +180,7 @@ Return ONLY valid JSON, no markdown:
     {
       "title": "Short 3-6 word title (for dreams: capture the key imagery/narrative)",
       "type": "task" | "idea" | "dream" | "reminder",
-      "reminder_time": "time string (only for type=reminder, e.g. '07:30', 'tomorrow 09:00', 'in 30 minutes')" | null,
+      "reminder_time": "time string preserving day references (e.g. 'thursday 19:00', 'el jueves', 'next saturday', 'el próximo sábado', 'tomorrow 09:00', 'in 30 minutes', '15:00'). For meals: include 'dinner/cenar/lunch/comer' keyword if no explicit time. ALWAYS preserve the day of week from user input." | null,
       "recurring": true | false,
       "interval": "daily" | "weekly" | "every 2 hours" | null,
       "category": "category (for dreams use: dreams)",
