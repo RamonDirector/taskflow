@@ -42,6 +42,29 @@ const Icons = {
   ),
 };
 
+const FeatureIcons: Record<string, JSX.Element> = {
+  mic: (
+    <svg className="w-10 h-10" fill="none" stroke="#6b8f71" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+    </svg>
+  ),
+  clock: (
+    <svg className="w-10 h-10" fill="none" stroke="#6b8f71" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  lightbulb: (
+    <svg className="w-10 h-10" fill="none" stroke="#6b8f71" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+    </svg>
+  ),
+  growth: (
+    <svg className="w-10 h-10" fill="none" stroke="#6b8f71" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+    </svg>
+  ),
+};
+
 interface ExtractedItem {
   title: string;
   category: string;
@@ -56,6 +79,9 @@ interface OnboardingStep {
   subtitle?: string;
   contextOptions?: string[];
   skipVoice?: boolean;
+  isFeature?: boolean;
+  featureIcon?: string;
+  differentiator?: string;
 }
 
 function getSteps(locale: Locale): OnboardingStep[] {
@@ -77,6 +103,42 @@ function getSteps(locale: Locale): OnboardingStep[] {
       id: 'name',
       panda: '/panda/new-neutral.png',
       title: t.onboarding.name_title,
+    },
+    {
+      id: 'feature-voice',
+      panda: '/panda/new-happy.png',
+      title: t.onboarding.feature_voice_title,
+      subtitle: t.onboarding.feature_voice_desc,
+      differentiator: t.onboarding.feature_voice_diff,
+      isFeature: true,
+      featureIcon: 'mic',
+    },
+    {
+      id: 'feature-reminders',
+      panda: '/panda/new-pointing.png',
+      title: t.onboarding.feature_reminders_title,
+      subtitle: t.onboarding.feature_reminders_desc,
+      differentiator: t.onboarding.feature_reminders_diff,
+      isFeature: true,
+      featureIcon: 'clock',
+    },
+    {
+      id: 'feature-actions',
+      panda: '/panda/new-thinking.png',
+      title: t.onboarding.feature_actions_title,
+      subtitle: t.onboarding.feature_actions_desc,
+      differentiator: t.onboarding.feature_actions_diff,
+      isFeature: true,
+      featureIcon: 'lightbulb',
+    },
+    {
+      id: 'feature-growth',
+      panda: '/panda/new-celebrate.png',
+      title: t.onboarding.feature_growth_title,
+      subtitle: t.onboarding.feature_growth_desc,
+      differentiator: t.onboarding.feature_growth_diff,
+      isFeature: true,
+      featureIcon: 'growth',
     },
     {
       id: 'what-capture',
@@ -372,8 +434,8 @@ function OnboardingContent() {
     return true;
   };
 
-  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language' && step.id !== 'notifications';
-  const showInputBar = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language' && step.id !== 'notifications';
+  const showVoiceButton = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language' && step.id !== 'notifications' && !step.isFeature;
+  const showInputBar = step.id !== 'processing' && step.id !== 'complete' && step.id !== 'welcome' && step.id !== 'language' && step.id !== 'notifications' && !step.isFeature;
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
@@ -426,9 +488,21 @@ function OnboardingContent() {
             : step.title}
         </h1>
 
+        {/* Feature icon */}
+        {step.isFeature && step.featureIcon && (
+          <div className="w-16 h-16 rounded-2xl bg-[#6b8f71]/10 flex items-center justify-center mb-4">
+            {FeatureIcons[step.featureIcon]}
+          </div>
+        )}
+
         {/* Subtitle */}
         {step.subtitle && (
-          <p className="text-[var(--gray-4)] text-sm text-center mb-4">{step.subtitle}</p>
+          <p className="text-[var(--gray-4)] text-sm text-center mb-3 max-w-[280px] leading-relaxed">{step.subtitle}</p>
+        )}
+
+        {/* Differentiator */}
+        {step.differentiator && (
+          <p className="text-[var(--gray-3)] text-xs text-center italic">{step.differentiator}</p>
         )}
 
       </div>
@@ -580,6 +654,36 @@ function OnboardingContent() {
             <p className={`text-center text-xs mt-3 transition-all duration-300 ${isRecording ? 'text-white/50' : 'text-[var(--gray-4)]'}`}>
               {t.onboarding.speak_naturally}
             </p>
+          </div>
+        )}
+
+        {/* Feature screen buttons */}
+        {step.isFeature && (
+          <div className="space-y-3 w-full">
+            <button
+              onClick={goNext}
+              className="w-full h-14 rounded-full font-medium text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              style={{ backgroundColor: THEME_COLOR }}
+            >
+              {t.onboarding.next_button} {Icons.arrow}
+            </button>
+            <button
+              onClick={() => {
+                // Skip to what-capture step
+                const whatCaptureIndex = steps.findIndex(s => s.id === 'what-capture');
+                if (whatCaptureIndex >= 0) {
+                  setDirection('forward');
+                  setIsAnimating(true);
+                  setTimeout(() => {
+                    setCurrentStep(whatCaptureIndex);
+                    setIsAnimating(false);
+                  }, 200);
+                }
+              }}
+              className="w-full h-12 rounded-full font-medium text-[var(--gray-4)] flex items-center justify-center transition-all active:scale-[0.98]"
+            >
+              {t.onboarding.feature_skip}
+            </button>
           </div>
         )}
 
