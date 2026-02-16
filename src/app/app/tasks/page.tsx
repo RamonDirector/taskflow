@@ -737,7 +737,6 @@ export default function TasksPage() {
                 {t.tasks.processing}
               </span>
             )}
-            )}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
