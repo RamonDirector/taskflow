@@ -113,6 +113,7 @@ export default function TasksPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isRecordingNewTask, setIsRecordingNewTask] = useState(false);
   const [isProcessingNewTask, setIsProcessingNewTask] = useState(false);
+  const [voiceDebug, setVoiceDebug] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -472,6 +473,8 @@ export default function TasksPage() {
 
   // Voice recording for NEW task
   const startRecordingForNewTask = async () => {
+    console.log('[TasksMic] startRecordingForNewTask called');
+    setVoiceDebug(null);
     try {
       let stream = streamRef.current;
       if (!stream || !stream.active) {
@@ -504,6 +507,7 @@ export default function TasksPage() {
   };
 
   const stopRecordingNewTask = () => {
+    console.log('[TasksMic] stopRecordingNewTask called, recorder state:', mediaRecorderRef.current?.state, 'chunks:', chunksRef.current.length);
     if (mediaRecorderRef.current?.state !== 'inactive') {
       mediaRecorderRef.current?.stop();
     }
@@ -512,15 +516,21 @@ export default function TasksPage() {
   };
 
   const processNewTaskRecording = async () => {
+    console.log('[TasksMic] processNewTaskRecording called, user:', !!user, 'chunks:', chunksRef.current.length);
     if (!user) {
+      console.log('[TasksMic] No user, aborting');
       setIsRecordingNewTask(false);
       setIsProcessingNewTask(false);
       return;
     }
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+    console.log('[TasksMic] audioBlob size:', audioBlob.size);
 
     // Skip if recording was too short (< 500 bytes likely means no real audio)
     if (audioBlob.size < 500) {
+      console.log('[TasksMic] Audio too short, skipping');
+      setVoiceDebug('Recording too short');
+      setTimeout(() => setVoiceDebug(null), 3000);
       setIsRecordingNewTask(false);
       setIsProcessingNewTask(false);
       return;
@@ -528,31 +538,49 @@ export default function TasksPage() {
 
     try {
       // 1. Transcribe audio
+      console.log('[TasksMic] Transcribing...');
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       
       const transcribeRes = await fetch('/api/transcribe', { method: 'POST', body: formData });
-      if (!transcribeRes.ok) throw new Error('Transcription failed');
+      console.log('[TasksMic] Transcribe response:', transcribeRes.status);
+      if (!transcribeRes.ok) {
+        const errText = await transcribeRes.text();
+        console.error('[TasksMic] Transcribe error:', errText);
+        throw new Error(`Transcription failed: ${transcribeRes.status}`);
+      }
       
       const { text } = await transcribeRes.json();
+      console.log('[TasksMic] Transcribed text:', text);
       if (!text?.trim()) {
+        console.log('[TasksMic] Empty transcription');
+        setVoiceDebug('Empty transcription');
+        setTimeout(() => setVoiceDebug(null), 3000);
         setIsRecordingNewTask(false);
         setIsProcessingNewTask(false);
         return;
       }
 
       // 2. Extract and separate items using AI
+      console.log('[TasksMic] Extracting tasks from:', text.trim());
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text.trim(), locale }),
       });
 
-      if (!extractRes.ok) throw new Error('Extraction failed');
+      console.log('[TasksMic] Extract response:', extractRes.status);
+      if (!extractRes.ok) {
+        const errText = await extractRes.text();
+        console.error('[TasksMic] Extract error:', errText);
+        throw new Error(`Extraction failed: ${extractRes.status}`);
+      }
       
       const extractData = await extractRes.json();
+      console.log('[TasksMic] Extract data:', JSON.stringify(extractData).slice(0, 500));
       
       const allItems = extractData.items || extractData.tasks || [];
+      console.log('[TasksMic] All items:', allItems.length);
       
       // Separate reminders from tasks/ideas
       const reminderItems = allItems.filter((item: { type: string }) => item.type === 'reminder');
@@ -602,11 +630,13 @@ export default function TasksPage() {
           due_date: todayDate,
         }));
 
+        console.log('[TasksMic] Inserting tasks:', JSON.stringify(tasksToInsert).slice(0, 500));
         const { data, error } = await supabase
           .from('tasks')
           .insert(tasksToInsert)
           .select();
 
+        console.log('[TasksMic] Insert result:', { data: !!data, error: error?.message, count: data?.length });
         if (!error && data) {
           setTasks(prev => [...data, ...prev]);
           if (user) {
@@ -620,7 +650,9 @@ export default function TasksPage() {
       // Haptic success feedback
       if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     } catch (e) {
-      console.error('New task recording error:', e);
+      console.error('[TasksMic] ERROR:', e);
+      setVoiceDebug(`Error: ${e instanceof Error ? e.message : String(e)}`);
+      setTimeout(() => setVoiceDebug(null), 5000);
     }
 
     setIsRecordingNewTask(false);
@@ -732,6 +764,9 @@ export default function TasksPage() {
                 <span className="w-3 h-3 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
                 {t.tasks.processing}
               </span>
+            )}
+            {voiceDebug && (
+              <span className="text-xs text-red-500 font-medium">{voiceDebug}</span>
             )}
             <button
               onTouchStart={(e) => {
