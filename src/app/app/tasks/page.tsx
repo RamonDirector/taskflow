@@ -497,11 +497,23 @@ export default function TasksPage() {
       mediaRecorderRef.current?.stop();
     }
     setIsRecording(false);
+    setIsProcessingVoice(true); // Show processing indicator immediately
   };
 
   const processNewTaskRecording = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsRecordingNewTask(false);
+      setIsProcessingVoice(false);
+      return;
+    }
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+    // Skip if recording was too short (< 500 bytes likely means no real audio)
+    if (audioBlob.size < 500) {
+      setIsRecordingNewTask(false);
+      setIsProcessingVoice(false);
+      return;
+    }
 
     try {
       // 1. Transcribe audio
@@ -514,10 +526,11 @@ export default function TasksPage() {
       const { text } = await transcribeRes.json();
       if (!text?.trim()) {
         setIsRecordingNewTask(false);
+        setIsProcessingVoice(false);
         return;
       }
 
-      // 2. Extract and separate tasks using AI
+      // 2. Extract and separate items using AI
       const extractRes = await fetch('/api/extract-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -527,16 +540,21 @@ export default function TasksPage() {
       if (!extractRes.ok) throw new Error('Extraction failed');
       
       const extractData = await extractRes.json();
-      const extractedTasks = extractData.tasks || [];
       
-      // If no tasks extracted, create one from the raw text
-      if (extractedTasks.length === 0) {
-        extractedTasks.push({
-          title: text.trim(),
-          category: 'personal',
-          priority: 'high',
-        });
-      }
+      // From the tasks view, treat ALL extracted items as tasks (tasks + ideas + any type)
+      // The user explicitly used the task mic button, so everything should become a task
+      const allItems = extractData.items || extractData.tasks || [];
+      const extractedTasks = allItems.length > 0 
+        ? allItems.map((item: { title: string; category?: string; priority?: string }) => ({
+            title: item.title,
+            category: item.category || 'personal',
+            priority: item.priority || 'high',
+          }))
+        : [{
+            title: text.trim(),
+            category: 'personal',
+            priority: 'high',
+          }];
 
       // 3. Insert all extracted tasks with today's date (Foco del día)
       const todayDate = new Date().toISOString().split('T')[0];
@@ -546,7 +564,7 @@ export default function TasksPage() {
         title: task.title,
         type: 'task',
         category: task.category || 'personal',
-        priority: task.priority || 'high', // Default to high since recording from Tasks view
+        priority: task.priority || 'high',
         completed: false,
         due_date: todayDate, // Foco del día
       }));
@@ -563,12 +581,15 @@ export default function TasksPage() {
             logActivity({ supabase, userId: user.id, action: 'task_created', entityType: 'task', entityId: t.id });
           }
         }
+        // Haptic success feedback
+        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
       }
     } catch (e) {
       console.error('New task recording error:', e);
     }
 
     setIsRecordingNewTask(false);
+    setIsProcessingVoice(false);
   };
 
   // Helper to get idea title by id
@@ -671,11 +692,17 @@ export default function TasksPage() {
             {isRecording && isRecordingNewTask && (
               <span className="text-xs text-[#6b8f71] font-medium animate-pulse">{t.app.recording}</span>
             )}
+            {!isRecording && isProcessingVoice && !selectedTaskId && (
+              <span className="text-xs text-[#6b8f71] font-medium flex items-center gap-1.5">
+                <span className="w-3 h-3 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
+                {t.tasks.processing}
+              </span>
+            )}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!isRecording) startRecordingForNewTask();
+                if (!isRecording && !isProcessingVoice) startRecordingForNewTask();
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
@@ -684,7 +711,7 @@ export default function TasksPage() {
               }}
               onMouseDown={(e) => {
                 e.stopPropagation();
-                if (!isRecording) startRecordingForNewTask();
+                if (!isRecording && !isProcessingVoice) startRecordingForNewTask();
               }}
               onMouseUp={(e) => {
                 e.stopPropagation();
