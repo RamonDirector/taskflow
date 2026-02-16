@@ -112,6 +112,7 @@ export default function TasksPage() {
   // Voice recording for new task
   const [isRecording, setIsRecording] = useState(false);
   const [isRecordingNewTask, setIsRecordingNewTask] = useState(false);
+  const [isProcessingNewTask, setIsProcessingNewTask] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -497,13 +498,13 @@ export default function TasksPage() {
       mediaRecorderRef.current?.stop();
     }
     setIsRecording(false);
-    setIsProcessingVoice(true); // Show processing indicator immediately
+    setIsProcessingNewTask(true); // Show processing indicator immediately
   };
 
   const processNewTaskRecording = async () => {
     if (!user) {
       setIsRecordingNewTask(false);
-      setIsProcessingVoice(false);
+      setIsProcessingNewTask(false);
       return;
     }
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
@@ -511,7 +512,7 @@ export default function TasksPage() {
     // Skip if recording was too short (< 500 bytes likely means no real audio)
     if (audioBlob.size < 500) {
       setIsRecordingNewTask(false);
-      setIsProcessingVoice(false);
+      setIsProcessingNewTask(false);
       return;
     }
 
@@ -589,7 +590,7 @@ export default function TasksPage() {
     }
 
     setIsRecordingNewTask(false);
-    setIsProcessingVoice(false);
+    setIsProcessingNewTask(false);
   };
 
   // Helper to get idea title by id
@@ -692,7 +693,7 @@ export default function TasksPage() {
             {isRecording && isRecordingNewTask && (
               <span className="text-xs text-[#6b8f71] font-medium animate-pulse">{t.app.recording}</span>
             )}
-            {!isRecording && isProcessingVoice && !selectedTaskId && (
+            {!isRecording && isProcessingNewTask && (
               <span className="text-xs text-[#6b8f71] font-medium flex items-center gap-1.5">
                 <span className="w-3 h-3 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
                 {t.tasks.processing}
@@ -702,7 +703,7 @@ export default function TasksPage() {
               onTouchStart={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!isRecording && !isProcessingVoice) startRecordingForNewTask();
+                if (!isRecording && !isProcessingNewTask) startRecordingForNewTask();
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
@@ -711,7 +712,7 @@ export default function TasksPage() {
               }}
               onMouseDown={(e) => {
                 e.stopPropagation();
-                if (!isRecording && !isProcessingVoice) startRecordingForNewTask();
+                if (!isRecording && !isProcessingNewTask) startRecordingForNewTask();
               }}
               onMouseUp={(e) => {
                 e.stopPropagation();
@@ -1054,7 +1055,7 @@ export default function TasksPage() {
 
 {/* Hint removed - UI should be self-explanatory */}
                   
-                  {isProcessingVoice && (
+                  {isProcessingVoice && isSelected && (
                     <p className="mt-2 text-xs text-[#6b8f71] flex items-center gap-2">
                       <span className="w-3 h-3 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
                       {t.tasks.processing}
