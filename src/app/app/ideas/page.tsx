@@ -663,16 +663,29 @@ export default function IdeasBoard() {
     }
   };
 
+  const [isProcessingNewIdea, setIsProcessingNewIdea] = useState(false);
+
   const stopRecordingNewIdea = () => {
     if (mediaRecorderRef.current?.state !== 'inactive') {
       mediaRecorderRef.current?.stop();
     }
     setIsRecording(false);
+    setIsProcessingNewIdea(true);
   };
 
   const processNewIdeaRecording = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsRecordingNewIdea(false);
+      setIsProcessingNewIdea(false);
+      return;
+    }
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+    if (audioBlob.size < 500) {
+      setIsRecordingNewIdea(false);
+      setIsProcessingNewIdea(false);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -683,13 +696,32 @@ export default function IdeasBoard() {
       
       const { text } = await transcribeRes.json();
       if (text?.trim()) {
+        // Use extract-tasks to get a clean title, but treat everything as idea
+        const extractRes = await fetch('/api/extract-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text.trim(), locale }),
+        });
+
+        let title = text.trim();
+        let category = 'personal';
+        if (extractRes.ok) {
+          const extractData = await extractRes.json();
+          const allItems = extractData.items || [];
+          if (allItems.length > 0) {
+            title = allItems[0].title || title;
+            category = allItems[0].category || category;
+          }
+        }
+
         const { data, error } = await supabase
           .from('tasks')
           .insert({
             user_id: user.id,
-            title: text.trim(),
+            title,
+            voice_context: text.trim(),
             type: 'idea',
-            category: 'personal',
+            category,
             priority: 'medium',
             completed: false,
           })
@@ -706,6 +738,7 @@ export default function IdeasBoard() {
     }
 
     setIsRecordingNewIdea(false);
+    setIsProcessingNewIdea(false);
   };
 
   // Swipe handlers for steps
@@ -845,10 +878,16 @@ export default function IdeasBoard() {
             {isRecording && isRecordingNewIdea && (
               <span className="text-xs text-[#6b8f71] font-medium animate-pulse">{t.app.recording}</span>
             )}
+            {!isRecording && isProcessingNewIdea && (
+              <span className="text-xs text-[#6b8f71] font-medium flex items-center gap-1.5">
+                <span className="w-3 h-3 border-2 border-[#6b8f71] border-t-transparent rounded-full animate-spin" />
+                {t.tasks.processing}
+              </span>
+            )}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
-                if (!isRecording) startRecordingForNewIdea();
+                if (!isRecording && !isProcessingNewIdea) startRecordingForNewIdea();
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();

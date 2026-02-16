@@ -364,16 +364,29 @@ export default function DreamsPage() {
     }
   };
 
+  const [isProcessingNewDream, setIsProcessingNewDream] = useState(false);
+
   const stopRecordingNewDream = () => {
     if (mediaRecorderRef.current?.state !== 'inactive') {
       mediaRecorderRef.current?.stop();
     }
     setIsRecording(false);
+    setIsProcessingNewDream(true);
   };
 
   const processNewDreamRecording = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsRecordingNewDream(false);
+      setIsProcessingNewDream(false);
+      return;
+    }
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+    if (audioBlob.size < 500) {
+      setIsRecordingNewDream(false);
+      setIsProcessingNewDream(false);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -384,14 +397,30 @@ export default function DreamsPage() {
       
       const { text } = await transcribeRes.json();
       if (text?.trim()) {
+        // Use extract-tasks to get a clean dream title
+        const extractRes = await fetch('/api/extract-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text.trim(), locale }),
+        });
+
+        let title = text.trim();
+        if (extractRes.ok) {
+          const extractData = await extractRes.json();
+          const allItems = extractData.items || [];
+          if (allItems.length > 0) {
+            title = allItems[0].title || title;
+          }
+        }
+
         const { data, error } = await supabase
           .from('tasks')
           .insert({
             user_id: user.id,
-            title: text.trim(),
+            title,
             voice_context: text.trim(),
             type: 'dream',
-            category: 'personal',
+            category: 'dreams',
             priority: 'medium',
             completed: false,
           })
@@ -400,6 +429,7 @@ export default function DreamsPage() {
 
         if (!error && data) {
           setDreams(prev => [data, ...prev]);
+          if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         }
       }
     } catch (e) {
@@ -407,6 +437,7 @@ export default function DreamsPage() {
     }
 
     setIsRecordingNewDream(false);
+    setIsProcessingNewDream(false);
   };
 
   if (loading) {
@@ -450,10 +481,16 @@ export default function DreamsPage() {
             {isRecording && isRecordingNewDream && (
               <span className="text-xs text-purple-600 font-medium animate-pulse">{t.app.recording}</span>
             )}
+            {!isRecording && isProcessingNewDream && (
+              <span className="text-xs text-purple-600 font-medium flex items-center gap-1.5">
+                <span className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                {t.tasks.processing}
+              </span>
+            )}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
-                if (!isRecording) startRecordingForNewDream();
+                if (!isRecording && !isProcessingNewDream) startRecordingForNewDream();
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
