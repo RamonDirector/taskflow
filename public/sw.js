@@ -18,8 +18,8 @@ self.addEventListener('install', (event) => {
       return cache.addAll(PRECACHE_ASSETS);
     })
   );
-  // Force activate immediately
-  self.skipWaiting();
+  // Don't skipWaiting here — let the app decide when to activate
+  // self.skipWaiting();
 });
 
 // Activate event - delete ALL old caches
@@ -146,4 +146,11 @@ self.addEventListener('notificationclick', (event) => {
       return self.clients.openWindow(url);
     })
   );
+});
+
+// Listen for skip waiting message from the app
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
