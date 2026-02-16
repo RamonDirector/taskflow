@@ -267,6 +267,17 @@ export default function TasksPage() {
     if (user) logActivity({ supabase, userId: user.id, action: nowCompleted ? 'task_completed' : 'task_uncompleted', entityType: 'task', entityId: id });
   };
 
+  const toggleFocus = async (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const isFocused = task.due_date === today;
+    const newDueDate = isFocused ? null : today;
+    await supabase.from('tasks').update({ due_date: newDueDate }).eq('id', id);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: newDueDate || undefined } : t));
+    if (navigator.vibrate) navigator.vibrate(30);
+    if (user) logActivity({ supabase, userId: user.id, action: isFocused ? 'task_unfocused' : 'task_focused', entityType: 'task', entityId: id });
+  };
+
   const deleteTask = async (id: string) => {
     await supabase.from('tasks').delete().eq('id', id);
     setTasks(prev => prev.filter(t => t.id !== id));
@@ -919,11 +930,25 @@ export default function TasksPage() {
                     </div>
                   </div>
                   {selectedTaskId === task.id && !task.completed && (
-                    <VoiceEditButton
-                      onTranscript={handleVoiceTranscript}
-                      size="md"
-                      disabled={isProcessingVoice}
-                    />
+                    <div className="flex items-center gap-1.5">
+                      {/* Unfocus button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleFocus(task.id); }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center bg-[#6b8f71]/15 text-[#6b8f71] transition-all duration-200"
+                        title="Remove from focus"
+                      >
+                        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <circle cx="12" cy="12" r="5" />
+                          <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                        </svg>
+                      </button>
+                      <VoiceEditButton
+                        onTranscript={handleVoiceTranscript}
+                        size="md"
+                        disabled={isProcessingVoice}
+                      />
+                    </div>
                   )}
                 </div>
               ))}
@@ -1043,13 +1068,32 @@ export default function TasksPage() {
                       </div>
                     </div>
 
-                    {/* Voice edit button when selected (only for incomplete tasks) */}
+                    {/* Action buttons when selected */}
                     {isSelected && !task.completed && (
-                      <VoiceEditButton
-                        onTranscript={handleVoiceTranscript}
-                        size="md"
-                        disabled={isProcessingVoice}
-                      />
+                      <div className="flex items-center gap-1.5">
+                        {/* Focus toggle */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFocus(task.id); }}
+                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+                            task.due_date === today
+                              ? 'bg-[#6b8f71]/15 text-[#6b8f71]'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                          }`}
+                          title={task.due_date === today ? 'Remove from focus' : 'Add to focus'}
+                        >
+                          <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill={task.due_date === today ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <circle cx="12" cy="12" r="5" />
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                          </svg>
+                        </button>
+                        {/* Voice edit */}
+                        <VoiceEditButton
+                          onTranscript={handleVoiceTranscript}
+                          size="md"
+                          disabled={isProcessingVoice}
+                        />
+                      </div>
                     )}
                   </div>
 
