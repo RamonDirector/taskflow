@@ -50,6 +50,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
     </svg>
   ),
+  clock: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
   // Bottom nav icons
   home: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -93,16 +98,126 @@ const typeConfigBase = {
     bg: 'bg-indigo-500/10',
     panda: '/panda/new-thinking.png',
   },
+  reminder: {
+    icon: Icons.clock,
+    color: 'text-[#6b8f71]',
+    bg: 'bg-[#6b8f71]/10',
+    panda: '/panda/new-celebrate.png',
+  },
 };
 
 interface CapturedItem {
   title: string;
-  type: 'task' | 'idea' | 'dream';
+  type: 'task' | 'idea' | 'dream' | 'reminder';
   category: string;
   priority: 'high' | 'medium' | 'low';
   due_date?: string;
   context?: string;
   _fromIdeaTitle?: string; // Track which idea generated this task (for linking)
+  reminder_time?: string | null;
+  recurring?: boolean;
+  interval?: string | null;
+}
+
+// Parse reminder time string into trigger_at and interval_ms
+function parseReminderTime(timeStr: string, recurring: boolean, interval: string | null): { triggerAt: string; intervalMs: number | null } {
+  const now = new Date();
+  // Use Europe/Amsterdam timezone
+  const amsterdamOffset = () => {
+    const jan = new Date(now.getFullYear(), 0, 1);
+    const jul = new Date(now.getFullYear(), 6, 1);
+    const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+    const isDST = now.getTimezoneOffset() < stdOffset;
+    return isDST ? 2 : 1; // CET=+1, CEST=+2
+  };
+  
+  let triggerAt = new Date(now);
+  let intervalMs: number | null = null;
+  
+  const lower = timeStr.toLowerCase();
+  
+  // "in X minutes/hours"
+  const inMinMatch = lower.match(/in\s+(\d+)\s*min/);
+  const enMinMatch = lower.match(/en\s+(\d+)\s*min/);
+  if (inMinMatch || enMinMatch) {
+    const mins = parseInt((inMinMatch || enMinMatch)![1]);
+    triggerAt = new Date(now.getTime() + mins * 60000);
+  }
+  const inHourMatch = lower.match(/in\s+(\d+)\s*hour/);
+  const enHourMatch = lower.match(/en\s+(\d+)\s*hora/);
+  if (inHourMatch || enHourMatch) {
+    const hrs = parseInt((inHourMatch || enHourMatch)![1]);
+    triggerAt = new Date(now.getTime() + hrs * 3600000);
+  }
+  
+  // Extract time like "07:30", "7:30", "9:00", "9am", "9pm"
+  const timeMatch = lower.match(/(\d{1,2})[:\.](\d{2})/);
+  const ampmMatch = lower.match(/(\d{1,2})\s*(am|pm)/i);
+  
+  let hours: number | null = null;
+  let minutes = 0;
+  
+  if (timeMatch) {
+    hours = parseInt(timeMatch[1]);
+    minutes = parseInt(timeMatch[2]);
+  } else if (ampmMatch) {
+    hours = parseInt(ampmMatch[1]);
+    if (ampmMatch[2].toLowerCase() === 'pm' && hours !== 12) hours += 12;
+    if (ampmMatch[2].toLowerCase() === 'am' && hours === 12) hours = 0;
+  }
+  
+  // "tomorrow" / "mañana"  
+  const isTomorrow = /\b(tomorrow|mañana)\b/.test(lower);
+  
+  // Day of week
+  const dayMap: Record<string, number> = {
+    'monday': 1, 'lunes': 1, 'tuesday': 2, 'martes': 2, 'wednesday': 3, 'miércoles': 3, 'miercoles': 3,
+    'thursday': 4, 'jueves': 4, 'friday': 5, 'viernes': 5, 'saturday': 6, 'sábado': 6, 'sabado': 6,
+    'sunday': 0, 'domingo': 0,
+  };
+  
+  let targetDay: number | null = null;
+  for (const [name, day] of Object.entries(dayMap)) {
+    if (lower.includes(name)) { targetDay = day; break; }
+  }
+  
+  if (hours !== null) {
+    triggerAt = new Date(now);
+    if (isTomorrow) {
+      triggerAt.setDate(triggerAt.getDate() + 1);
+    } else if (targetDay !== null) {
+      const currentDay = triggerAt.getDay();
+      let daysToAdd = targetDay - currentDay;
+      if (daysToAdd <= 0) daysToAdd += 7;
+      triggerAt.setDate(triggerAt.getDate() + daysToAdd);
+    } else if (hours <= now.getHours() || (hours === now.getHours() && minutes <= now.getMinutes())) {
+      // Time already passed today, set for tomorrow
+      triggerAt.setDate(triggerAt.getDate() + 1);
+    }
+    triggerAt.setHours(hours, minutes, 0, 0);
+  } else if (isTomorrow) {
+    triggerAt.setDate(triggerAt.getDate() + 1);
+    triggerAt.setHours(9, 0, 0, 0); // Default 9am
+  }
+  
+  // Calculate interval
+  if (recurring && interval) {
+    const intervalLower = interval.toLowerCase();
+    if (intervalLower === 'daily' || intervalLower.includes('day') || intervalLower.includes('día') || intervalLower.includes('dia')) {
+      intervalMs = 86400000;
+    } else if (intervalLower === 'weekly' || intervalLower.includes('week') || intervalLower.includes('semana')) {
+      intervalMs = 604800000;
+    } else {
+      const everyHoursMatch = intervalLower.match(/(\d+)\s*hour|(\d+)\s*hora/);
+      if (everyHoursMatch) {
+        intervalMs = parseInt(everyHoursMatch[1] || everyHoursMatch[2]) * 3600000;
+      } else {
+        intervalMs = 86400000; // Default to daily
+      }
+    }
+  }
+  
+  return { triggerAt: triggerAt.toISOString(), intervalMs };
 }
 
 // Deadline options (labels set dynamically via i18n)
@@ -118,6 +233,7 @@ export default function PandaHub() {
     task: { ...typeConfigBase.task, label: t.app.type_task },
     idea: { ...typeConfigBase.idea, label: t.app.type_idea },
     dream: { ...typeConfigBase.dream, label: t.app.type_dream },
+    reminder: { ...typeConfigBase.reminder, label: t.app.type_reminder },
   };
 
   const deadlineOptions = [
@@ -813,10 +929,13 @@ export default function PandaHub() {
       if (extractData.items && extractData.items.length > 0) {
         items.push(...extractData.items.map((item: any) => ({
           title: item.title,
-          type: item.type === 'dream' ? 'dream' : item.type === 'idea' ? 'idea' : 'task',
+          type: item.type === 'dream' ? 'dream' : item.type === 'idea' ? 'idea' : item.type === 'reminder' ? 'reminder' : 'task',
           category: item.category || 'personal',
           priority: item.priority || 'medium',
           context: item.context || null,
+          reminder_time: item.reminder_time || null,
+          recurring: item.recurring || false,
+          interval: item.interval || null,
         })));
       }
 
@@ -892,9 +1011,31 @@ export default function PandaHub() {
 
     const dueDate = getDueDate();
 
+    // Separate reminders from other items
+    const reminderItems = itemsToSave.filter(item => item.type === 'reminder');
+    const nonReminderItems = itemsToSave.filter(item => item.type !== 'reminder');
+    
+    // Save reminders to reminders table
+    if (reminderItems.length > 0) {
+      const reminderRows = reminderItems.map(item => {
+        const { triggerAt, intervalMs } = parseReminderTime(item.reminder_time || '', item.recurring || false, item.interval || null);
+        return {
+          user_id: user.id,
+          title: item.title,
+          schedule_type: item.recurring ? 'recurring' : 'once',
+          trigger_at: triggerAt,
+          next_trigger: triggerAt,
+          interval_ms: intervalMs,
+          active: true,
+          source: 'manual',
+        };
+      });
+      await supabase.from('reminders').insert(reminderRows);
+    }
+    
     // Separate ideas (and non-linked items) from linked tasks
-    const linkedTasks = itemsToSave.filter(item => item._fromIdeaTitle);
-    const nonLinkedItems = itemsToSave.filter(item => !item._fromIdeaTitle);
+    const linkedTasks = nonReminderItems.filter(item => item._fromIdeaTitle);
+    const nonLinkedItems = nonReminderItems.filter(item => !item._fromIdeaTitle);
     
     // 1. Insert non-linked items first (ideas, standalone tasks, dreams)
     if (nonLinkedItems.length > 0) {
@@ -949,7 +1090,7 @@ export default function PandaHub() {
     if (user) {
       logActivity({ supabase, userId: user.id, action: 'brain_dump', metadata: {
         itemCount: itemsToSave.length,
-        types: { tasks: itemsToSave.filter(i => i.type === 'task').length, ideas: itemsToSave.filter(i => i.type === 'idea').length, dreams: itemsToSave.filter(i => i.type === 'dream').length },
+        types: { tasks: itemsToSave.filter(i => i.type === 'task').length, ideas: itemsToSave.filter(i => i.type === 'idea').length, dreams: itemsToSave.filter(i => i.type === 'dream').length, reminders: itemsToSave.filter(i => i.type === 'reminder').length },
       }});
     }
 
@@ -1028,13 +1169,13 @@ export default function PandaHub() {
     setEditText('');
   };
 
-  // Cycle item type: task → idea → dream → task
+  // Cycle item type: task → idea → dream → reminder → task
   const cycleItemType = (index: number) => {
     haptic.light();
-    const typeOrder: ('task' | 'idea' | 'dream')[] = ['task', 'idea', 'dream'];
+    const typeOrder: ('task' | 'idea' | 'dream' | 'reminder')[] = ['task', 'idea', 'dream', 'reminder'];
     const newItems = [...capturedItems];
     const currentIdx = typeOrder.indexOf(newItems[index].type);
-    newItems[index] = { ...newItems[index], type: typeOrder[(currentIdx + 1) % 3] };
+    newItems[index] = { ...newItems[index], type: typeOrder[(currentIdx + 1) % 4] };
     setCapturedItems(newItems);
   };
 
@@ -1197,8 +1338,13 @@ export default function PandaHub() {
               {item.context && (
                 <p className="text-xs text-[var(--gray-4)] mt-1 line-clamp-2 italic">"{item.context}"</p>
               )}
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className={`text-[10px] ${config.color} font-medium`}>{config.label}</span>
+                {item.type === 'reminder' && item.reminder_time && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#6b8f71]/10 text-[#6b8f71] font-medium">
+                    {item.recurring && item.interval ? `${t.app.reminder_every} ${item.interval === 'daily' ? t.app.reminder_daily : item.interval === 'weekly' ? t.app.reminder_weekly : item.interval} ${t.app.reminder_at} ${item.reminder_time.replace(/^.*?(\d{1,2}[:.]\d{2}).*$/, '$1') || item.reminder_time}` : `${item.reminder_time}`}
+                  </span>
+                )}
                 {item.category && item.category !== 'personal' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--gray-2)] text-[var(--gray-4)]">{item.category}</span>
                 )}
@@ -1708,10 +1854,12 @@ export default function PandaHub() {
                   const taskCount = capturedItems.filter(i => i.type === 'task').length;
                   const ideaCount = capturedItems.filter(i => i.type === 'idea').length;
                   const dreamCount = capturedItems.filter(i => i.type === 'dream').length;
+                  const reminderCount = capturedItems.filter(i => i.type === 'reminder').length;
                   const parts = [];
                   if (taskCount > 0) parts.push(t.app.captured_tasks(taskCount));
                   if (ideaCount > 0) parts.push(t.app.captured_ideas(ideaCount));
                   if (dreamCount > 0) parts.push(t.app.captured_dreams(dreamCount));
+                  if (reminderCount > 0) parts.push(t.app.captured_reminders(reminderCount));
                   return (
                     <p className="text-sm font-medium text-[var(--foreground)] mb-4">
                       {t.app.captured_prefix}{parts.join(', ')}

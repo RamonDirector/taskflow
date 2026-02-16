@@ -126,10 +126,11 @@ Map these phrases to actual dates:
    - "enviar propuesta al cliente" → category: work
    - "comprar regalo" → category: errands or personal
 
-5. **DISTINGUISH task vs idea vs dream** (VERY IMPORTANT):
+5. **DISTINGUISH task vs idea vs dream vs reminder** (VERY IMPORTANT):
    - TASK = Actionable with clear next step ("llamar", "comprar", "enviar", "ir a", "tengo que")
    - IDEA = Concept, thought, possibility ("sería bueno...", "podríamos...", "qué tal si...", "se me ocurrió")
    - DREAM = ONLY the sleep dream narration itself ("soñé que X" - X is the dream content)
+   - REMINDER = Time-based reminder ("remind me", "recuérdame", "avísame", "a las X", "every morning", "cada mañana")
    
    ⚠️ **CRITICAL - DO NOT CLASSIFY EVERYTHING AS DREAM**: 
    - If input starts with "soñé que X" but THEN mentions tasks or ideas, you MUST separate them!
@@ -172,7 +173,10 @@ Return ONLY valid JSON, no markdown:
   "items": [
     {
       "title": "Short 3-6 word title (for dreams: capture the key imagery/narrative)",
-      "type": "task" | "idea" | "dream",
+      "type": "task" | "idea" | "dream" | "reminder",
+      "reminder_time": "time string (only for type=reminder, e.g. '07:30', 'tomorrow 09:00', 'in 30 minutes')" | null,
+      "recurring": true | false,
+      "interval": "daily" | "weekly" | "every 2 hours" | null,
       "category": "category (for dreams use: dreams)",
       "due_date": "YYYY-MM-DD" | null,
       "priority": "high" | "medium" | "low",
@@ -242,7 +246,10 @@ ${text}`;
       // Post-process: ensure all items have required fields
       const processedItems = items.map((item: any) => ({
         title: item.title || 'Sin título',
-        type: ['task', 'idea', 'dream'].includes(item.type) ? item.type : 'idea',
+        type: ['task', 'idea', 'dream', 'reminder'].includes(item.type) ? item.type : 'idea',
+        reminder_time: item.reminder_time || null,
+        recurring: item.recurring || false,
+        interval: item.interval || null,
         category: item.category || (item.type === 'dream' ? 'dreams' : 'personal'),
         due_date: item.due_date || null,
         priority: ['high', 'medium', 'low'].includes(item.priority) ? item.priority : 'medium',

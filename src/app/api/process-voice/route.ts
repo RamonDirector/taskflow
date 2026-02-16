@@ -97,7 +97,20 @@ End of month: ${dates.endOfMonth}
 4. TASK = Actionable ("llamar", "comprar", "enviar", "tengo que")
 5. IDEA = Concept/possibility ("sería bueno", "podríamos", "se me ocurrió")
 6. DREAM = ONLY sleep dream narration ("soñé que X")
-7. If "soñé que X" then mentions tasks/ideas → SEPARATE them (dream + tasks)
+7. REMINDER = Time-based reminder ("remind me", "recuérdame", "avísame", "a las 7:30", "every morning", "cada mañana")
+8. If "soñé que X" then mentions tasks/ideas → SEPARATE them (dream + tasks)
+
+## REMINDER DETECTION
+When type=reminder, also extract these fields:
+- "reminder_time": The time string (e.g. "07:30", "tomorrow 9:00", "in 30 minutes")
+- "recurring": true/false
+- "interval": "daily", "weekly", "every 2 hours", etc. (null if not recurring)
+
+Examples:
+- "remind me to take creatine at 7:30 every morning" → type: reminder, title: "Take creatine", reminder_time: "07:30", recurring: true, interval: "daily"
+- "recuérdame llamar al dentista mañana a las 9" → type: reminder, title: "Llamar al dentista", reminder_time: "tomorrow 09:00", recurring: false
+- "avísame en 30 minutos" → type: reminder, title: "Reminder", reminder_time: "in 30 minutes", recurring: false
+- "every Monday at 8am remind me to review goals" → type: reminder, title: "Review goals", reminder_time: "Monday 08:00", recurring: true, interval: "weekly"
 
 ## TITLE RULES
 - TASKS: 3-6 words (verb + object)
@@ -122,7 +135,10 @@ Return ONLY valid JSON, no markdown:
   "items": [
     {
       "title": "Short title",
-      "type": "task" | "idea" | "dream",
+      "type": "task" | "idea" | "dream" | "reminder",
+      "reminder_time": "time string (only for reminders)" | null,
+      "recurring": true | false,
+      "interval": "daily" | "weekly" | null,
       "category": "category",
       "due_date": "YYYY-MM-DD" | null,
       "priority": "high" | "medium" | "low",
@@ -170,7 +186,10 @@ ${textInput ? `## TEXT TO ANALYZE:\n${textInput}` : '## AUDIO ATTACHED - Listen 
       
       const processedItems = (parsed.items || []).map((item: any) => ({
         title: item.title || 'Sin título',
-        type: ['task', 'idea', 'dream'].includes(item.type) ? item.type : 'idea',
+        type: ['task', 'idea', 'dream', 'reminder'].includes(item.type) ? item.type : 'idea',
+        reminder_time: item.reminder_time || null,
+        recurring: item.recurring || false,
+        interval: item.interval || null,
         category: item.category || (item.type === 'dream' ? 'dreams' : 'personal'),
         due_date: item.due_date || null,
         priority: ['high', 'medium', 'low'].includes(item.priority) ? item.priority : 'medium',
