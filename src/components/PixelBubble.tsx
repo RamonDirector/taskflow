@@ -75,7 +75,7 @@ export function PixelBubble({ message, className = '', tailPosition = 'center', 
     <Wrapper {...(wrapperProps as Record<string, unknown>)} className={`relative inline-block ${className}`}>
       {/* Main bubble */}
       <div
-        className="relative px-4 py-3 bg-[#f0f7f1] dark:bg-[#2a3a2c]"
+        className="relative px-4 py-3 bg-white dark:bg-[#1a2a1c]"
         style={{
           // Pixel corners via clip-path
           clipPath: `polygon(
@@ -101,6 +101,7 @@ export function PixelBubble({ message, className = '', tailPosition = 'center', 
             ${px * 3}px ${px}px
           )`,
           imageRendering: 'pixelated',
+          filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))',
         }}
       >
         {/* Inner pixel border */}
@@ -132,7 +133,7 @@ export function PixelBubble({ message, className = '', tailPosition = 'center', 
             border: `${px}px solid ${color}`,
           }}
         />
-        <div className="text-sm text-gray-800 dark:text-gray-200 text-left leading-relaxed relative z-10 max-h-[200px] overflow-y-auto scrollbar-hide">
+        <div className="text-sm text-gray-900 dark:text-gray-100 text-left leading-relaxed relative z-10 max-h-[200px] overflow-y-auto scrollbar-hide">
           {renderSimpleMarkdown(message)}
         </div>
       </div>
@@ -157,7 +158,7 @@ export function PixelBubble({ message, className = '', tailPosition = 'center', 
             top: px,
             width: px * 4,
             height: px,
-            backgroundColor: '#f0f7f1',
+            backgroundColor: '#ffffff',
             boxShadow: `${-px}px 0 0 0 ${color}, ${px * 4}px 0 0 0 ${color}`,
           }}
         />
@@ -168,7 +169,7 @@ export function PixelBubble({ message, className = '', tailPosition = 'center', 
             top: px * 2,
             width: px * 2,
             height: px,
-            backgroundColor: '#f0f7f1',
+            backgroundColor: '#ffffff',
             boxShadow: `${-px}px 0 0 0 ${color}, ${px * 2}px 0 0 0 ${color}`,
           }}
         />
