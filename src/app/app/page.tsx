@@ -1002,17 +1002,20 @@ export default function PandaHub() {
     setIsProcessing(false);
   };
 
-  // Save captured items
+  // Save captured items (only selected ones)
   const saveItems = async () => {
     haptic.strong();
     
-    // Save any pending edit before saving all items
-    let itemsToSave = [...capturedItems];
+    // Save any pending edit before saving
+    let allItems = [...capturedItems];
     if (editingIndex !== null && editText.trim()) {
-      itemsToSave[editingIndex] = { ...itemsToSave[editingIndex], title: editText.trim() };
+      allItems[editingIndex] = { ...allItems[editingIndex], title: editText.trim() };
       setEditingIndex(null);
       setEditText('');
     }
+    
+    // Only save selected items
+    const itemsToSave = allItems.filter((_, i) => itemSelected.has(i));
     
     if (!user || itemsToSave.length === 0) return;
 
@@ -1146,6 +1149,7 @@ export default function PandaHub() {
     setOriginalVoiceContext(null);
     setBatchMode(false);
     setBatchSelected(new Set());
+    setItemSelected(new Set());
     setActionPlans({});
     setExpandedPlans(new Set());
     setConnections([]);
@@ -1195,7 +1199,24 @@ export default function PandaHub() {
     setCapturedItems(newItems);
   };
 
-  // Batch selection
+  // Item selection (for selective save — all selected by default)
+  const [itemSelected, setItemSelected] = useState<Set<number>>(new Set());
+  
+  // Auto-select all items when capturedItems change
+  useEffect(() => {
+    if (capturedItems.length > 0) {
+      setItemSelected(new Set(capturedItems.map((_, i) => i)));
+    }
+  }, [capturedItems.length]);
+  
+  const toggleItemSelect = (index: number) => {
+    const newSet = new Set(itemSelected);
+    if (newSet.has(index)) newSet.delete(index);
+    else newSet.add(index);
+    setItemSelected(newSet);
+  };
+
+  // Batch selection (long press mode for reclassify/delete)
   const [batchSelected, setBatchSelected] = useState<Set<number>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
 
@@ -1328,9 +1349,23 @@ export default function PandaHub() {
             onClick={() => { if (batchMode) toggleBatchSelect(i); }}
             onDoubleClick={() => { if (!batchMode) startEditing(i); }}
             onContextMenu={(e) => { e.preventDefault(); setBatchMode(true); toggleBatchSelect(i); }}
-            className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border ${batchSelected.has(i) ? 'border-[#6b8f71] ring-1 ring-[#6b8f71]/30' : 'border-[var(--gray-2)]'} cursor-pointer active:scale-[0.98] transition-all`}
+            className={`flex items-start gap-3 p-3 rounded-xl ${config.bg} border ${!itemSelected.has(i) ? 'border-[var(--gray-2)] opacity-40' : batchSelected.has(i) ? 'border-[#6b8f71] ring-1 ring-[#6b8f71]/30' : 'border-[var(--gray-2)]'} cursor-pointer active:scale-[0.98] transition-all`}
           >
-            {/* Batch checkbox or type icon (tappable to cycle) */}
+            {/* Selection circle — always visible */}
+            <button
+              onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); toggleItemSelect(i); }}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+              className="mt-0.5 flex-shrink-0"
+            >
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${itemSelected.has(i) ? 'bg-[#6b8f71] border-[#6b8f71]' : 'border-[var(--gray-3)]'}`}>
+                {itemSelected.has(i) && (
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+              </div>
+            </button>
+            {/* Type icon (tappable to cycle) */}
             {batchMode ? (
               <div className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center transition-colors ${batchSelected.has(i) ? 'bg-[#6b8f71] border-[#6b8f71]' : 'border-[var(--gray-3)]'}`}>
                 {batchSelected.has(i) && (
@@ -2010,10 +2045,11 @@ export default function PandaHub() {
                       </button>
                       <button
                         onClick={saveItems}
-                        className="flex-1 h-12 rounded-full text-white text-sm font-medium active:scale-[0.98]"
+                        disabled={itemSelected.size === 0}
+                        className={`flex-1 h-12 rounded-full text-white text-sm font-medium active:scale-[0.98] ${itemSelected.size === 0 ? 'opacity-40' : ''}`}
                         style={{ backgroundColor: THEME_COLOR }}
                       >
-                        {t.app.save} ({capturedItems.length})
+                        {t.app.save} ({itemSelected.size})
                       </button>
                     </motion.div>
                   )}
