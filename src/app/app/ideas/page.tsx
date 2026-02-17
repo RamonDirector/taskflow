@@ -359,15 +359,25 @@ export default function IdeasBoard() {
 
   // CRUD operations
   const deleteIdea = async (id: string) => {
-    await supabase.from('tasks').delete().eq('parent_idea_id', id);
-    await supabase.from('tasks').delete().eq('id', id);
+    // Delete children first, then the idea itself
+    const { error: childErr } = await supabase.from('tasks').delete().eq('parent_idea_id', id);
+    const { error: ideaErr } = await supabase.from('tasks').delete().eq('id', id);
+    if (childErr || ideaErr) {
+      console.error('Delete idea failed:', childErr || ideaErr);
+      // Fallback: mark as completed so it disappears
+      await supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', id);
+    }
     setIdeas(prev => prev.filter(i => i.id !== id && i.parent_idea_id !== id));
     if (selectedIdea?.id === id) closeDrawer();
     if (user) logActivity({ supabase, userId: user.id, action: 'idea_deleted', entityType: 'idea', entityId: id });
   };
 
   const deleteTask = async (id: string) => {
-    await supabase.from('tasks').delete().eq('id', id);
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) {
+      console.error('Delete task failed:', error);
+      await supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', id);
+    }
     setIdeas(prev => prev.filter(i => i.id !== id));
   };
 
