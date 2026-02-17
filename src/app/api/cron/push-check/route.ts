@@ -88,10 +88,13 @@ async function processUser(
     return;
   }
 
-  // Use UTC hour (users don't have timezone stored yet — future improvement)
-  const hour = now.getUTCHours();
+  // Get user's timezone from metadata
+  const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+  const userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
+  const userNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+  const hour = userNow.getHours();
 
-  // Quiet hours: 23:00-07:00
+  // Quiet hours: 23:00-07:00 in user's timezone
   if (hour >= 23 || hour < 7) {
     return;
   }

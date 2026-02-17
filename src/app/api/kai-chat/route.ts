@@ -668,7 +668,10 @@ async function executeTool(
 
       if (error) return `Error setting reminder: ${error.message}`;
 
-      const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
+      // Get user's timezone from metadata
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
+      const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: userTimezone });
       return `Reminder "${title}" set for ${timeStr}${recurring ? ` (repeating every ${intervalHours}h)` : ''}`;
     }
 

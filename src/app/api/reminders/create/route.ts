@@ -11,19 +11,19 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 /**
  * Get the CET offset and current Amsterdam time
  */
-function getAmsterdamContext() {
+function getUserTimeContext(timezone: string) {
   const now = new Date();
-  const amsterdamNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' }));
-  const cetOffset = Math.round((amsterdamNow.getTime() - now.getTime()) / (60 * 60 * 1000));
-  return { now, amsterdamNow, cetOffset };
+  const userNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  const tzOffset = Math.round((userNow.getTime() - now.getTime()) / (60 * 60 * 1000));
+  return { now, userNow, tzOffset };
 }
 
 /**
  * Create a Date in CET timezone from hours/minutes, on a specific date
  */
-function createCETDate(baseDate: Date, hours: number, minutes: number, cetOffset: number): Date {
+function createUserDate(baseDate: Date, hours: number, minutes: number, tzOffset: number): Date {
   const target = new Date(baseDate);
-  target.setUTCHours(hours - cetOffset, minutes, 0, 0);
+  target.setUTCHours(hours - tzOffset, minutes, 0, 0);
   return target;
 }
 
@@ -31,9 +31,9 @@ function createCETDate(baseDate: Date, hours: number, minutes: number, cetOffset
  * Get next occurrence of a weekday (0=Sun, 1=Mon, ..., 6=Sat)
  * If "next" prefix, always skip this week
  */
-function getNextWeekday(targetDay: number, skipThisWeek: boolean = false): Date {
-  const { amsterdamNow } = getAmsterdamContext();
-  const currentDay = amsterdamNow.getDay();
+function getNextWeekday(targetDay: number, skipThisWeek: boolean = false, timezone: string = 'UTC'): Date {
+  const { userNow } = getUserTimeContext(timezone);
+  const currentDay = userNow.getDay();
   let daysAhead = targetDay - currentDay;
   if (daysAhead <= 0 || skipThisWeek) daysAhead += 7;
   if (skipThisWeek && daysAhead <= 7) daysAhead += 7; // "next" = skip this week entirely
@@ -47,7 +47,7 @@ function getNextWeekday(targetDay: number, skipThisWeek: boolean = false): Date 
     // Only force +7 if we want to truly skip. For now treat "próximo" = next occurrence.
   }
   
-  const result = new Date(amsterdamNow);
+  const result = new Date(userNow);
   result.setDate(result.getDate() + daysAhead);
   return result;
 }
@@ -72,7 +72,7 @@ const DAY_NAMES_ES: Record<string, number> = {
   'sábado': 6, 'sabado': 6, 'sáb': 6, 'sab': 6,
 };
 
-function parseReminderTime(timeStr: string | null): Date {
+function parseReminderTime(timeStr: string | null, timezone: string = 'UTC'): Date {
   if (!timeStr) {
     // Default: 1 hour from now
     return new Date(Date.now() + 60 * 60 * 1000);
@@ -80,7 +80,7 @@ function parseReminderTime(timeStr: string | null): Date {
 
   const lower = timeStr.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const original = timeStr.toLowerCase().trim();
-  const { now, cetOffset } = getAmsterdamContext();
+  const { now, tzOffset } = getUserTimeContext(timezone);
 
   // "in X minutes"
   const inMinMatch = lower.match(/(?:in|en)\s+(\d+)\s*min/);
@@ -105,14 +105,14 @@ function parseReminderTime(timeStr: string | null): Date {
   if (tomorrowMatch) {
     const d = new Date(now);
     d.setDate(d.getDate() + 1);
-    return createCETDate(d, parseInt(tomorrowMatch[2]), parseInt(tomorrowMatch[3]), cetOffset);
+    return createUserDate(d, parseInt(tomorrowMatch[2]), parseInt(tomorrowMatch[3]), tzOffset);
   }
 
   // "tomorrow" / "mañana" without time → tomorrow 9:00 CET
   if (/^(tomorrow|manana)$/.test(lower)) {
     const d = new Date(now);
     d.setDate(d.getDate() + 1);
-    return createCETDate(d, 9, 0, cetOffset);
+    return createUserDate(d, 9, 0, tzOffset);
   }
 
   // Day of week detection (EN + ES)
@@ -129,7 +129,7 @@ function parseReminderTime(timeStr: string | null): Date {
     const isNext = /(?:next|proximo|siguiente)/.test(lower);
     
     if (targetDay !== undefined) {
-      const targetDate = getNextWeekday(targetDay, isNext);
+      const targetDate = getNextWeekday(targetDay, isNext, timezone);
       
       // Extract time if provided, otherwise default based on context
       let hours = 9; // default 9:00 AM CET
@@ -151,7 +151,7 @@ function parseReminderTime(timeStr: string | null): Date {
         }
       }
       
-      return createCETDate(targetDate, hours, minutes, cetOffset);
+      return createUserDate(targetDate, hours, minutes, tzOffset);
     }
   }
 
@@ -160,7 +160,7 @@ function parseReminderTime(timeStr: string | null): Date {
   if (todayMatch) {
     const hours = todayMatch[1] ? parseInt(todayMatch[1]) : 9;
     const minutes = todayMatch[2] ? parseInt(todayMatch[2]) : 0;
-    const target = createCETDate(now, hours, minutes, cetOffset);
+    const target = createUserDate(now, hours, minutes, tzOffset);
     if (target <= now) {
       target.setTime(target.getTime() + 60 * 60 * 1000); // if past, 1h from now
     }
@@ -172,7 +172,7 @@ function parseReminderTime(timeStr: string | null): Date {
   if (timeMatch) {
     const hours = parseInt(timeMatch[1]);
     const minutes = parseInt(timeMatch[2]);
-    const target = createCETDate(now, hours, minutes, cetOffset);
+    const target = createUserDate(now, hours, minutes, tzOffset);
     if (target <= now) {
       target.setDate(target.getDate() + 1);
     }
@@ -212,7 +212,8 @@ function parseInterval(intervalStr: string | null): number | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, reminder_time, recurring, interval } = await request.json();
+    const { title, reminder_time, recurring, interval, timezone: reqTimezone } = await request.json();
+    const timezone = reqTimezone || 'UTC';
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title required' }, { status: 400 });
@@ -226,7 +227,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const triggerAt = parseReminderTime(reminder_time);
+    const triggerAt = parseReminderTime(reminder_time, timezone);
     const intervalMs = recurring ? parseInterval(interval) : null;
 
     // Use service role to bypass RLS
@@ -254,7 +255,7 @@ export async function POST(request: NextRequest) {
     const timeStr = triggerAt.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      timeZone: 'Europe/Amsterdam',
+      timeZone: timezone,
     });
 
     return NextResponse.json({

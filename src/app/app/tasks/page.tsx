@@ -12,6 +12,7 @@ import { logActivity } from '@/lib/activity';
 import { PixelBubble } from '@/components/PixelBubble';
 import { PushBanner } from '@/components/PushBanner';
 import { useLocale } from '@/lib/i18n';
+import { getUserTimezone, syncTimezone } from '@/lib/timezone';
 
 // Dark mode hook
 const useDarkMode = () => {
@@ -228,6 +229,7 @@ export default function TasksPage() {
         return;
       }
       setUser(user);
+      syncTimezone(supabase);
       await Promise.all([fetchTasks(), fetchReminders()]);
       setLoading(false);
     };
@@ -592,6 +594,7 @@ export default function TasksPage() {
               reminder_time: reminder.reminder_time || null,
               recurring: reminder.recurring || false,
               interval: reminder.interval || null,
+              timezone: getUserTimezone(),
             }),
           });
           if (!res.ok) {

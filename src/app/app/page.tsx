@@ -15,6 +15,7 @@ import { logActivity } from '@/lib/activity';
 import { PixelBubble } from '@/components/PixelBubble';
 import { PushPromptBanner } from '@/components/PushPromptBanner';
 import { useLocale } from '@/lib/i18n';
+import { getUserTimezone, syncTimezone } from '@/lib/timezone';
 
 const THEME_COLOR = '#6b8f71';
 
@@ -123,14 +124,10 @@ interface CapturedItem {
 // titleHint provides extra context (day names, meal keywords) when reminder_time is sparse
 function parseReminderTime(timeStr: string, recurring: boolean, interval: string | null, titleHint?: string): { triggerAt: string; intervalMs: number | null } {
   const now = new Date();
-  // Use Europe/Amsterdam timezone
-  const amsterdamOffset = () => {
-    const jan = new Date(now.getFullYear(), 0, 1);
-    const jul = new Date(now.getFullYear(), 6, 1);
-    const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-    const isDST = now.getTimezoneOffset() < stdOffset;
-    return isDST ? 2 : 1; // CET=+1, CEST=+2
-  };
+  // Use user's detected timezone
+  const userTz = getUserTimezone();
+  // Get current time in user's timezone
+  const userNow = new Date(now.toLocaleString('en-US', { timeZone: userTz }));
   
   let triggerAt = new Date(now);
   let intervalMs: number | null = null;
@@ -204,11 +201,11 @@ function parseReminderTime(timeStr: string, recurring: boolean, interval: string
     if (isTomorrow) {
       triggerAt.setDate(triggerAt.getDate() + 1);
     } else if (targetDay !== null) {
-      const currentDay = triggerAt.getDay();
+      const currentDay = userNow.getDay();
       let daysToAdd = targetDay - currentDay;
       if (daysToAdd <= 0) daysToAdd += 7;
       triggerAt.setDate(triggerAt.getDate() + daysToAdd);
-    } else if (hours <= now.getHours() || (hours === now.getHours() && minutes <= now.getMinutes())) {
+    } else if (hours <= userNow.getHours() || (hours === userNow.getHours() && minutes <= userNow.getMinutes())) {
       // Time already passed today, set for tomorrow
       triggerAt.setDate(triggerAt.getDate() + 1);
     }
@@ -383,6 +380,7 @@ export default function PandaHub() {
       }
       
       setUser(user);
+      syncTimezone(supabase);
       const name = localStorage.getItem('taskflow-user-name') || '';
       setUserName(name);
       setLoading(false);
