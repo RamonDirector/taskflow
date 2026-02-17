@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
       : {};
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, supabaseOptions);
     
-    // Parallel queries for context
-    const [tasksRes, ideasRes, activityRes] = await Promise.all([
+    // Parallel queries for rich context — leverage Sonnet 4.6's 1M context window
+    const [tasksRes, ideasRes, dreamsRes, remindersRes, activityRes] = await Promise.all([
       supabase
         .from('tasks')
         .select('id, title, completed, type, priority, created_at, due_date, completed_at')
@@ -108,30 +108,47 @@ export async function POST(request: NextRequest) {
         .eq('type', 'task')
         .is('parent_idea_id', null)
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(30),
       supabase
         .from('tasks')
-        .select('id, title, type, created_at')
+        .select('id, title, type, created_at, voice_context')
         .eq('user_id', userId)
         .eq('type', 'idea')
         .order('created_at', { ascending: false })
+        .limit(15),
+      supabase
+        .from('tasks')
+        .select('id, title, created_at, interpretation, emotion, voice_context')
+        .eq('user_id', userId)
+        .eq('type', 'dream')
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('reminders')
+        .select('id, title, schedule_type, trigger_at, next_trigger, interval_ms, active')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .order('next_trigger', { ascending: true })
         .limit(10),
       supabase
         .from('activity_log')
         .select('action, entity_type, metadata, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(30),
+        .limit(50),
     ]);
     
     const tasks = tasksRes.data || [];
     const ideas = ideasRes.data || [];
+    const dreams = dreamsRes.data || [];
+    const reminders = remindersRes.data || [];
     const activity = activityRes.data || [];
     
-    // Build context
+    // Build rich context
     const pendingTasks = tasks.filter(t => !t.completed);
     const completedTasks = tasks.filter(t => t.completed);
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
     const todayTasks = pendingTasks.filter(t => t.due_date === today);
     
     // Stale tasks (pending > 3 days)
@@ -140,36 +157,122 @@ export async function POST(request: NextRequest) {
       return age > 3;
     });
     
-    // Activity summary
+    // Activity analysis
     const last7Days = activity.filter(a => {
       const age = (Date.now() - new Date(a.created_at).getTime()) / (1000 * 60 * 60 * 24);
       return age <= 7;
     });
+    const last24h = activity.filter(a => {
+      const age = (Date.now() - new Date(a.created_at).getTime()) / (1000 * 60 * 60);
+      return age <= 24;
+    });
     const completedThisWeek = last7Days.filter(a => a.action === 'task_completed').length;
     const brainDumpsThisWeek = last7Days.filter(a => a.action === 'brain_dump').length;
+    const completedToday = last24h.filter(a => a.action === 'task_completed').length;
+    const createdToday = last24h.filter(a => a.action === 'task_created').length;
+    
+    // Streak calculation: consecutive days with at least 1 completed task
+    const completionDays = new Set(
+      activity
+        .filter(a => a.action === 'task_completed')
+        .map(a => new Date(a.created_at).toISOString().split('T')[0])
+    );
+    let streak = 0;
+    const checkDate = new Date(now);
+    for (let i = 0; i < 30; i++) {
+      const dayStr = checkDate.toISOString().split('T')[0];
+      if (completionDays.has(dayStr)) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (i === 0) {
+        // Today might not have completions yet, check yesterday
+        checkDate.setDate(checkDate.getDate() - 1);
+        continue;
+      } else {
+        break;
+      }
+    }
+    
+    // Most productive hour (from activity log)
+    const hourCounts: Record<number, number> = {};
+    activity.filter(a => a.action === 'task_completed').forEach(a => {
+      const hour = new Date(a.created_at).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    const peakHour = Object.entries(hourCounts).sort(([,a], [,b]) => b - a)[0];
+    
+    // Completion rate this week
+    const createdThisWeek = last7Days.filter(a => a.action === 'task_created').length;
+    const completionRate = createdThisWeek > 0 ? Math.round((completedThisWeek / createdThisWeek) * 100) : 0;
+    
+    // Recently completed tasks (last 3 days) for conversational awareness
+    const recentCompleted = completedTasks
+      .filter(t => t.completed_at && (Date.now() - new Date(t.completed_at).getTime()) < 3 * 86400000)
+      .slice(0, 5);
+    
+    // Format reminders for context
+    const reminderContext = reminders.length > 0 
+      ? reminders.map(r => {
+          const triggerDate = new Date(r.next_trigger);
+          const timeStr = triggerDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          const dateStr = triggerDate.toISOString().split('T')[0] === today ? 'today' : triggerDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          const recStr = r.schedule_type === 'recurring' && r.interval_ms 
+            ? ` (recurring every ${Math.round(r.interval_ms / 3600000)}h)` 
+            : '';
+          return `- [R#${r.id}] "${r.title}" → ${dateStr} ${timeStr}${recStr}`;
+        }).join('\n')
+      : 'No active reminders';
+    
+    // Format dreams for context (emotional awareness)
+    const dreamContext = dreams.length > 0
+      ? dreams.slice(0, 5).map(d => {
+          const dateStr = new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const emotionStr = d.emotion ? ` [${d.emotion}]` : '';
+          return `- "${d.title}" (${dateStr})${emotionStr}`;
+        }).join('\n')
+      : 'No dreams recorded yet';
+    
+    // Format ideas with voice context for richer understanding
+    const ideaContext = ideas.length > 0
+      ? ideas.slice(0, 10).map(i => {
+          const dateStr = new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const voiceStr = i.voice_context ? ` — context: "${i.voice_context.slice(0, 80)}"` : '';
+          return `- [#${i.id}] "${i.title}" (${dateStr})${voiceStr}`;
+        }).join('\n')
+      : 'No ideas yet';
     
     const contextBlock = `
-## Tu contexto actual
+## User's full context
 
-### Tareas pendientes (${pendingTasks.length})
-${pendingTasks.slice(0, 10).map(t => `- [#${t.id}] "${t.title}" ${t.due_date === today ? '(HOY)' : ''} ${staleTasks.find(s => s.id === t.id) ? `(${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} días)` : ''} [prioridad: ${t.priority || 'normal'}]`).join('\n')}
-${pendingTasks.length > 10 ? `...y ${pendingTasks.length - 10} más` : ''}
+### Today's focus (${todayTasks.length} tasks)
+${todayTasks.length > 0 ? todayTasks.map(t => `- [#${t.id}] "${t.title}" [${t.priority || 'normal'}]`).join('\n') : 'No tasks scheduled for today'}
 
-### Tareas completadas recientes (${completedTasks.length})
-${completedTasks.slice(0, 5).map(t => `- [#${t.id}] "${t.title}"`).join('\n')}
+### All pending tasks (${pendingTasks.length})
+${pendingTasks.slice(0, 15).map(t => `- [#${t.id}] "${t.title}" ${t.due_date === today ? '(TODAY)' : t.due_date ? `(due ${t.due_date})` : ''} ${staleTasks.find(s => s.id === t.id) ? `⚠ stale ${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} days` : ''} [${t.priority || 'normal'}]`).join('\n')}
+${pendingTasks.length > 15 ? `...and ${pendingTasks.length - 15} more` : ''}
 
-### Ideas activas (${ideas.length})
-${ideas.slice(0, 5).map(i => `- [#${i.id}] "${i.title}"`).join('\n')}
+### Recently completed (last 3 days)
+${recentCompleted.length > 0 ? recentCompleted.map(t => `- [#${t.id}] "${t.title}" ✓`).join('\n') : 'None recently'}
 
-### Actividad última semana
-- Tareas completadas: ${completedThisWeek}
-- Brain dumps: ${brainDumpsThisWeek}
+### Stale tasks (3+ days without progress)
+${staleTasks.length > 0 ? staleTasks.map(t => `- [#${t.id}] "${t.title}" (${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} days old)`).join('\n') : 'None — all tasks are fresh'}
 
-### Tareas estancadas (3+ días sin mover)
-${staleTasks.length > 0 ? staleTasks.map(t => `- [#${t.id}] "${t.title}" (${Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000)} días)`).join('\n') : 'Ninguna'}
+### Active reminders
+${reminderContext}
 
-### Foco de hoy
-${todayTasks.length > 0 ? todayTasks.map(t => `- [#${t.id}] "${t.title}"`).join('\n') : 'Sin tareas para hoy'}
+### Ideas (${ideas.length})
+${ideaContext}
+
+### Recent dreams
+${dreamContext}
+
+### User stats & patterns
+- Streak: ${streak} consecutive days completing tasks
+- Today: ${completedToday} completed, ${createdToday} created
+- This week: ${completedThisWeek} completed, ${brainDumpsThisWeek} brain dumps
+- Completion rate (7d): ${completionRate}%${createdThisWeek === 0 ? ' (no tasks created)' : ''}
+${peakHour ? `- Most productive hour: ${parseInt(peakHour[0])}:00 (${peakHour[1]} tasks completed)` : ''}
+- Total pending: ${pendingTasks.length} tasks, ${ideas.length} ideas
 `.trim();
 
     // === TIER 1: Gemini Flash for simple responses (no tools needed) ===
@@ -181,11 +284,15 @@ ${todayTasks.length > 0 ? todayTasks.map(t => `- [#${t.id}] "${t.title}"`).join(
 Max 2-3 lines. No emojis. Direct and warm.
 Use line breaks between ideas. Use **bold** for tasks or keywords.
 Don't use dash lists or numbered lists. No headers.
+You know the user's tasks, ideas, dreams, reminders, and stats — reference them naturally.
+If they have a streak, mention it. If they ask how they're doing, use their real data.
 If asked about something outside productivity: "That's not my thing. Shall we talk about your tasks?"`
           : `Eres Kai, el panda asistente de Hansei. Responde en español, informal (tuteo).
 Máximo 2-3 líneas. Sin emojis. Directo y cálido.
 Usa saltos de línea entre ideas. Usa **negrita** para tareas o palabras clave.
 No uses listas con guiones ni números. No uses headers.
+Conoces las tareas, ideas, sueños, recordatorios y stats del usuario — referenciarlos naturalmente.
+Si tiene una racha activa, menciónala. Si pregunta cómo va, usa sus datos reales.
 Si preguntan algo fuera de productividad: "Eso no es lo mío. ¿Hablamos de tus tareas?"`;
         const geminiPrompt = `${systemPrompt}
 
@@ -339,17 +446,32 @@ Examples:
 - Max 4 lines. If you need more, prioritize and leave less important stuff out
 
 ## What you can do
-- Prioritize user's tasks
-- Suggest what to do now
+- Prioritize user's tasks based on context
+- Suggest what to do now — use their stats, streak, and patterns
 - Create, complete, or delete tasks
-- Give activity summaries
+- Set reminders
+- Give personalized activity summaries ("you've been on a 5-day streak!")
 - Push user to action (without being annoying)
 - Detect stale tasks and suggest what to do with them
+- Reference their ideas and suggest turning them into tasks
+- Notice dream patterns and emotions (if relevant to their mood)
+- Celebrate streaks and progress — this is a companion, not just a tool
+- Use completion rate and peak hours for smart suggestions ("you're most productive at 10am")
 
 ## What you CAN'T do
 - Answer general questions (weather, news, jokes)
 - Topics outside personal productivity
-- Make up data you don't have`
+- Make up data you don't have
+
+## Context intelligence
+You have access to the user's full context: tasks, ideas, dreams, reminders, stats, and patterns.
+USE this context proactively:
+- If they have a streak going, mention it when encouraging them
+- If an idea has been sitting for days, suggest turning it into a task
+- If they ask "how am I doing?", give a data-driven answer with their stats
+- If they completed a lot today, celebrate it
+- If their completion rate is low, gently nudge
+- Reference specific task/idea names — it shows you know them`
       : `Eres Kai, el panda asistente de Hansei. Eres un coach de productividad personal.
 
 ## Tu personalidad
@@ -369,17 +491,32 @@ Examples:
 - Máximo 4 líneas. Si necesitas más, prioriza y deja lo menos importante fuera
 
 ## Lo que puedes hacer
-- Priorizar tareas del usuario
-- Sugerir qué hacer ahora
+- Priorizar tareas del usuario basándote en contexto
+- Sugerir qué hacer ahora — usa sus stats, racha y patrones
 - Crear, completar o eliminar tareas
-- Dar resúmenes de actividad
+- Poner recordatorios
+- Dar resúmenes personalizados ("llevas una racha de 5 días!")
 - Empujar al usuario a la acción (sin ser pesado)
 - Detectar tareas estancadas y sugerir qué hacer con ellas
+- Mencionar sus ideas y sugerir convertirlas en tareas
+- Notar patrones en sus sueños y emociones (si es relevante)
+- Celebrar rachas y progreso — eres un compañero, no solo una herramienta
+- Usar tasa de completado y horas pico para sugerencias inteligentes ("rindes más a las 10am")
 
 ## Lo que NO puedes hacer
 - Responder preguntas generales (clima, noticias, chistes)
 - Temas fuera de productividad personal
 - Inventar datos que no tienes
+
+## Inteligencia contextual
+Tienes acceso al contexto completo del usuario: tareas, ideas, sueños, recordatorios, stats y patrones.
+USA este contexto proactivamente:
+- Si tiene una racha activa, menciónala al motivarle
+- Si una idea lleva días sin moverse, sugiere convertirla en tarea
+- Si pregunta "¿cómo voy?", da una respuesta con datos reales
+- Si completó mucho hoy, celébralo
+- Si su tasa de completado es baja, empuja con tacto
+- Menciona nombres específicos de tareas/ideas — demuestra que le conoces
 
 ## Reglas
 - Si el usuario pregunta "¿qué debería hacer?" → mira tareas de hoy y prioriza
@@ -689,7 +826,10 @@ function determinePose(message: string, actions: Array<{ tool: string }>): strin
   // Encouraging / celebrating — check FIRST (positive tone overrides everything)
   if (lower.includes('puedes') || lower.includes('bien') || lower.includes('genial') || 
       lower.includes('racha') || lower.includes('completaste') || lower.includes('excelente') ||
-      lower.includes('avance') || lower.includes('dale') || lower.includes('vamos'))
+      lower.includes('avance') || lower.includes('dale') || lower.includes('vamos') ||
+      lower.includes('streak') || lower.includes('great') || lower.includes('awesome') ||
+      lower.includes('nice') || lower.includes('completed') || lower.includes('progress') ||
+      lower.includes('keep it up') || lower.includes('on fire'))
     return '/panda/new-celebrate.png';
   
   // Out of scope
