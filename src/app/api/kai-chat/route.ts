@@ -19,9 +19,20 @@ function needsSonnet(text: string): boolean {
   if (words.length <= 2 && !/\b(crea|borra|elimina|completa|prioriza)\b/i.test(lower)) return false;
   
   // Task CRUD actions + reminders → Sonnet (needs tools)
-  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita|remind|alarm|avisa)\b/i.test(lower)) return true;
+  if (/\b(crea|añade|pon|agrega|completa|termin[eé]|hice|borra|elimina|quita|remind|alarm|avisa|cancel|cambia|mueve)\b/i.test(lower)) return true;
   // Spanish accented words — \b doesn't work with accented chars in JS
   if (/(recu[eé]rd|recordar)/i.test(lower)) return true;
+  
+  // Ideas → Sonnet (needs tools)
+  if (/\b(idea|what if|convert|convierte|transforma)\b/i.test(lower)) return true;
+  if (/(se me ocurri[oó]|pens[eé] en|tengo una idea)/i.test(lower)) return true;
+  
+  // Dreams → Sonnet (needs tools)
+  if (/\b(dream|nightmare|dreamed|dreamt|analiz|patrones?|patterns?)\b/i.test(lower)) return true;
+  if (/(soñ[eé]|pesadilla|anoche soñ|mis sueños)/i.test(lower)) return true;
+  
+  // Reminders management → Sonnet
+  if (/\b(reminders?|recordatorios?|alarma)/i.test(lower)) return true;
   
   // Coaching / prioritization questions → Sonnet (needs reasoning)
   if (/\b(qu[eé] (debo|hago|tengo|podr[ií]a)|c[oó]mo voy|sugi[eé]r|recomiend|prioriz|por d[oó]nde empiezo|ayuda)\b/i.test(lower)) return true;
@@ -62,11 +73,11 @@ function isConversation(text: string): boolean {
   // "Tengo que..." / "Necesito..." / "Hay que..." → task, not conversation
   if (lower.startsWith('tengo que ') || lower.startsWith('necesito ') || lower.startsWith('hay que ')) return false;
   
-  // "Se me ocurrió..." / "Una idea:" → idea, brain dump
-  if (lower.startsWith('se me ocurri') || lower.startsWith('una idea') || lower.startsWith('idea:')) return false;
+  // "Se me ocurrió..." / "Una idea:" → NOW goes to Kai (create_idea tool) instead of brain dump
+  // if (lower.startsWith('se me ocurri') || lower.startsWith('una idea') || lower.startsWith('idea:')) return false;
   
-  // "Soñé que..." → dream
-  if (lower.startsWith('soñé') || lower.startsWith('soñe') || lower.startsWith('anoche soñ')) return false;
+  // "Soñé que..." → NOW goes to Kai (log_dream tool) instead of brain dump
+  // if (lower.startsWith('soñé') || lower.startsWith('soñe') || lower.startsWith('anoche soñ')) return false;
   
   // === EVERYTHING ELSE → CONVERSATION with Kai ===
   return true;
@@ -442,6 +453,191 @@ Examples:
           required: ['title'],
         },
       },
+      // === IDEAS TOOLS ===
+      {
+        name: 'create_idea',
+        description: `Save a new idea for the user.
+
+Use when:
+- "I just thought of something..." or "What if we..."
+- "Idea: ..." or "Se me ocurrió..."
+- User shares a concept, business idea, or creative thought
+
+Don't use when:
+- It's a concrete task with a deadline → use create_task
+- It's a reminder → use set_reminder
+- User is just chatting, not capturing an idea
+
+Examples:
+- "What if I built an app for dog walkers?" → title: "App for dog walkers"
+- "Se me ocurrió hacer un podcast de finanzas" → title: "Podcast de finanzas"`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Clear, concise idea title.' },
+            voice_context: { type: 'string', description: 'Extra context the user provided about the idea. Capture their exact words/reasoning.' },
+          },
+          required: ['title'],
+        },
+      },
+      {
+        name: 'convert_idea_to_task',
+        description: `Convert an existing idea into an actionable task.
+
+Use when:
+- "Let's do the X idea" or "Convert my idea about X into a task"
+- "I want to start working on X" (where X is a known idea)
+- User decides to act on an idea they previously captured
+
+Don't use when:
+- The idea doesn't exist in their list → tell them
+- User wants to keep it as an idea → don't convert
+
+Finds the idea by ID or title match, creates a task linked to it.`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            idea_id: { type: 'string', description: 'ID of the idea from context [#ID]. Preferred.' },
+            idea_title: { type: 'string', description: 'Partial title match as fallback.' },
+            task_title: { type: 'string', description: 'Title for the new task. If not provided, uses the idea title.' },
+            due_today: { type: 'boolean', description: 'Set as today\'s focus.' },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'delete_idea',
+        description: `Delete an idea from the board.
+
+Use when:
+- "Delete/remove the idea about X"
+- "That idea isn't relevant anymore"
+
+Don't use when:
+- User wants to convert it to a task → use convert_idea_to_task
+- Ambiguous which idea → ask for clarification`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            idea_id: { type: 'string', description: 'ID from context [#ID]. Preferred.' },
+            idea_title: { type: 'string', description: 'Partial title match as fallback.' },
+          },
+          required: [],
+        },
+      },
+      // === DREAMS TOOLS ===
+      {
+        name: 'log_dream',
+        description: `Log a dream the user describes.
+
+Use when:
+- "Last night I dreamed that..." or "Anoche soñé que..."
+- "I had a nightmare about..." or "Tuve una pesadilla..."
+- User describes any dream experience
+
+Don't use when:
+- User talks about goals/aspirations ("my dream is to...") → that's an idea or conversation
+- User asks about dream interpretation → use analyze_dreams instead
+
+Capture the full description as voice_context. Generate a short title.`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Short dream title (3-6 words). E.g. "Flying over the ocean"' },
+            description: { type: 'string', description: 'Full dream description as told by the user. Preserve their words.' },
+            emotion: { type: 'string', description: 'Primary emotion detected: joy, fear, anxiety, confusion, sadness, anger, peace, excitement, nostalgia, neutral' },
+          },
+          required: ['title', 'description'],
+        },
+      },
+      {
+        name: 'analyze_dreams',
+        description: `Analyze patterns across the user's recent dreams.
+
+Use when:
+- "What patterns do you see in my dreams?"
+- "Am I dreaming about the same things?"
+- "What do my dreams say about me?"
+- "Analyze my dreams"
+
+Don't use when:
+- User is logging a new dream → use log_dream
+- User has no dreams recorded → tell them to start logging
+
+Returns analysis based on actual dream data in context. Focus on emotions, recurring themes, and temporal patterns. Be thoughtful, not mystical.`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            period_days: { type: 'number', description: 'How many days back to analyze. Default: 30' },
+          },
+          required: [],
+        },
+      },
+      // === REMINDERS MANAGEMENT TOOLS ===
+      {
+        name: 'list_reminders',
+        description: `List the user's active reminders.
+
+Use when:
+- "What reminders do I have?" or "¿Qué recordatorios tengo?"
+- "Show my reminders" or "List my alarms"
+
+Don't use when:
+- User wants to create a reminder → use set_reminder
+- User wants to cancel one → use cancel_reminder
+
+Returns formatted list from context. No DB call needed — use the reminders already in context.`,
+        input_schema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'cancel_reminder',
+        description: `Cancel/deactivate an active reminder.
+
+Use when:
+- "Cancel the reminder about X"
+- "Remove my X alarm"
+- "I don't need the X reminder anymore"
+
+Don't use when:
+- User wants to edit the time → use edit_reminder
+- Ambiguous which reminder → ask for clarification`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            reminder_id: { type: 'string', description: 'ID from context [R#ID]. Preferred.' },
+            reminder_title: { type: 'string', description: 'Partial title match as fallback.' },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'edit_reminder',
+        description: `Change the time or frequency of an existing reminder.
+
+Use when:
+- "Change my X reminder to 5pm"
+- "Make the X reminder daily instead"
+- "Push my X reminder to tomorrow"
+
+Don't use when:
+- User wants to cancel → use cancel_reminder
+- User wants a new reminder → use set_reminder`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            reminder_id: { type: 'string', description: 'ID from context [R#ID]. Preferred.' },
+            reminder_title: { type: 'string', description: 'Partial title match as fallback.' },
+            new_time: { type: 'string', description: 'New trigger time. ISO 8601 or relative ("5pm", "tomorrow 9am").' },
+            recurring: { type: 'boolean', description: 'Change to recurring or one-time.' },
+            interval_hours: { type: 'number', description: 'New interval in hours if making recurring.' },
+          },
+          required: [],
+        },
+      },
     ];
 
     // Call Sonnet
@@ -586,7 +782,7 @@ ${contextBlock}`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6-20260217',
-        max_tokens: 300,
+        max_tokens: 400,
         system: fullSystemPrompt,
         tools,
         messages: messageHistory,
@@ -849,6 +1045,237 @@ async function executeTool(
       const userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
       const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: userTimezone });
       return `Reminder "${title}" set for ${timeStr}${recurring ? ` (repeating every ${intervalHours}h)` : ''}`;
+    }
+
+    // === IDEAS ===
+    case 'create_idea': {
+      const title = input.title as string;
+      const voiceContext = input.voice_context as string | undefined;
+
+      const { error } = await supabase.from('tasks').insert({
+        user_id: userId,
+        title,
+        voice_context: voiceContext || null,
+        type: 'idea',
+        category: 'personal',
+        priority: 'medium',
+        completed: false,
+        position_x: 150 + Math.random() * 400,
+        position_y: 150 + Math.random() * 200,
+      });
+
+      if (error) return `Error creating idea: ${error.message}`;
+
+      await supabase.from('activity_log').insert({
+        user_id: userId,
+        action: 'idea_created',
+        entity_type: 'idea',
+        metadata: { title, source: 'kai_chat' },
+      });
+
+      return `Idea "${title}" saved`;
+    }
+
+    case 'convert_idea_to_task': {
+      const ideaId = input.idea_id as string | undefined;
+      const ideaTitle = input.idea_title as string | undefined;
+      const taskTitle = input.task_title as string | undefined;
+      const dueToday = input.due_today as boolean;
+
+      // Find the idea
+      let matches;
+      if (ideaId) {
+        const res = await supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('id', ideaId)
+          .eq('user_id', userId)
+          .eq('type', 'idea')
+          .limit(1);
+        matches = res.data;
+      } else if (ideaTitle) {
+        const res = await supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('user_id', userId)
+          .eq('type', 'idea')
+          .ilike('title', `%${ideaTitle}%`)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        matches = res.data;
+      }
+
+      if (!matches?.length) return `Idea not found`;
+
+      const idea = matches[0];
+      const finalTitle = taskTitle || idea.title;
+      const dueDate = dueToday ? new Date().toISOString().split('T')[0] : null;
+
+      const { error } = await supabase.from('tasks').insert({
+        user_id: userId,
+        title: finalTitle,
+        type: 'task',
+        priority: 'medium',
+        completed: false,
+        due_date: dueDate,
+        parent_idea_id: idea.id,
+      });
+
+      if (error) return `Error converting idea: ${error.message}`;
+
+      await supabase.from('activity_log').insert({
+        user_id: userId,
+        action: 'idea_converted',
+        entity_type: 'idea',
+        entity_id: idea.id,
+        metadata: { title: finalTitle, source: 'kai_chat' },
+      });
+
+      return `Idea "${idea.title}" converted to task "${finalTitle}"${dueToday ? ' (today)' : ''}`;
+    }
+
+    case 'delete_idea': {
+      const ideaId = input.idea_id as string | undefined;
+      const ideaTitle = input.idea_title as string | undefined;
+
+      let matches;
+      if (ideaId) {
+        const res = await supabase.from('tasks').select('id, title').eq('id', ideaId).eq('user_id', userId).eq('type', 'idea').limit(1);
+        matches = res.data;
+      } else if (ideaTitle) {
+        const res = await supabase.from('tasks').select('id, title').eq('user_id', userId).eq('type', 'idea').ilike('title', `%${ideaTitle}%`).limit(1);
+        matches = res.data;
+      }
+
+      if (!matches?.length) return `Idea not found`;
+
+      const idea = matches[0];
+      // Delete children first, then the idea
+      await supabase.from('tasks').delete().eq('parent_idea_id', idea.id);
+      const { error } = await supabase.from('tasks').delete().eq('id', idea.id);
+      
+      if (error) {
+        // Fallback: mark as completed
+        await supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', idea.id);
+      }
+
+      await supabase.from('activity_log').insert({
+        user_id: userId,
+        action: 'idea_deleted',
+        entity_type: 'idea',
+        entity_id: idea.id,
+        metadata: { source: 'kai_chat' },
+      });
+
+      return `Idea "${idea.title}" deleted`;
+    }
+
+    // === DREAMS ===
+    case 'log_dream': {
+      const title = input.title as string;
+      const description = input.description as string;
+      const emotion = input.emotion as string | undefined;
+
+      const { data: dreamData, error } = await supabase.from('tasks').insert({
+        user_id: userId,
+        title,
+        voice_context: description,
+        type: 'dream',
+        category: 'dreams',
+        priority: 'medium',
+        completed: false,
+        ...(emotion ? { emotion } : {}),
+      }).select().single();
+
+      if (error) return `Error logging dream: ${error.message}`;
+
+      await supabase.from('activity_log').insert({
+        user_id: userId,
+        action: 'dream_logged',
+        entity_type: 'dream',
+        metadata: { title, emotion, source: 'kai_chat' },
+      });
+
+      return `Dream "${title}" logged${emotion ? ` (${emotion})` : ''}`;
+    }
+
+    case 'analyze_dreams': {
+      // This tool doesn't need DB — Kai uses the dream context already in the system prompt
+      // Just return a signal that Kai should analyze based on context
+      return `ANALYZE_DREAMS_FROM_CONTEXT`;
+    }
+
+    // === REMINDERS MANAGEMENT ===
+    case 'list_reminders': {
+      // Kai already has reminders in context — just signal to format them nicely
+      return `LIST_REMINDERS_FROM_CONTEXT`;
+    }
+
+    case 'cancel_reminder': {
+      const reminderId = input.reminder_id as string | undefined;
+      const reminderTitle = input.reminder_title as string | undefined;
+
+      const svc = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || '');
+      
+      let matches;
+      if (reminderId) {
+        const res = await svc.from('reminders').select('id, title').eq('id', reminderId).eq('user_id', userId).eq('active', true).limit(1);
+        matches = res.data;
+      } else if (reminderTitle) {
+        const res = await svc.from('reminders').select('id, title').eq('user_id', userId).eq('active', true).ilike('title', `%${reminderTitle}%`).limit(1);
+        matches = res.data;
+      }
+
+      if (!matches?.length) return `Reminder not found`;
+
+      const reminder = matches[0];
+      await svc.from('reminders').update({ active: false }).eq('id', reminder.id);
+
+      return `Reminder "${reminder.title}" cancelled`;
+    }
+
+    case 'edit_reminder': {
+      const reminderId = input.reminder_id as string | undefined;
+      const reminderTitle = input.reminder_title as string | undefined;
+      const newTime = input.new_time as string | undefined;
+      const recurring = input.recurring as boolean | undefined;
+      const intervalHours = input.interval_hours as number | undefined;
+
+      const svc = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || '');
+
+      let matches;
+      if (reminderId) {
+        const res = await svc.from('reminders').select('id, title').eq('id', reminderId).eq('user_id', userId).eq('active', true).limit(1);
+        matches = res.data;
+      } else if (reminderTitle) {
+        const res = await svc.from('reminders').select('id, title').eq('user_id', userId).eq('active', true).ilike('title', `%${reminderTitle}%`).limit(1);
+        matches = res.data;
+      }
+
+      if (!matches?.length) return `Reminder not found`;
+
+      const reminder = matches[0];
+      const updates: Record<string, unknown> = {};
+
+      if (newTime) {
+        const newTrigger = new Date(newTime);
+        if (!isNaN(newTrigger.getTime())) {
+          updates.trigger_at = newTrigger.toISOString();
+          updates.next_trigger = newTrigger.toISOString();
+        }
+      }
+      if (recurring !== undefined) {
+        updates.schedule_type = recurring ? 'recurring' : 'once';
+      }
+      if (intervalHours) {
+        updates.interval_ms = intervalHours * 60 * 60 * 1000;
+      }
+
+      if (Object.keys(updates).length === 0) return `Nothing to update`;
+
+      await svc.from('reminders').update(updates).eq('id', reminder.id);
+
+      return `Reminder "${reminder.title}" updated`;
     }
 
     default:
