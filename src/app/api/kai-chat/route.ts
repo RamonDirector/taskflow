@@ -328,7 +328,10 @@ ${contextBlock}
 ${recentConvos ? `## Recent conversation history\n${recentConvos}\n\n` : ''}${isEnglish ? 'User' : 'Usuario'}: ${text}`;
         
         const geminiRes = await geminiModel.generateContent(geminiPrompt);
-        const geminiText = geminiRes.response.text();
+        let geminiText = geminiRes.response.text();
+        // Strip Gemini preamble artifacts ("Here is the prompt:", "Here's a response:", etc.)
+        geminiText = geminiText.replace(/^(here\s*(is|are)\s*(the|a|my)?\s*(prompt|response|reply|answer)[:\s]*\n?)/i, '').trim();
+        geminiText = geminiText.replace(/^(how about[:\s]*\n?|here you go[:\s]*\n?|sure[,!:\s]*\n?)/i, '').trim();
         const pose = determinePose(geminiText, []);
         
         // Save conversation (fire-and-forget, don't block response)
