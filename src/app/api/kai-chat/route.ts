@@ -99,8 +99,11 @@ export async function POST(request: NextRequest) {
       : {};
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, supabaseOptions);
     
+    // Service role client for saving conversations (bypasses RLS)
+    const serviceSupabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || '');
+
     // Parallel queries for rich context — leverage Sonnet 4.6's 1M context window
-    const [tasksRes, ideasRes, dreamsRes, remindersRes, activityRes] = await Promise.all([
+    const [tasksRes, ideasRes, dreamsRes, remindersRes, activityRes, conversationsRes] = await Promise.all([
       supabase
         .from('tasks')
         .select('id, title, completed, type, priority, created_at, due_date, completed_at')
@@ -136,6 +139,12 @@ export async function POST(request: NextRequest) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(50),
+      supabase
+        .from('kai_conversations')
+        .select('user_message, kai_response, tools_used, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20),
     ]);
     
     const tasks = tasksRes.data || [];
@@ -143,6 +152,7 @@ export async function POST(request: NextRequest) {
     const dreams = dreamsRes.data || [];
     const reminders = remindersRes.data || [];
     const activity = activityRes.data || [];
+    const conversations = (conversationsRes.data || []).reverse(); // chronological order
     
     // Build rich context
     const pendingTasks = tasks.filter(t => !t.completed);
@@ -294,15 +304,24 @@ No uses listas con guiones ni números. No uses headers.
 Conoces las tareas, ideas, sueños, recordatorios y stats del usuario — referenciarlos naturalmente.
 Si tiene una racha activa, menciónala. Si pregunta cómo va, usa sus datos reales.
 Si preguntan algo fuera de productividad: "Eso no es lo mío. ¿Hablamos de tus tareas?"`;
+        // Build conversation history for Gemini (last 10 for token efficiency)
+        const recentConvos = conversations.slice(-10).map(c => {
+          const timeAgo = getTimeAgo(new Date(c.created_at), isEnglish);
+          return `${isEnglish ? 'User' : 'Usuario'} (${timeAgo}): ${c.user_message}\nKai: ${c.kai_response}`;
+        }).join('\n\n');
+        
         const geminiPrompt = `${systemPrompt}
 
 ${contextBlock}
 
-${isEnglish ? 'User' : 'Usuario'}: ${text}`;
+${recentConvos ? `## Recent conversation history\n${recentConvos}\n\n` : ''}${isEnglish ? 'User' : 'Usuario'}: ${text}`;
         
         const geminiRes = await geminiModel.generateContent(geminiPrompt);
         const geminiText = geminiRes.response.text();
         const pose = determinePose(geminiText, []);
+        
+        // Save conversation (fire-and-forget, don't block response)
+        saveConversation(serviceSupabase, userId, text, geminiText, [], 'gemini', locale).catch(() => {});
         
         return NextResponse.json({
           type: 'conversation',
@@ -465,13 +484,16 @@ Examples:
 
 ## Context intelligence
 You have access to the user's full context: tasks, ideas, dreams, reminders, stats, and patterns.
+You also have CONVERSATION MEMORY — you remember previous chats with this user.
 USE this context proactively:
+- Reference things the user told you before ("last time you mentioned X, how did that go?")
 - If they have a streak going, mention it when encouraging them
 - If an idea has been sitting for days, suggest turning it into a task
 - If they ask "how am I doing?", give a data-driven answer with their stats
 - If they completed a lot today, celebrate it
 - If their completion rate is low, gently nudge
-- Reference specific task/idea names — it shows you know them`
+- Reference specific task/idea names — it shows you know them
+- NEVER say "I don't have memory" or "I can't remember" — you DO remember`
       : `Eres Kai, el panda asistente de Hansei. Eres un coach de productividad personal.
 
 ## Tu personalidad
@@ -510,13 +532,16 @@ USE this context proactively:
 
 ## Inteligencia contextual
 Tienes acceso al contexto completo del usuario: tareas, ideas, sueños, recordatorios, stats y patrones.
+También tienes MEMORIA DE CONVERSACIONES — recuerdas chats anteriores con este usuario.
 USA este contexto proactivamente:
+- Referencia cosas que el usuario te dijo antes ("la última vez mencionaste X, ¿cómo fue?")
 - Si tiene una racha activa, menciónala al motivarle
 - Si una idea lleva días sin moverse, sugiere convertirla en tarea
 - Si pregunta "¿cómo voy?", da una respuesta con datos reales
 - Si completó mucho hoy, celébralo
 - Si su tasa de completado es baja, empuja con tacto
 - Menciona nombres específicos de tareas/ideas — demuestra que le conoces
+- NUNCA digas "no tengo memoria" o "no puedo recordar" — SÍ recuerdas
 
 ## Reglas
 - Si el usuario pregunta "¿qué debería hacer?" → mira tareas de hoy y prioriza
@@ -542,6 +567,16 @@ ${rulesBlock}
 
 ${contextBlock}`;
 
+    // Build multi-turn message history from recent conversations
+    // Use last 15 conversations as actual user/assistant turns for natural continuity
+    const messageHistory: Array<{ role: string; content: string }> = [];
+    for (const conv of conversations.slice(-15)) {
+      messageHistory.push({ role: 'user', content: conv.user_message });
+      messageHistory.push({ role: 'assistant', content: conv.kai_response });
+    }
+    // Add current message
+    messageHistory.push({ role: 'user', content: text });
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -554,7 +589,7 @@ ${contextBlock}`;
         max_tokens: 300,
         system: fullSystemPrompt,
         tools,
-        messages: [{ role: 'user', content: text }],
+        messages: messageHistory,
       }),
     });
     
@@ -634,11 +669,15 @@ ${contextBlock}`;
     // Determine Kai's pose based on response
     const pose = determinePose(kaiMessage, actions);
     
+    // Save conversation (fire-and-forget)
+    const toolsSummary = actions.map(a => ({ tool: a.tool, input: a.input }));
+    saveConversation(serviceSupabase, userId, text, kaiMessage, toolsSummary, 'sonnet', locale).catch(() => {});
+    
     return NextResponse.json({
       type: 'conversation',
       message: kaiMessage,
       pose,
-      actions: actions.map(a => ({ tool: a.tool, input: a.input })),
+      actions: toolsSummary,
     });
     
   } catch (error) {
@@ -847,4 +886,59 @@ function determinePose(message: string, actions: Array<{ tool: string }>): strin
   
   // Default — friendly wave
   return '/panda/new-wave.png';
+}
+
+// Save conversation to DB for memory continuity
+async function saveConversation(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  userMessage: string,
+  kaiResponse: string,
+  toolsUsed: Array<{ tool: string; input: unknown }>,
+  model: string,
+  locale: string,
+) {
+  try {
+    await supabase.from('kai_conversations').insert({
+      user_id: userId,
+      user_message: userMessage,
+      kai_response: kaiResponse,
+      tools_used: toolsUsed,
+      model,
+      locale,
+    });
+    
+    // Cleanup: keep only last 100 conversations per user
+    const { data: oldConvos } = await supabase
+      .from('kai_conversations')
+      .select('id')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(100, 200);
+    
+    if (oldConvos && oldConvos.length > 0) {
+      const idsToDelete = oldConvos.map(c => c.id);
+      await supabase
+        .from('kai_conversations')
+        .delete()
+        .in('id', idsToDelete);
+    }
+  } catch (err) {
+    console.error('Failed to save conversation:', err);
+  }
+}
+
+// Human-readable relative time
+function getTimeAgo(date: Date, isEnglish: boolean): string {
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMin < 1) return isEnglish ? 'just now' : 'ahora';
+  if (diffMin < 60) return isEnglish ? `${diffMin}m ago` : `hace ${diffMin}m`;
+  if (diffHours < 24) return isEnglish ? `${diffHours}h ago` : `hace ${diffHours}h`;
+  if (diffDays === 1) return isEnglish ? 'yesterday' : 'ayer';
+  if (diffDays < 7) return isEnglish ? `${diffDays}d ago` : `hace ${diffDays}d`;
+  return date.toLocaleDateString(isEnglish ? 'en-US' : 'es-ES', { month: 'short', day: 'numeric' });
 }
