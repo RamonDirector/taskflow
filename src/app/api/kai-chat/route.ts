@@ -164,12 +164,22 @@ export async function POST(request: NextRequest) {
     const reminders = remindersRes.data || [];
     const activity = activityRes.data || [];
     const conversations = (conversationsRes.data || []).reverse(); // chronological order
-    
+
+    // Fetch user timezone from Supabase metadata (parallel fetch done, now get tz)
+    let userTimezone = 'UTC';
+    try {
+      const { data: { user: authUser } } = await serviceSupabase.auth.admin.getUserById(userId);
+      userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
+    } catch {
+      // fallback to UTC
+    }
+
     // Build rich context
     const pendingTasks = tasks.filter(t => !t.completed);
     const completedTasks = tasks.filter(t => t.completed);
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    // Use user's local date, not UTC (critical for users in negative-offset timezones like Hawaii)
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: userTimezone }).format(now); // en-CA = YYYY-MM-DD
     const todayTasks = pendingTasks.filter(t => t.due_date === today);
     
     // Stale tasks (pending > 3 days)
@@ -231,12 +241,13 @@ export async function POST(request: NextRequest) {
       .filter(t => t.completed_at && (Date.now() - new Date(t.completed_at).getTime()) < 3 * 86400000)
       .slice(0, 5);
     
-    // Format reminders for context
+    // Format reminders for context — always use user's timezone, not server UTC
     const reminderContext = reminders.length > 0 
       ? reminders.map(r => {
           const triggerDate = new Date(r.next_trigger);
-          const timeStr = triggerDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-          const dateStr = triggerDate.toISOString().split('T')[0] === today ? 'today' : triggerDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          const timeStr = triggerDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: userTimezone });
+          const triggerLocalDate = new Intl.DateTimeFormat('en-CA', { timeZone: userTimezone }).format(triggerDate);
+          const dateStr = triggerLocalDate === today ? 'today' : triggerDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: userTimezone });
           const recStr = r.schedule_type === 'recurring' && r.interval_ms 
             ? ` (recurring every ${Math.round(r.interval_ms / 3600000)}h)` 
             : '';
@@ -262,8 +273,21 @@ export async function POST(request: NextRequest) {
         }).join('\n')
       : 'No ideas yet';
     
+    // Current local time for Claude (so it generates correct trigger_at ISO strings)
+    const userLocalTimeStr = now.toLocaleString('en-US', {
+      timeZone: userTimezone,
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    });
+    const userUtcOffsetStr = now.toLocaleString('en-US', { timeZone: userTimezone, timeZoneName: 'short' }).split(' ').pop() || userTimezone;
+
     const contextBlock = `
 ## User's full context
+
+### Current time (user's local timezone)
+- Local time: ${userLocalTimeStr} (${userTimezone} / ${userUtcOffsetStr})
+- Today's date: ${today}
+- When setting reminder trigger_at: convert user's stated local time to UTC ISO 8601. Example: if user says "3pm" in ${userTimezone}, compute the correct UTC equivalent.
 
 ### Today's focus (${todayTasks.length} tasks)
 ${todayTasks.length > 0 ? todayTasks.map(t => `- [#${t.id}] "${t.title}" [${t.priority || 'normal'}]`).join('\n') : 'No tasks scheduled for today'}
@@ -453,7 +477,7 @@ Examples:
           properties: {
             title: { type: 'string', description: 'What to remind about. Clear and actionable.' },
             delay_minutes: { type: 'number', description: 'Minutes from now to trigger. Use this OR trigger_at.' },
-            trigger_at: { type: 'string', description: 'ISO 8601 datetime to trigger. Use this OR delay_minutes.' },
+            trigger_at: { type: 'string', description: 'ISO 8601 datetime in UTC (ends with Z). Convert user\'s local time to UTC using the timezone in context. E.g. if user is HST (UTC-10) and says 3pm, use "...T01:00:00.000Z" (next day UTC). NEVER use delay_minutes and trigger_at together.' },
             recurring: { type: 'boolean', description: 'Whether this repeats. Default false.' },
             interval_hours: { type: 'number', description: 'Hours between recurrences. Only if recurring=true.' },
           },
@@ -1051,9 +1075,7 @@ async function executeTool(
 
       if (error) return `Error setting reminder: ${error.message}`;
 
-      // Get user's timezone from metadata
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      const userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
+      // userTimezone already fetched at route level — use it directly
       const timeStr = triggerAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: userTimezone });
       return `Reminder "${title}" set for ${timeStr}${recurring ? ` (repeating every ${intervalHours}h)` : ''}`;
     }

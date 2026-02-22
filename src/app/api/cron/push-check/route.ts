@@ -59,8 +59,15 @@ async function processUser(
   results: string[]
 ) {
   // Anti-spam: check today's push count (exclude custom reminders)
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
+  // Use user's local midnight in UTC — NOT UTC midnight (critical for negative-offset timezones like HST)
+  const todayParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: userTimezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(now);
+  const hNow = parseInt(todayParts.find(p => p.type === 'hour')?.value || '0');
+  const mNow = parseInt(todayParts.find(p => p.type === 'minute')?.value || '0');
+  const sNow = parseInt(todayParts.find(p => p.type === 'second')?.value || '0');
+  // Subtract elapsed seconds since midnight in user's TZ to get user's local midnight in UTC
+  const todayStart = new Date(now.getTime() - (hNow * 3600 + mNow * 60 + sNow) * 1000);
 
   const { data: todayPushes } = await supabase
     .from('push_log')
