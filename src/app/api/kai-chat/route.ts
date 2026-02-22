@@ -816,7 +816,7 @@ ${contextBlock}`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20260217',
+        model: 'claude-sonnet-4-6',
         max_tokens: 400,
         system: fullSystemPrompt,
         tools,
@@ -876,7 +876,7 @@ ${contextBlock}`;
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6-20260217',
+          model: 'claude-sonnet-4-6',
           max_tokens: 200,
           system: fullSystemPrompt,
           tools,
