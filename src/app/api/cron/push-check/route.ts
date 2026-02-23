@@ -58,6 +58,10 @@ async function processUser(
   now: Date,
   results: string[]
 ) {
+  // Get user's timezone first — needed for local-midnight calculation below
+  const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+  const userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
+
   // Anti-spam: check today's push count (exclude custom reminders)
   // Use user's local midnight in UTC — NOT UTC midnight (critical for negative-offset timezones like HST)
   const todayParts = new Intl.DateTimeFormat('en-US', {
@@ -95,9 +99,7 @@ async function processUser(
     return;
   }
 
-  // Get user's timezone from metadata
-  const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
-  const userTimezone = (authUser as any)?.user_metadata?.timezone || 'UTC';
+  // Determine local hour for time-window checks
   const userNow = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
   const hour = userNow.getHours();
 
